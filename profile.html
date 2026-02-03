@@ -2,61 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus // Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Hub | Profile</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000; --panel: #0a0a0a; --accent: #00A2FF; --border: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; justify-content: center; }
-        .profile-card { width: 500px; background: var(--panel); border: 1px solid var(--border); margin-top: 50px; border-radius: 20px; padding: 40px; text-align: center; }
-        .pfp-large { width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--accent); margin-bottom: 20px; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .stat-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
-        .btn-report { background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 20px; cursor: pointer; font-weight: 800; }
+        :root { --bg: #000; --panel: #0a0a0a; --accent: #00A2FF; --border: #1a1a1a; --text-main: #FFFFFF; }
+        body { background: var(--bg); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        .profile-container { width: 400px; background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 40px; text-align: center; }
+        .pfp-main { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--accent); margin-bottom: 20px; background: #111; }
+        .username { font-size: 1.5rem; font-weight: 800; margin: 0; }
+        .handle { color: #555; font-size: 0.9rem; margin-bottom: 25px; }
+        
+        .stat-card { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .stat-label { font-size: 0.7rem; color: #444; font-weight: 800; text-transform: uppercase; }
+        
+        .back-btn { margin-top: 20px; display: inline-block; color: var(--accent); text-decoration: none; font-size: 0.8rem; font-weight: 800; }
     </style>
 </head>
 <body>
-    <div class="profile-card">
-        <img id="view-pfp" class="pfp-large" src="">
-        <h1 id="view-name" style="margin:0;">Loading...</h1>
-        <p id="view-handle" style="color:#555;"></p>
-        
-        <div class="stat-grid">
-            <div class="stat-box"><small>RANK</small><div id="view-rank" style="font-weight:800;">Member</div></div>
-            <div class="stat-box"><small>STATUS</small><div style="color:#00ff00; font-weight:800;">Verified</div></div>
+
+    <div class="profile-container">
+        <img id="pfp" class="pfp-main" src="">
+        <h1 id="name" class="username">Loading...</h1>
+        <div id="handle" class="handle">@fetching</div>
+
+        <div class="stat-card">
+            <span class="stat-label">Nexus Status</span>
+            <span style="color: #00ff00; font-weight: 800; font-size: 0.8rem;">VERIFIED</span>
         </div>
 
-        <button class="btn-report" onclick="openReport()">REPORT USER</button>
+        <div class="stat-card">
+            <span class="stat-label">Origin</span>
+            <span style="font-weight: 800; font-size: 0.8rem;">ROBLOX OAUTH2</span>
+        </div>
+
+        <a href="threads.html" class="back-btn">← BACK TO FEED</a>
     </div>
 
     <script>
         window.onload = async () => {
             const params = new URLSearchParams(window.location.search);
-            const targetUser = params.get('user');
-            
-            // In a real setup, you'd fetch this from your database or Roblox API
-            // For now, we'll use the URL data or look it up via RoProxy
-            if(targetUser) {
-                document.getElementById('view-name').innerText = targetUser;
-                document.getElementById('view-handle').innerText = `@${targetUser.toLowerCase()}`;
+            const user = params.get('user');
+
+            if (!user) {
+                document.body.innerHTML = "<h1>User not found.</h1>";
+                return;
+            }
+
+            document.getElementById('name').innerText = user;
+            document.getElementById('handle').innerText = `@${user.toLowerCase()}`;
+
+            try {
+                // Fetch Roblox PFP via RoProxy to avoid CORS
+                const userRes = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${user}&limit=1`);
+                const userData = await userRes.json();
                 
-                // Fetch Roblox PFP for this user
-                const res = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${targetUser}&limit=1`);
-                const data = await res.json();
-                if(data.data[0]) {
-                    const thumbRes = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${data.data[0].id}&size=150x150&format=Png&isCircular=true`);
+                if(userData.data && userData.data[0]) {
+                    const userId = userData.data[0].id;
+                    const thumbRes = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`);
                     const thumbData = await thumbRes.json();
-                    document.getElementById('view-pfp').src = thumbData.data[0].imageUrl;
+                    document.getElementById('pfp').src = thumbData.data[0].imageUrl;
                 }
+            } catch(e) {
+                console.error("Profile sync error");
             }
         };
-
-        function openReport() {
-            const reason = prompt("Reason for reporting this user?");
-            if(reason) {
-                // Send to Ably 'reports' channel
-                alert("Report submitted to Adiyan Studio staff.");
-            }
-        }
     </script>
 </body>
 </html>
