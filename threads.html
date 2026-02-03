@@ -45,7 +45,13 @@
     </style>
 </head>
 <body>
-
+ <div class="header">
+    BEYOND_THREADS<span>.</span>
+    <div class="nav-links">
+        <a href="#" onclick="goMyProfile()">MY PROFILE</a>
+        <a href="discuss.html">DISCUSSIONS</a>
+    </div>
+</div>
     <div id="login-gate">
         <a href="#" id="auth-link" class="auth-btn">VERIFY WITH ROBLOX</a>
     </div>
@@ -189,6 +195,11 @@ async function reportPost(postId, offenderName, content) {
     else list.appendChild(post);
 }
 
+        function goMyProfile() {
+    const me = localStorage.getItem('rbx_user');
+    if(me) location.href = `profile.html?user=${me}`;
+}
+        
         function addThreadToUI(data, isNew) {
             const list = document.getElementById('thread-list');
             const post = document.createElement('div');
