@@ -3,122 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adiyan | Lead Developer</title>
+    <title>Adiyan | Lead Systems Architect</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg: #050505;
-            --card-bg: rgba(20, 20, 20, 0.6);
+            --bg: #030303;
+            --card-bg: rgba(15, 15, 15, 0.7);
             --accent: #ffffff;
-            --accent-dim: #888;
+            --accent-dim: #666;
             --text-main: #ffffff;
-            --text-dim: #a1a1a1;
-            --border: rgba(255, 255, 255, 0.08);
-            --glass: rgba(255, 255, 255, 0.03);
-            --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            --text-dim: #999;
+            --border: rgba(255, 255, 255, 0.06);
+            --glass: rgba(255, 255, 255, 0.02);
+            --transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            cursor: none !important; /* Managed by custom cursor */
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none !important; }
 
         body {
             background-color: var(--bg);
             color: var(--text-main);
             font-family: 'Plus Jakarta Sans', sans-serif;
             overflow-x: hidden;
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
-        /* --- Custom Cursor --- */
-        .cursor-main {
-            width: 40px; height: 40px; border: 1px solid var(--accent);
-            border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999;
-            transition: width 0.3s, height 0.3s, background 0.3s;
-        }
-        .cursor-dot {
-            width: 6px; height: 6px; background: var(--accent);
-            border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999;
-        }
-        .cursor-main.hovering { width: 60px; height: 60px; background: rgba(255,255,255,0.1); }
+        /* --- Cursor --- */
+        .cursor-main { width: 40px; height: 40px; border: 1px solid var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transition: transform 0.2s ease, background 0.3s; }
+        .cursor-dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; }
+        .cursor-main.hovering { transform: scale(1.8); background: rgba(255,255,255,0.05); }
 
-        /* --- Background Elements --- */
-        .mesh-gradient {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% -20%, #1a1a1a, transparent);
-            z-index: -1;
-        }
-
-        /* --- Layout --- */
-        section { padding: 120px 10%; position: relative; }
-
-        .reveal { opacity: 0; transform: translateY(40px); transition: var(--transition); }
+        /* --- Animations --- */
+        .reveal { opacity: 0; transform: translateY(50px); transition: var(--transition); }
         .reveal.visible { opacity: 1; transform: translateY(0); }
 
-        /* --- Hero Section --- */
-        .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; }
-        .hero-tag { font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; letter-spacing: 4px; color: var(--accent-dim); font-size: 0.9rem; margin-bottom: 20px; }
-        .hero-title { font-size: clamp(3rem, 8vw, 6rem); font-weight: 800; line-height: 1; margin-bottom: 30px; }
-        .hero-title em { font-style: normal; color: transparent; -webkit-text-stroke: 1px var(--accent); }
+        /* --- Hero --- */
+        .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 0 10%; }
+        .hero-tag { font-family: 'Space Grotesk', sans-serif; letter-spacing: 5px; color: var(--accent-dim); text-transform: uppercase; font-size: 0.8rem; margin-bottom: 20px; }
+        .hero-title { font-size: clamp(3.5rem, 10vw, 8rem); font-weight: 800; line-height: 0.9; margin-bottom: 40px; letter-spacing: -2px; }
+        .hero-title span { color: transparent; -webkit-text-stroke: 1px var(--accent); }
 
-        /* --- Project Grid --- */
-        .section-header { margin-bottom: 60px; }
-        .section-label { color: var(--accent-dim); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; }
+        /* --- Gallery Section --- */
+        section { padding: 120px 10%; }
+        .section-label { color: var(--accent-dim); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 3px; display: block; margin-bottom: 20px; }
         
-        .project-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
-        .project-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px;
-            height: 450px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
+        .gallery-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; margin-top: 50px; }
+        .gallery-item { 
+            grid-column: span 4; height: 400px; background: var(--card-bg); border-radius: 30px; 
+            overflow: hidden; border: 1px solid var(--border); position: relative; transition: var(--transition);
         }
-        .project-card:hover { border-color: rgba(255,255,255,0.3); }
-        .project-card h3 { font-size: 2rem; margin-bottom: 10px; }
-        .project-tag { font-size: 0.7rem; background: var(--glass); padding: 5px 12px; border-radius: 50px; border: 1px solid var(--border); width: fit-content; margin-bottom: 15px; }
+        .gallery-item.wide { grid-column: span 8; }
+        .gallery-item:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-10px); }
+        
+        .gallery-content { position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); }
+        .gallery-content h3 { font-size: 1.5rem; margin-bottom: 5px; }
+        .gallery-content p { color: var(--text-dim); font-size: 0.9rem; }
 
-        /* --- Team Section --- */
-        .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-top: 50px; }
-        .team-member { text-align: center; }
-        .member-avatar { width: 120px; height: 120px; border-radius: 50%; background: var(--glass); margin: 0 auto 20px; border: 1px solid var(--border); }
-        .member-name { font-weight: 600; font-size: 1.2rem; }
-        .member-role { color: var(--accent-dim); font-size: 0.9rem; }
+        /* --- Team --- */
+        .team-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 40px; }
+        .team-card { background: var(--glass); padding: 40px; border-radius: 30px; border: 1px solid var(--border); text-align: center; backdrop-filter: blur(10px); }
+        .team-avatar { width: 100px; height: 100px; background: var(--accent); border-radius: 50%; margin: 0 auto 20px; opacity: 0.1; }
 
-        /* --- Socials --- */
-        .social-links { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 40px; }
-        .social-btn {
-            background: var(--text-main);
-            color: var(--bg);
-            padding: 16px 32px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: var(--transition);
+        /* --- Social Buttons --- */
+        .social-wrap { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 50px; }
+        .btn { 
+            padding: 18px 35px; border-radius: 100px; text-decoration: none; font-weight: 700; 
+            font-size: 0.9rem; transition: var(--transition); display: flex; align-items: center; gap: 10px;
         }
-        .social-btn:hover { transform: scale(1.05); filter: brightness(0.9); }
-        .social-btn.secondary { background: transparent; color: white; border: 1px solid var(--border); }
+        .btn-primary { background: var(--accent); color: var(--bg); }
+        .btn-secondary { border: 1px solid var(--border); color: var(--text-main); }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(255,255,255,0.05); }
 
-        /* --- Footer --- */
-        footer { padding: 60px 10%; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: var(--text-dim); }
+        footer { padding: 60px 10%; border-top: 1px solid var(--border); display: flex; justify-content: space-between; color: var(--accent-dim); font-size: 0.8rem; }
 
-        @media (max-width: 768px) {
-            .project-grid { grid-template-columns: 1fr; }
-            section { padding: 80px 5%; }
+        @media (max-width: 900px) {
+            .gallery-item, .gallery-item.wide { grid-column: span 12; height: 350px; }
         }
     </style>
 </head>
@@ -126,140 +88,114 @@
 
     <div class="cursor-main"></div>
     <div class="cursor-dot"></div>
-    <div class="mesh-gradient"></div>
 
     <section class="hero">
-        <div class="hero-tag reveal">Creative Developer & Architect</div>
-        <h1 class="hero-title reveal delay-1">I am <em>Adiyan.</em><br>Building Digital Experiences.</h1>
-        <div class="social-links reveal delay-2">
-            <a href="https://github.com/yourusername" class="social-btn">View GitHub</a>
-            <a href="#" class="social-btn secondary" onclick="copyDiscord(event)">Discord</a>
+        <div class="hero-tag reveal">Architecting The Future</div>
+        <h1 class="hero-title reveal delay-1">Adiyan<span>.</span><br>Full-Stack Lead.</h1>
+        <div class="social-wrap reveal delay-2">
+            <a href="https://www.fiverr.com/YOUR_FIVERR_NAME" class="btn btn-primary">Fiverr Pro</a>
+            <a href="https://t.me/YOUR_TELEGRAM_NAME" class="btn btn-secondary">Telegram</a>
+            <a href="#" class="btn btn-secondary" onclick="copyDiscord(event)">Discord</a>
         </div>
     </section>
 
-    <section id="projects">
-        <div class="section-header reveal">
-            <span class="section-label">Selected Works</span>
-            <h2>Project Previews</h2>
-        </div>
-        
-        <div class="project-grid">
-            <div class="project-card reveal delay-1">
-                <span class="project-tag">System Architecture</span>
-                <h3>Advanced DataCore</h3>
-                <p>A global data persistence layer built for high-traffic environments.</p>
+    <section id="gallery">
+        <span class="section-label reveal">Portfolio Gallery</span>
+        <h2 class="reveal">Project Previews</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item wide reveal delay-1">
+                <div class="gallery-content">
+                    <h3>Neural Combat System</h3>
+                    <p>Advanced physics-based interaction model.</p>
+                </div>
             </div>
-            <div class="project-card reveal delay-2">
-                <span class="project-tag">Combat Mechanics</span>
-                <h3>Vanguard Engine</h3>
-                <p>Physics-based hit detection and ability management systems.</p>
+            <div class="gallery-item reveal delay-2">
+                <div class="gallery-content">
+                    <h3>Data Arch</h3>
+                    <p>Global cloud data scaling.</p>
+                </div>
             </div>
-            <div class="project-card reveal delay-3">
-                <span class="project-tag">Artificial Intelligence</span>
-                <h3>Neural Pathfinding</h3>
-                <p>Complex NPC behaviors with dynamic obstacle avoidance.</p>
+            <div class="gallery-item reveal delay-3">
+                <div class="gallery-content">
+                    <h3>Nexus UI</h3>
+                    <p>Dynamic glassmorphism framework.</p>
+                </div>
             </div>
-            <div class="project-card reveal delay-4">
-                <span class="project-tag">User Interface</span>
-                <h3>Eclipse UI Framework</h3>
-                <p>Clean, responsive, and animated interface components.</p>
+            <div class="gallery-item wide reveal delay-4">
+                <div class="gallery-content">
+                    <h3>Procedural Worlds</h3>
+                    <p>Infinite terrain generation logic.</p>
+                </div>
             </div>
         </div>
     </section>
 
     <section id="team">
-        <div class="section-header reveal">
-            <span class="section-label">Collaboration</span>
-            <h2>The Team</h2>
-        </div>
-
-        <div class="team-grid">
-            <div class="team-member reveal delay-1">
-                <div class="member-avatar"></div>
-                <div class="member-name">Adiyan</div>
-                <div class="member-role">Lead Developer</div>
+        <span class="section-label reveal">Collaboration</span>
+        <h2 class="reveal">The Core Team</h2>
+        <div class="team-row">
+            <div class="team-card reveal delay-1">
+                <div class="team-avatar"></div>
+                <h3>Adiyan</h3>
+                <p style="color: var(--accent-dim)">Founder & Lead Dev</p>
             </div>
-            <div class="team-member reveal delay-2">
-                <div class="member-avatar"></div>
-                <div class="member-name">Partner Name</div>
-                <div class="member-role">Technical Artist</div>
+            <div class="team-card reveal delay-2">
+                <div class="team-avatar"></div>
+                <h3>Zenith</h3>
+                <p style="color: var(--accent-dim)">UI/UX Architect</p>
             </div>
-            <div class="team-member reveal delay-3">
-                <div class="member-avatar"></div>
-                <div class="member-name">Partner Name</div>
-                <div class="member-role">Frontend Specialist</div>
-            </div>
-        </div>
-    </section>
-
-    <section id="contact">
-        <div class="reveal">
-            <span class="section-label">Connect</span>
-            <h2 style="font-size: 3rem; margin: 20px 0;">Let's create something together.</h2>
-            <div class="social-links">
-                <a href="mailto:your@email.com" class="social-btn">Send an Email</a>
-                <a href="https://twitter.com/yourusername" class="social-btn secondary">Twitter / X</a>
+            <div class="team-card reveal delay-3">
+                <div class="team-avatar"></div>
+                <h3>Vector</h3>
+                <p style="color: var(--accent-dim)">Backend Specialist</p>
             </div>
         </div>
     </section>
 
     <footer>
-        <div>© 2026 Adiyan. All rights reserved.</div>
-        <div>Available for collaborations.</div>
+        <div>© 2026 Adiyan Studio</div>
+        <div>Built for high-performance experiences.</div>
     </footer>
 
     <script>
-        // --- Cursor Management ---
-        const cursorMain = document.querySelector('.cursor-main');
-        const cursorDot = document.querySelector('.cursor-dot');
-        let mX = 0, mY = 0, cX = 0, cY = 0, dX = 0, dY = 0;
+        // Smooth Cursor
+        const cMain = document.querySelector('.cursor-main');
+        const cDot = document.querySelector('.cursor-dot');
+        let mX = 0, mY = 0, currX = 0, currY = 0;
 
-        window.addEventListener('mousemove', (e) => {
-            mX = e.clientX; mY = e.clientY;
-        });
+        window.addEventListener('mousemove', e => { mX = e.clientX; mY = e.clientY; });
 
-        function render() {
-            cX += (mX - cX) * 0.12;
-            cY += (mY - cY) * 0.12;
-            dX += (mX - dX) * 0.25;
-            dY += (mY - dY) * 0.25;
-            
-            cursorMain.style.transform = `translate3d(${cX - 20}px, ${cY - 20}px, 0)`;
-            cursorDot.style.transform = `translate3d(${dX - 3}px, ${dY - 3}px, 0)`;
-            
-            requestAnimationFrame(render);
+        function animate() {
+            currX += (mX - currX) * 0.15;
+            currY += (mY - currY) * 0.15;
+            cMain.style.left = `${currX - 20}px`;
+            cMain.style.top = `${currY - 20}px`;
+            cDot.style.left = `${mX - 2}px`;
+            cDot.style.top = `${mY - 2}px`;
+            requestAnimationFrame(animate);
         }
-        render();
+        animate();
 
-        // --- Hover Effects ---
-        document.querySelectorAll('a, button, .project-card').forEach(el => {
-            el.addEventListener('mouseenter', () => cursorMain.classList.add('hovering'));
-            el.addEventListener('mouseleave', () => cursorMain.classList.remove('hovering'));
+        // Reveal Logic
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(en => { if(en.isIntersecting) en.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+        // Hover Effect
+        document.querySelectorAll('.btn, .gallery-item').forEach(el => {
+            el.addEventListener('mouseenter', () => cMain.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => cMain.classList.remove('hovering'));
         });
 
-        // --- Reveal Observer ---
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) entry.target.classList.add('visible');
-            });
-        }, { threshold: 0.15 });
-
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-        // --- Actions ---
+        // Discord Action
         function copyDiscord(e) {
             e.preventDefault();
-            navigator.clipboard.writeText('YOUR_DISCORD_ID');
-            const originalText = e.target.innerText;
-            e.target.innerText = 'ID Copied!';
-            setTimeout(() => e.target.innerText = originalText, 2000);
+            navigator.clipboard.writeText('YOUR_DISCORD_USER');
+            alert('Discord ID copied to clipboard!');
         }
 
-        // Disable custom cursor on mobile
-        if ('ontouchstart' in window) {
-            cursorMain.style.display = 'none';
-            cursorDot.style.display = 'none';
-        }
+        if('ontouchstart' in window) { document.body.style.cursor = 'auto'; cMain.style.display='none'; cDot.style.display='none'; }
     </script>
 </body>
 </html>
