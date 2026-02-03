@@ -79,27 +79,58 @@
         .submit-btn:hover { transform: scale(1.02); background: #eee; }
 
         footer { padding: 40px 8%; text-align: center; border-top: 1px solid var(--border); font-size: 0.75rem; color: #555; }
+
+        /* ADD THIS TO YOUR CSS TO FIX THE GIANT ARROW */
+.btn-icon svg {
+    width: 20px !important;  /* Force the arrow to be small */
+    height: 20px !important;
+    display: block;
+}
+
+/* Ensure the button container handles the icon correctly */
+.s-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 30px;
+    text-decoration: none;
+    /* ... keep your other button styles ... */
+}
+
+/* Fix the video background to stay behind everything */
+#video-bg-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+}
+
+#bg-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
     </style>
 </head>
 <body>
 
-    <div id="video-bg-wrapper">
-        <video id="bg-video" autoplay loop muted playsinline>
-            <source src="videos/combat-system.mp4" type="video/mp4">
-        </video>
-    </div>
-    <div class="bg-overlay"></div>
-    <div class="cursor-main"></div>
+  <div id="video-bg-wrapper">
+    <video id="bg-video" autoplay loop muted playsinline>
+        <source src="videos/combat-system.mp4" type="video/mp4">
+    </video>
+</div>
+<div class="bg-overlay"></div>
 
 <section class="hero">
     <div class="reveal">
-        <h1 class="hero-title">BEYOND THE FUTURE<span>.</span></h1>
+        <h1 class="hero-title">Beyond The<span>.</span><br>Future.</h1>
         <p class="hero-subtitle">Secure terminal for the Nexus Collective.</p>
         
-        <div class="btn-container">
+        <div class="btn-container" style="margin-bottom: 20px;">
             <a href="discuss.html" class="s-btn">
                 <span class="btn-text">ACCESS DISCUSSIONS</span>
-                <span class="btn-glitch"></span>
                 <div class="btn-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -107,15 +138,13 @@
                 </div>
             </a>
         </div>
+
+        <div class="social-links">
+            <a href="#" class="s-btn" onclick="copyDiscord(event)">Discord</a>
+            <a href="https://t.me/Adiyan_official11" class="s-btn">Telegram</a>
+        </div>
     </div>
 </section>
-            <h1 class="hero-title">Beyond The<span>.</span><br>Future.</h1>
-            <div class="social-links">
-                <a href="#" class="s-btn" onclick="copyDiscord(event)">Discord</a>
-                <a href="https://t.me/Adiyan_official11" class="s-btn">Telegram</a>
-            </div>
-        </div>
-    </section>
 
     <section id="gallery">
         <h2 class="reveal" style="font-family: 'Space Grotesk'; margin-bottom: 15px;">Development Preview</h2>
