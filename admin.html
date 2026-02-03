@@ -3,139 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Control | Admin Terminal</title>
+    <title>Nexus | Secure Terminal</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --accent: #00A2FF; --panel: #0d0d0d; --border: rgba(255,255,255,0.05); }
-        body { background: var(--bg); color: white; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; height: 100vh; }
+        :root { --bg: #050505; --accent: #00A2FF; --panel: #0d0d0d; --border: rgba(255,255,255,0.1); }
+        body { background: var(--bg); color: white; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; overflow: hidden; }
         
-        .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; }
-        .main { flex: 1; padding: 50px; overflow-y: auto; }
+        /* LOGIN OVERLAY */
+        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .login-box { background: var(--panel); padding: 40px; border-radius: 20px; border: 1px solid var(--border); width: 350px; text-align: center; }
         
-        .card { background: var(--panel); border: 1px solid var(--border); padding: 25px; border-radius: 15px; margin-bottom: 20px; }
-        h2 { font-family: 'Space Grotesk'; color: var(--accent); margin-bottom: 20px; font-size: 1.2rem; text-transform: uppercase; }
+        /* ADMIN INTERFACE */
+        .wrapper { display: flex; height: 100vh; visibility: hidden; }
+        .sidebar { width: 280px; background: var(--panel); border-right: 1px solid var(--border); padding: 30px; }
+        .main { flex: 1; padding: 40px; overflow-y: auto; background: #000; }
         
-        label { display: block; font-size: 0.75rem; color: #555; margin-bottom: 5px; font-weight: 800; }
-        input, textarea, select { width: 100%; padding: 12px; background: #000; border: 1px solid #222; color: white; border-radius: 8px; margin-bottom: 15px; font-family: inherit; }
+        .card { background: var(--panel); border: 1px solid var(--border); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
+        h2 { font-family: 'Space Grotesk'; color: var(--accent); font-size: 1rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
         
-        .btn { background: #fff; color: #000; border: none; padding: 12px 25px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.3s; width: 100%; }
+        input, select, textarea { width: 100%; padding: 12px; background: #000; border: 1px solid #222; color: white; border-radius: 8px; margin-bottom: 15px; font-family: inherit; }
+        .btn { background: #fff; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%; transition: 0.3s; }
         .btn:hover { background: var(--accent); color: #fff; }
         .btn-red { background: #ff3b3b; color: #fff; margin-top: 10px; }
-
-        .staff-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 5px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h3 style="font-family: 'Space Grotesk'; color: var(--accent);">NEXUS OS v1.0</h3>
-        <p style="font-size: 0.7rem; color: #333; margin-bottom: 40px;">ADMINISTRATOR ACCESS</p>
-        <a href="index.html" style="color: #666; text-decoration: none; font-size: 0.85rem;">← Exit Terminal</a>
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="margin-bottom: 20px;">AUTHENTICATION REQUIRED</h2>
+            <input type="text" id="adminUser" placeholder="Username">
+            <input type="password" id="adminPass" placeholder="Security Key">
+            <button class="btn" onclick="checkAuth()">ACCESS TERMINAL</button>
+        </div>
     </div>
 
-    <div class="main">
-        <h1>Global Site Override<span>.</span></h1>
-        
-        <div class="card">
-            <h2>1. Hero Content</h2>
-            <label>HERO TITLE (Main)</label>
-            <input type="text" id="heroTitle" placeholder="Beyond The">
-            <label>HERO SUBTITLE</label>
-            <input type="text" id="heroSub" placeholder="Secure terminal for the Nexus Collective.">
-            <label>BACKGROUND VIDEO PATH</label>
-            <input type="text" id="bgVid" placeholder="videos/combat-system.mp4">
-            <button class="btn" onclick="saveGeneral()">SAVE HERO CHANGES</button>
+    <div class="wrapper" id="admin-ui">
+        <div class="sidebar">
+            <h3 style="font-family: 'Space Grotesk'; color: var(--accent);">NEXUS ADMIN</h3>
+            <p style="font-size: 0.7rem; color: #444; margin-bottom: 30px;">V2.1 SECURE ACCESS</p>
+            <a href="index.html" class="btn" style="text-decoration:none; display:block; text-align:center;">VIEW SITE</a>
+            <button class="btn btn-red" onclick="localStorage.clear(); location.reload();" style="margin-top: 20px;">WIPE ALL DATA</button>
         </div>
 
-        <div class="card">
-            <h2>2. Staff Management</h2>
-            <div id="staffListDisplay" style="margin-bottom: 20px;"></div>
-            
-            <label>NEW STAFF NAME</label>
-            <input type="text" id="staffName" placeholder="e.g. Adiyan">
-            <label>ROLE</label>
-            <input type="text" id="staffRole" placeholder="e.g. Lead Developer">
-            <label>PFP URL / PATH</label>
-            <input type="text" id="staffImg" placeholder="images/adiyan.png">
-            <button class="btn" onclick="addStaff()">DEPLOY / UPDATE MEMBER</button>
-            <button class="btn btn-red" onclick="resetStaff()">RESET TO DEFAULTS</button>
-        </div>
+        <div class="main">
+            <div class="card">
+                <h2>1. Hero Section</h2>
+                <input type="text" id="heroTitle" placeholder="Hero Title (e.g. Beyond The)">
+                <input type="text" id="heroSub" placeholder="Hero Subtitle">
+                <input type="text" id="bgVid" placeholder="Main Background Video Path">
+                <button class="btn" onclick="saveConfig()">UPDATE HERO</button>
+            </div>
 
-        <div id="status" style="color: #0f0; font-family: monospace; font-size: 0.8rem;"></div>
+            <div class="card">
+                <h2>2. Project Gallery (Updates Index)</h2>
+                <label style="font-size: 0.7rem; color: #666;">This updates the 3 main gallery slots</label>
+                <select id="gallerySlot">
+                    <option value="0">Slot 1 (Wide Card)</option>
+                    <option value="1">Slot 2 (Small Card)</option>
+                    <option value="2">Slot 3 (Small Card)</option>
+                </select>
+                <input type="text" id="galTitle" placeholder="Project Title">
+                <input type="text" id="galDesc" placeholder="Project Description">
+                <input type="text" id="galVid" placeholder="Project Video Path">
+                <button class="btn" onclick="updateGallery()">UPDATE GALLERY SLOT</button>
+            </div>
+
+            <div class="card">
+                <h2>3. Staff Management</h2>
+                <input type="text" id="staffName" placeholder="Name">
+                <input type="text" id="staffRole" placeholder="Role">
+                <input type="text" id="staffImg" placeholder="Image Path">
+                <button class="btn" onclick="addStaff()">SYNC STAFF MEMBER</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Load initial data
-        window.onload = () => {
+        // SECURITY CONFIG
+        const USER = "adiyan"; 
+        const PASS = "nexus2026"; 
+
+        function checkAuth() {
+            const u = document.getElementById('adminUser').value;
+            const p = document.getElementById('adminPass').value;
+            if(u === USER && p === PASS) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('admin-ui').style.visibility = 'visible';
+            } else {
+                alert("ACCESS DENIED: INVALID CREDENTIALS");
+            }
+        }
+
+        function saveConfig() {
             const config = JSON.parse(localStorage.getItem('nexus_config')) || {};
-            if(config.heroTitle) document.getElementById('heroTitle').value = config.heroTitle;
-            if(config.heroSub) document.getElementById('heroSub').value = config.heroSub;
-            if(config.bgVid) document.getElementById('bgVid').value = config.bgVid;
-            renderStaffList();
-        };
-
-        function saveGeneral() {
-            const config = {
-                heroTitle: document.getElementById('heroTitle').value,
-                heroSub: document.getElementById('heroSub').value,
-                bgVid: document.getElementById('bgVid').value
-            };
+            config.heroTitle = document.getElementById('heroTitle').value;
+            config.heroSub = document.getElementById('heroSub').value;
+            config.bgVid = document.getElementById('bgVid').value;
             localStorage.setItem('nexus_config', JSON.stringify(config));
-            showStatus("Core systems updated.");
+            alert("Hero Systems Synchronized.");
         }
 
-        function getStaff() {
-            return JSON.parse(localStorage.getItem('nexus_staff')) || [
-                {name: "Adiyan", role: "Lead Developer", img: "images/adiyan.png"},
-                {name: "Itachi", role: "UI Designer", img: "images/itachi.png"},
-                {name: "Pari", role: "Lead Builder", img: "images/pari.png"}
-            ];
-        }
-
-        function renderStaffList() {
-            const staff = getStaff();
-            const container = document.getElementById('staffListDisplay');
-            container.innerHTML = staff.map((s, i) => `
-                <div class="staff-item">
-                    <span><b>${s.name}</b> (${s.role})</span>
-                    <button onclick="deleteStaff(${i})" style="background:none; border:none; color:red; cursor:pointer;">REMOVE</button>
-                </div>
-            `).join('');
+        function updateGallery() {
+            const slot = document.getElementById('gallerySlot').value;
+            let gallery = JSON.parse(localStorage.getItem('nexus_gallery')) || [{}, {}, {}];
+            gallery[slot] = {
+                title: document.getElementById('galTitle').value,
+                desc: document.getElementById('galDesc').value,
+                vid: document.getElementById('galVid').value
+            };
+            localStorage.setItem('nexus_gallery', JSON.stringify(gallery));
+            alert(`Gallery Slot ${parseInt(slot)+1} Updated.`);
         }
 
         function addStaff() {
-            const name = document.getElementById('staffName').value;
-            const role = document.getElementById('staffRole').value;
-            const img = document.getElementById('staffImg').value;
-            if(!name || !img) return alert("Fields missing");
-
-            let staff = getStaff();
-            const index = staff.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
-            
-            if(index > -1) staff[index] = { name, role, img };
-            else staff.push({ name, role, img });
-
+            let staff = JSON.parse(localStorage.getItem('nexus_staff')) || [];
+            const newMember = {
+                name: document.getElementById('staffName').value,
+                role: document.getElementById('staffRole').value,
+                img: document.getElementById('staffImg').value
+            };
+            staff.push(newMember);
             localStorage.setItem('nexus_staff', JSON.stringify(staff));
-            renderStaffList();
-            showStatus(`Personnel ${name} synchronized.`);
-        }
-
-        function deleteStaff(index) {
-            let staff = getStaff();
-            staff.splice(index, 1);
-            localStorage.setItem('nexus_staff', JSON.stringify(staff));
-            renderStaffList();
-        }
-
-        function resetStaff() {
-            localStorage.removeItem('nexus_staff');
-            location.reload();
-        }
-
-        function showStatus(msg) {
-            const s = document.getElementById('status');
-            s.innerText = `[SUCCESS]: ${msg}`;
-            setTimeout(() => s.innerText = "", 3000);
+            alert("Staff roster updated.");
         }
     </script>
 </body>
