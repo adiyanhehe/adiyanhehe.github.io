@@ -18,7 +18,7 @@
         
         body { background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar */
+        /* Sidebar & DM List */
         .sidebar { width: 320px; background: var(--panel); border-right: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; gap: 20px; }
         .logo { font-family: 'Space Grotesk'; font-weight: 700; font-size: 1.2rem; color: var(--accent); letter-spacing: 1px; }
         
@@ -48,7 +48,6 @@
         input { flex: 1; background: transparent; border: none; color: white; padding: 10px 15px; outline: none; font-family: inherit; font-size: 1rem; }
         .send-btn { background: var(--accent); color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: 700; cursor: pointer; }
 
-        /* Login Overlay */
         #login-overlay { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; align-items: center; justify-content: center; }
         .btn-roblox { background: #fff; color: #000; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: 800; display: flex; align-items: center; gap: 10px; }
 
@@ -67,15 +66,18 @@
     <div class="sidebar">
         <div class="logo">BEYOND THE FUTURE<span>.</span></div>
         <div class="section-header">Networks</div>
-        <div class="nav-item active"># general-hub</div>
+        <div id="chan-global" class="nav-item active" onclick="switchChannel('global')"># general-hub</div>
+        
         <div class="section-header">Direct Messages</div>
-        <div id="dm-list"><div class="nav-item" style="opacity:0.3">No active DMs</div></div>
+        <div id="dm-list">
+            </div>
+        
         <div style="margin-top: auto;" id="my-profile"></div>
     </div>
 
     <div class="chat-container">
         <div class="chat-header">
-            <h2 style="margin:0; font-family: 'Space Grotesk'; font-size: 1rem;"># GENERAL-HUB</h2>
+            <h2 id="chat-title" style="margin:0; font-family: 'Space Grotesk'; font-size: 1rem;"># GENERAL-HUB</h2>
             <div style="font-size: 0.6rem; color: var(--accent);">● SECURE_CONNECTION_ACTIVE</div>
         </div>
         <div id="messages"></div>
@@ -91,26 +93,22 @@
         const CLIENT_ID = "4112872619143689543";
         const SITE_URL = "https://adiyanhehe-github-io.vercel.app";
         const ably = new Ably.Realtime('8_p8_w.Y-S57A:E-8j2q-u-S0S-O-T');
-        const channel = ably.channels.get('global-hub');
+        
+        let currentMode = 'global';
+        let currentDMTarget = null;
+        let globalChannel = ably.channels.get('global-hub');
+        let dmChannel = null;
 
-        // Setup Login Link
         document.getElementById('auth-btn').href = `https://apis.roblox.com/oauth/v1/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(SITE_URL + '/api/callback')}&scope=openid+profile&response_type=code`;
 
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
-            const urlUser = params.get('username');
-            const urlPic = params.get('avatar');
-
-            // 1. If we just arrived from login, save data
-            if (urlUser) {
-                localStorage.setItem('rbx_user', urlUser);
-                localStorage.setItem('rbx_pic', urlPic);
+            if (params.get('username')) {
+                localStorage.setItem('rbx_user', params.get('username'));
+                localStorage.setItem('rbx_pic', params.get('avatar'));
                 window.history.replaceState({}, "", "/discuss.html");
             }
-
-            // 2. Check if we have a saved session
-            const me = localStorage.getItem('rbx_user');
-            if (!me) {
+            if (!localStorage.getItem('rbx_user')) {
                 document.getElementById('login-overlay').style.display = 'flex';
             } else {
                 startNexus();
@@ -127,17 +125,67 @@
                         <div style="font-size:0.6rem; color:var(--accent); cursor:pointer" onclick="logout()">LOGOUT</div>
                     </div>
                 </div>`;
-            channel.subscribe('msg', (m) => renderMessage(m.data));
+            
+            globalChannel.subscribe('msg', (m) => {
+                if (currentMode === 'global') renderMessage(m.data);
+                // Automatically add people to DM list when they talk in Global
+                if (m.data.user !== localStorage.getItem('rbx_user')) {
+                    addToDMList(m.data.user, m.data.pic);
+                }
+            });
+
+            // Listen for private DMs
+            const myId = localStorage.getItem('rbx_user');
+            ably.channels.get('dm-' + myId).subscribe('private', (m) => {
+                addToDMList(m.data.user, m.data.pic);
+                if (currentMode === 'dm' && currentDMTarget === m.data.user) {
+                    renderMessage(m.data);
+                }
+            });
+        }
+
+        function addToDMList(user, pic) {
+            const list = document.getElementById('dm-list');
+            if (document.getElementById('dm-' + user)) return;
+            const div = document.createElement('div');
+            div.id = 'dm-' + user;
+            div.className = 'nav-item';
+            div.onclick = () => switchChannel('dm', user);
+            div.innerHTML = `<img src="${pic}" style="width:20px; border-radius:5px;"> ${user}`;
+            list.appendChild(div);
+        }
+
+        function switchChannel(mode, target = null) {
+            currentMode = mode;
+            document.getElementById('messages').innerHTML = '';
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            if (mode === 'global') {
+                document.getElementById('chan-global').classList.add('active');
+                document.getElementById('chat-title').innerText = '# GENERAL-HUB';
+            } else {
+                currentDMTarget = target;
+                document.getElementById('dm-' + target).classList.add('active');
+                document.getElementById('chat-title').innerText = '@ ' + target.toUpperCase();
+            }
         }
 
         function send() {
             const input = document.getElementById('msgInput');
             if (!input.value.trim()) return;
-            channel.publish('msg', {
+            const data = {
                 user: localStorage.getItem('rbx_user'),
                 text: input.value,
                 pic: localStorage.getItem('rbx_pic')
-            });
+            };
+
+            if (currentMode === 'global') {
+                globalChannel.publish('msg', data);
+            } else {
+                // Send to the other person's private channel
+                ably.channels.get('dm-' + currentDMTarget).publish('private', data);
+                renderMessage(data); // Show on my screen too
+            }
             input.value = '';
         }
 
