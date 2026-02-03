@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Feed | Live Dev Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    
+    <style>
+        :root {
+            --bg: #030303;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --accent: #ffffff;
+            --border: rgba(255, 255, 255, 0.08);
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body { background-color: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; overflow-x: hidden; }
+        
+        nav { padding: 20px 8%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-family: 'Space Grotesk'; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: white; }
+
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        
+        /* --- REAL TIME CHAT BOX --- */
+        #chat-container {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 25px; padding: 30px; margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        #message-window {
+            height: 350px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 10px;
+            padding-right: 10px; margin-bottom: 20px;
+        }
+
+        .msg-bubble {
+            background: rgba(255,255,255,0.05); padding: 12px 18px;
+            border-radius: 15px; border-left: 3px solid var(--accent);
+            max-width: 80%; animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .msg-user { font-size: 0.7rem; font-weight: 800; color: #888; margin-bottom: 5px; text-transform: uppercase; }
+        .msg-text { font-size: 0.95rem; }
+
+        .chat-input-area { display: flex; gap: 10px; }
+        input {
+            flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            padding: 15px; border-radius: 12px; color: white; outline: none;
+        }
+
+        .s-btn {
+            background: #fff; color: #000; padding: 12px 25px; border-radius: 12px;
+            font-weight: 800; border: none; cursor: pointer; transition: var(--transition);
+        }
+
+        /* --- LOGIN OVERLAY --- */
+        #login-overlay {
+            position: fixed; inset: 0; background: #000; z-index: 1000;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div>
+            <h1 style="font-family: 'Space Grotesk'; margin-bottom: 20px;">Identity Required</h1>
+            <input type="text" id="username-input" placeholder="Enter Dev Alias..." style="width: 250px; text-align: center; margin-bottom: 20px;"><br>
+            <button onclick="startApp()" class="s-btn">ACCESS NEXUS FEED</button>
+        </div>
+    </div>
+
+    <nav>
+        <a href="index.html" class="logo">ADIYAN HUB</a>
+        <div id="user-display" style="font-size: 0.8rem; color: #888;"></div>
+    </nav>
+
+    <div class="container">
+        <h2 style="font-family: 'Space Grotesk'; margin-bottom: 10px;">Live Developer Network</h2>
+        <p style="color: #555; margin-bottom: 30px;">Real-time collaboration across the collective.</p>
+
+        <div id="chat-container">
+            <div id="message-window">
+                </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Broadcasting a message...">
+                <button onclick="publishMessage()" class="s-btn">SEND</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ABLY REAL-TIME CONFIG (Free Tier Key)
+        // Note: For a production site, you'd hide this in a backend.
+        const ably = new Ably.Realtime('8_p8_w.Y-S57A:E-8j2q-u-S0S-O-T'); 
+        const channel = ably.channels.get('adiyan-dev-hub');
+        let currentUser = "";
+
+        function startApp() {
+            const user = document.getElementById('username-input').value;
+            if (user.trim().length > 2) {
+                currentUser = user;
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('user-display').innerText = `ID: ${currentUser}`;
+                
+                // Subscribe to real-time messages
+                channel.subscribe('msg', (message) => {
+                    displayMessage(message.data.user, message.data.text);
+                });
+            } else {
+                alert("Enter a longer name!");
+            }
+        }
+
+        function publishMessage() {
+            const input = document.getElementById('chat-input');
+            if (input.value.trim() !== "") {
+                channel.publish('msg', { user: currentUser, text: input.value });
+                input.value = "";
+            }
+        }
+
+        function displayMessage(user, text) {
+            const window = document.getElementById('message-window');
+            const div = document.createElement('div');
+            div.className = 'msg-bubble';
+            if(user === currentUser) div.style.alignSelf = "flex-end";
+            
+            div.innerHTML = `
+                <div class="msg-user">${user}</div>
+                <div class="msg-text">${text}</div>
+            `;
+            window.appendChild(div);
+            window.scrollTop = window.scrollHeight;
+        }
+
+        // Handle Enter Key
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') publishMessage();
+        });
+    </script>
+</body>
+</html>
