@@ -127,6 +127,22 @@
 
             input.value = '';
         }
+        window.onload = () => {
+    const p = new URLSearchParams(window.location.search);
+    if(p.get('username')) {
+        localStorage.setItem('rbx_user', p.get('username'));
+        localStorage.setItem('rbx_pic', p.get('avatar'));
+        
+        // CHANGE THIS LINE FROM /discuss.html TO /threads.html
+        window.history.replaceState({}, "", "/threads.html"); 
+    }
+    
+    if(!localStorage.getItem('rbx_user')) {
+        document.getElementById('login-gate').style.display='flex';
+    } else {
+        initThreads();
+    }
+};
 
         function addThreadToUI(data, isNew) {
             const list = document.getElementById('thread-list');
