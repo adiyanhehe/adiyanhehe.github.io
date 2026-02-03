@@ -291,5 +291,36 @@ function syncNexus() {
 // Run sync on load
 window.addEventListener('DOMContentLoaded', syncNexus);
 </script>
+    <script>
+function syncSite() {
+    // Sync Staff Members
+    const staff = JSON.parse(localStorage.getItem('nexus_staff')) || [];
+    const staffContainer = document.querySelector('.team-row');
+    if(staff.length > 0) {
+        staffContainer.innerHTML = staff.map(s => `
+            <div class="team-card reveal visible">
+                <img src="${s.img}" class="team-img">
+                <h3>${s.name}</h3>
+                <p>${s.role}</p>
+            </div>
+        `).join('');
+    }
+
+    // Sync Gallery Projects
+    const gallery = JSON.parse(localStorage.getItem('nexus_gallery')) || [];
+    const galleryContainer = document.querySelector('.gallery-grid');
+    if(gallery.length > 0) {
+        galleryContainer.innerHTML = gallery.map((g, i) => `
+            <div class="gallery-item ${i === 0 ? 'wide' : ''} reveal visible" data-video="${g.vid}">
+                <video autoplay loop muted playsinline class="gallery-video-card">
+                    <source src="${g.vid}" type="video/mp4">
+                </video>
+                <div class="gallery-content"><h3>${g.title}</h3><p>${g.desc}</p></div>
+            </div>
+        `).join('');
+    }
+}
+window.addEventListener('DOMContentLoaded', syncSite);
+</script>
 </body>
 </html>
