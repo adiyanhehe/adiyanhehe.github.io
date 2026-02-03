@@ -14,7 +14,8 @@
         .feed-container { border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; display: flex; flex-direction: column; }
         
         /* Header */
-        .header { padding: 20px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; font-weight: 800; display: flex; justify-content: space-between; }
+        .header { padding: 20px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: var(--accent); text-decoration: none; font-size: 0.8rem; margin-left: 15px; font-weight: 800; }
 
         /* Compose Box */
         .compose { padding: 20px; border-bottom: 1px solid var(--border); display: flex; gap: 15px; }
@@ -51,7 +52,12 @@
 
     <div class="main-layout" id="app">
         <div class="feed-container">
-            <div class="header">BEYOND_THREADS<span>.</span></div>
+            <div class="header">
+                BEYOND_THREADS<span>.</span>
+                <div class="nav-links">
+                    <a href="discuss.html">DISCUSSIONS</a>
+                </div>
+            </div>
 
             <div class="compose">
                 <img id="my-pic" class="user-pic" src="">
@@ -76,17 +82,26 @@
     </div>
 
     <script>
-        // OAUTH CONFIG (Matches your callback logic)
         const CLIENT_ID = "4112872619143689543";
         const SITE_URL = "https://adiyanhehe-github-io.vercel.app";
-        // Add &state=threads to the end of the URL
-document.getElementById('auth-link').href = `https://apis.roblox.com/oauth/v1/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(SITE_URL + '/api/callback')}&scope=openid+profile&response_type=code&state=threads`;
-
-        // ABLY CONFIG (Same as your chat)
         const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
         const threadChan = ably.channels.get('nexus-threads');
 
+        // Set the dynamic OAuth link with the 'threads' state
+        document.getElementById('auth-link').href = `https://apis.roblox.com/oauth/v1/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(SITE_URL + '/api/callback')}&scope=openid+profile&response_type=code&state=threads`;
+
         window.onload = () => {
+            const p = new URLSearchParams(window.location.search);
+            
+            // Catch data from callback.js
+            if(p.get('username')) {
+                localStorage.setItem('rbx_user', p.get('username'));
+                localStorage.setItem('rbx_pic', p.get('avatar'));
+                // Stay on threads.html after login
+                window.history.replaceState({}, "", "/threads.html"); 
+            }
+            
+            // Toggle Login Gate or Main App
             if(!localStorage.getItem('rbx_user')) {
                 document.getElementById('login-gate').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
@@ -98,12 +113,12 @@ document.getElementById('auth-link').href = `https://apis.roblox.com/oauth/v1/au
         function initThreads() {
             document.getElementById('my-pic').src = localStorage.getItem('rbx_pic');
             
-            // Subscribe to live threads
+            // Subscribe to live threads via Ably
             threadChan.subscribe('new-thread', (m) => {
                 addThreadToUI(m.data, true);
             });
 
-            // Load existing threads from history/local (Optional: Ably history can be used here)
+            // Load local cache to prevent empty screen on refresh
             const saved = JSON.parse(localStorage.getItem('cached_threads')) || [];
             saved.forEach(t => addThreadToUI(t, false));
         }
@@ -119,31 +134,16 @@ document.getElementById('auth-link').href = `https://apis.roblox.com/oauth/v1/au
                 id: Date.now()
             };
 
+            // Publish to everyone live
             threadChan.publish('new-thread', data);
             
-            // Save to local cache so they don't vanish on refresh
+            // Save to local cache
             const saved = JSON.parse(localStorage.getItem('cached_threads')) || [];
             saved.unshift(data);
             localStorage.setItem('cached_threads', JSON.stringify(saved.slice(0, 50)));
 
             input.value = '';
         }
-        window.onload = () => {
-    const p = new URLSearchParams(window.location.search);
-    if(p.get('username')) {
-        localStorage.setItem('rbx_user', p.get('username'));
-        localStorage.setItem('rbx_pic', p.get('avatar'));
-        
-        // CHANGE THIS LINE FROM /discuss.html TO /threads.html
-        window.history.replaceState({}, "", "/threads.html"); 
-    }
-    
-    if(!localStorage.getItem('rbx_user')) {
-        document.getElementById('login-gate').style.display='flex';
-    } else {
-        initThreads();
-    }
-};
 
         function addThreadToUI(data, isNew) {
             const list = document.getElementById('thread-list');
