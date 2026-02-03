@@ -2,186 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Feed | Adiyan Studio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <title>Adiyan Hub | Discussions</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
-    
     <style>
-        :root {
-            --bg: #030303;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --accent: #ffffff;
-            --border: rgba(255, 255, 255, 0.08);
-            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        body { background-color: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; overflow-x: hidden; }
-        
-        nav { padding: 20px 8%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
-        .logo { font-family: 'Space Grotesk'; font-weight: 700; letter-spacing: 2px; text-decoration: none; color: white; }
-
-        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
-        
-        /* --- CHAT INTERFACE --- */
-        #chat-container {
-            background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 25px; padding: 30px; margin-bottom: 40px;
-            backdrop-filter: blur(10px); display: none; /* Hidden until logged in */
-        }
-
-        #message-window {
-            height: 400px; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 12px;
-            padding-right: 10px; margin-bottom: 20px;
-            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
-        }
-
-        .msg-bubble {
-            background: rgba(255,255,255,0.05); padding: 14px 20px;
-            border-radius: 18px; border-left: 2px solid var(--accent);
-            max-width: 85%; align-self: flex-start;
-            animation: slideUp 0.3s ease;
-        }
-
-        .msg-bubble.me {
-            align-self: flex-end; border-left: none; border-right: 2px solid #555;
-            background: rgba(255,255,255,0.1);
-        }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .msg-user { font-size: 0.65rem; font-weight: 800; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        .msg-text { font-size: 0.95rem; line-height: 1.5; }
-
-        .chat-input-area { display: flex; gap: 12px; }
-        input {
-            flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s;
-        }
-        input:focus { border-color: #fff; background: rgba(255,255,255,0.08); }
-
-        .s-btn {
-            background: #fff; color: #000; padding: 12px 28px; border-radius: 14px;
-            font-weight: 800; border: none; cursor: pointer; transition: var(--transition);
-        }
-        .s-btn:hover { transform: scale(1.03); opacity: 0.9; }
-
-        /* --- LOGIN SCREEN --- */
-        #login-overlay {
-            position: fixed; inset: 0; background: #000; z-index: 1000;
-            display: flex; align-items: center; justify-content: center; text-align: center;
-        }
-        
-        .logout-link { font-size: 0.7rem; color: #555; cursor: pointer; text-decoration: underline; margin-left: 15px; }
-        .logout-link:hover { color: #fff; }
+        body { background: #050505; color: white; font-family: sans-serif; margin: 0; }
+        .nav { padding: 20px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
+        .chat-box { max-width: 800px; margin: 50px auto; background: #111; padding: 20px; border-radius: 15px; }
+        #msgs { height: 300px; overflow-y: auto; border-bottom: 1px solid #222; margin-bottom: 20px; padding: 10px; }
+        .msg { margin-bottom: 10px; font-size: 0.9rem; }
+        .input-area { display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; background: #222; border: 1px solid #333; color: white; border-radius: 5px; }
+        button { padding: 10px 20px; cursor: pointer; background: #fff; color: #000; border: none; font-weight: bold; border-radius: 5px; }
+        #overlay { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="reveal" style="opacity: 1; transform: translateY(0);">
-            <h1 style="font-family: 'Space Grotesk'; margin-bottom: 10px; font-size: 2.5rem;">Nexus Access</h1>
-            <p style="color: #666; margin-bottom: 30px;">Identify yourself to enter the global dev feed.</p>
-            <input type="text" id="username-input" placeholder="Developer Alias..." style="width: 280px; text-align: center; margin-bottom: 20px;"><br>
-            <button onclick="startApp()" class="s-btn">INITIALIZE</button>
-        </div>
+    <div id="overlay">
+        <button onclick="login()" style="background:#00A2FF; color:white; padding:20px 40px; font-size:1.2rem;">LOGIN WITH ROBLOX</button>
     </div>
 
-    <nav>
-        <a href="index.html" class="logo">ADIYAN HUB</a>
-        <div style="display: flex; align-items: center;">
-            <div id="user-display" style="font-size: 0.8rem; color: #888; font-weight: 600;"></div>
-            <span id="logout-btn" class="logout-link" onclick="logout()" style="display:none;">LOGOUT</span>
-        </div>
-    </nav>
+    <div class="nav">
+        <span>ADIYAN HUB</span>
+        <div id="user-info"></div>
+    </div>
 
-    <div class="container">
-        <div style="margin-bottom: 40px;">
-            <h2 style="font-family: 'Space Grotesk'; font-size: 2rem; margin-bottom: 10px;">Live Collective Chat</h2>
-            <p style="color: #555;">Real-time communication for Adiyan Studio developers and partners.</p>
-        </div>
-
-        <div id="chat-container">
-            <div id="message-window">
-                </div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Type a message to the hub...">
-                <button onclick="publishMessage()" class="s-btn">SEND</button>
-            </div>
+    <div class="chat-box">
+        <div id="msgs"></div>
+        <div class="input-area">
+            <input type="text" id="chatInput" placeholder="Type a message...">
+            <button onclick="send()">SEND</button>
         </div>
     </div>
 
     <script>
-        // API KEY - Valid for Adiyan Dev Hub
         const ably = new Ably.Realtime('8_p8_w.Y-S57A:E-8j2q-u-S0S-O-T'); 
-        const channel = ably.channels.get('adiyan-global-v1');
-        let currentUser = localStorage.getItem('dev_alias');
+        const channel = ably.channels.get('global-chat');
+        
+        // LOGIN REDIRECT
+        function login() {
+            const clientID = "YOUR_CLIENT_ID"; // <--- PASTE CLIENT ID
+            const redirect = encodeURIComponent("https://your-site.vercel.app/api/callback");
+            location.href = `https://apis.roblox.com/oauth/v1/authorize?client_id=${clientID}&redirect_uri=${redirect}&scope=openid+profile&response_type=code`;
+        }
 
-        // Check if already logged in on Load
         window.onload = () => {
-            if (currentUser) {
-                setupUI(currentUser);
+            const params = new URLSearchParams(window.location.search);
+            const user = params.get('username');
+            const pic = params.get('avatar');
+
+            if (user) {
+                localStorage.setItem('rbx_user', user);
+                localStorage.setItem('rbx_pic', pic);
+                window.history.replaceState({}, "", "/discuss.html"); // Clean URL
+            }
+
+            const activeUser = localStorage.getItem('rbx_user');
+            if (activeUser) {
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('user-info').innerHTML = `
+                    <img src="${localStorage.getItem('rbx_pic')}" style="width:30px; border-radius:50%; vertical-align:middle;">
+                    ${activeUser} | <a href="#" onclick="localStorage.clear(); location.reload();" style="color:red; font-size:10px;">LOGOUT</a>
+                `;
+                
+                channel.subscribe('msg', (m) => {
+                    const d = document.createElement('div');
+                    d.className = 'msg';
+                    d.innerHTML = `<strong>${m.data.user}:</strong> ${m.data.text}`;
+                    document.getElementById('msgs').appendChild(d);
+                    document.getElementById('msgs').scrollTop = 9999;
+                });
             }
         };
 
-        function startApp() {
-            const input = document.getElementById('username-input').value.trim();
-            if (input.length >= 3) {
-                localStorage.setItem('dev_alias', input);
-                currentUser = input;
-                setupUI(currentUser);
-            } else {
-                alert("Alias must be at least 3 characters.");
+        function send() {
+            const txt = document.getElementById('chatInput').value;
+            if (txt) {
+                channel.publish('msg', { user: localStorage.getItem('rbx_user'), text: txt });
+                document.getElementById('chatInput').value = '';
             }
         }
-
-        function setupUI(user) {
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('chat-container').style.display = 'block';
-            document.getElementById('logout-btn').style.display = 'inline';
-            document.getElementById('user-display').innerText = `DEV: ${user.toUpperCase()}`;
-            
-            // Connect to Real-time Stream
-            channel.subscribe('msg', (message) => {
-                displayMessage(message.data.user, message.data.text);
-            });
-        }
-
-        function publishMessage() {
-            const input = document.getElementById('chat-input');
-            if (input.value.trim() !== "") {
-                channel.publish('msg', { user: currentUser, text: input.value });
-                input.value = "";
-            }
-        }
-
-        function displayMessage(user, text) {
-            const windowEl = document.getElementById('message-window');
-            const div = document.createElement('div');
-            
-            // Style differently if message is from me
-            const isMe = user === currentUser;
-            div.className = isMe ? 'msg-bubble me' : 'msg-bubble';
-            
-            div.innerHTML = `
-                <div class="msg-user">${isMe ? 'You' : user}</div>
-                <div class="msg-text">${text}</div>
-            `;
-            
-            windowEl.appendChild(div);
-            windowEl.scrollTo({ top: windowEl.scrollHeight, behavior: 'smooth' });
-        }
-
-        function logout() {
-            localStorage.removeItem('dev_alias');
-            location.reload();
-        }
-
-        // Enter Key Support
-        document.getElementById('chat-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') publishMessage();
-        });
     </script>
 </body>
 </html>
