@@ -9,6 +9,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     
     <style>
+        /* Fix the overlap fighting */
+.hero {
+    padding-top: 120px !important; /* Pushes text below the header */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Ensure the header stays on top of everything */
+.main-nav {
+    z-index: 10000 !important; 
+}
         /* Restores the Button Hovers */
 .s-btn:hover, .social-btn:hover {
     background: #fff !important;
