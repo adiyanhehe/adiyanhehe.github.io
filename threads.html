@@ -2,151 +2,149 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus // Global Feed</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Nexus // Threads</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        :root { --bg: #000; --border: #2F3336; --accent: #1D9BF0; --text-dim: #71767B; --gold: #FFD700; }
-        body { background: var(--bg); color: white; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; justify-content: center; }
+        :root { --bg: #000; --panel: #0a0a0a; --accent: #00A2FF; --border: #1a1a1a; --text-dim: #555; }
+        body { background: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; justify-content: center; }
         
-        /* Layout */
+        /* X-Style Layout */
         .main-layout { display: grid; grid-template-columns: 600px 350px; gap: 30px; max-width: 1000px; width: 100%; }
-        .feed-container { border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; }
+        .feed-container { border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; display: flex; flex-direction: column; }
         
-        /* Login Gate */
-        #login-gate { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .login-card { background: #16181c; padding: 40px; border-radius: 20px; border: 1px solid var(--border); text-align: center; }
+        /* Header */
+        .header { padding: 20px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; font-weight: 800; display: flex; justify-content: space-between; }
 
-        /* Sidebar Bubbles */
-        .trending-box { background: #16181c; border-radius: 16px; padding: 20px; margin-top: 20px; position: sticky; top: 20px; }
-        .trend-item { margin-bottom: 15px; cursor: pointer; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        .trend-label { color: var(--text-dim); font-size: 0.75rem; }
+        /* Compose Box */
+        .compose { padding: 20px; border-bottom: 1px solid var(--border); display: flex; gap: 15px; }
+        .user-pic { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+        textarea { flex: 1; background: transparent; border: none; color: #fff; font-size: 1.1rem; outline: none; resize: none; padding-top: 10px; }
+        .btn-post { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 30px; font-weight: 800; cursor: pointer; align-self: flex-end; transition: 0.2s; }
+        .btn-post:hover { opacity: 0.8; transform: scale(1.05); }
 
         /* Posts */
-        .post { padding: 15px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; transition: 0.2s; }
-        .post:hover { background: rgba(255,255,255,0.02); }
-        .user-pfp { width: 48px; height: 48px; border-radius: 50%; background: #222; }
-        .badge { background: var(--accent); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 5px; }
-        .dev-badge { background: var(--gold); color: black; }
+        .post { padding: 20px; border-bottom: 1px solid var(--border); display: flex; gap: 15px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .post-content { flex: 1; }
+        .post-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        .username { font-weight: 800; font-size: 0.95rem; }
+        .handle { color: var(--text-dim); font-size: 0.85rem; }
+        .post-text { line-height: 1.5; color: #ccc; }
 
-        input, textarea { width: 100%; background: transparent; border: none; color: white; outline: none; resize: none; }
-        .btn-post { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-        .btn-post:hover { opacity: 0.8; transform: scale(1.05); }
+        /* Sidebar */
+        .sidebar { padding: 20px; position: sticky; top: 0; height: fit-content; }
+        .trending { background: var(--panel); border-radius: 16px; padding: 20px; border: 1px solid var(--border); }
+        .trend-item { margin-top: 15px; border-bottom: 1px solid #111; padding-bottom: 10px; cursor: pointer; }
+        .trend-tag { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Login Gate */
+        #login-gate { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; align-items: center; justify-content: center; }
+        .auth-btn { background: #fff; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 800; }
     </style>
 </head>
 <body>
 
     <div id="login-gate">
-        <div class="login-card">
-            <h1 style="font-size:1.5rem;">Initialize Session</h1>
-            <input type="text" id="rbxName" placeholder="Roblox Username" style="border: 1px solid #333; padding: 10px; border-radius: 8px; margin: 15px 0; text-align: center;">
-            <button class="btn-post" style="width:100%" onclick="syncRoblox()">Connect to Nexus</button>
-        </div>
+        <a href="#" id="auth-link" class="auth-btn">VERIFY WITH ROBLOX</a>
     </div>
 
-    <div class="main-layout" id="main-ui" style="display:none;">
+    <div class="main-layout" id="app">
         <div class="feed-container">
-            <div style="padding:15px; border-bottom:1px solid var(--border);"><h2 style="margin:0;">Home</h2></div>
-            
-            <div class="compose" style="padding:15px; border-bottom:1px solid var(--border); display:flex; gap:12px;">
-                <img id="uPFP" class="user-pfp">
-                <div style="flex:1">
-                    <textarea id="postContent" placeholder="Post a dev update..."></textarea>
-                    <button class="btn-post" style="float:right" onclick="pushPost()">Post</button>
-                </div>
+            <div class="header">BEYOND_THREADS<span>.</span></div>
+
+            <div class="compose">
+                <img id="my-pic" class="user-pic" src="">
+                <textarea id="thread-input" placeholder="What's the latest update?"></textarea>
+                <button class="btn-post" onclick="postThread()">POST</button>
             </div>
 
-            <div id="timeline"></div>
+            <div id="thread-list"></div>
         </div>
 
         <div class="sidebar">
-            <div class="trending-box">
-                <h3 style="margin:0 0 15px 0;">Top Discussions</h3>
-                <div id="trends-list"></div>
+            <div class="trending">
+                <div style="font-weight: 800; font-size: 1.1rem;">Top Stories</div>
+                <div id="trending-list">
+                    <div class="trend-item">
+                        <div class="trend-tag">Trending in Studio</div>
+                        <div style="font-weight: 800;">Nexus Hub V3 Launch</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const GROUP_ID = "YOUR_GROUP_ID"; // Replace with your Roblox Group ID
+        // OAUTH CONFIG (Matches your callback logic)
+        const CLIENT_ID = "4112872619143689543";
+        const SITE_URL = "https://adiyanhehe-github-io.vercel.app";
+        document.getElementById('auth-link').href = `https://apis.roblox.com/oauth/v1/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(SITE_URL + '/api/callback')}&scope=openid+profile&response_type=code`;
 
-        async function syncRoblox() {
-            const user = document.getElementById('rbxName').value;
-            if(!user) return;
-
-            try {
-                // Get User Info
-                const res = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${user}&limit=1`);
-                const data = await res.json();
-                if(!data.data[0]) return alert("Invalid User");
-                
-                const uid = data.data[0].id;
-                
-                // Get Headshot
-                const pfpRes = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${uid}&size=150x150&format=Png&isCircular=true`);
-                const pfpData = await pfpRes.json();
-
-                // Check Group Rank
-                const rankRes = await fetch(`https://groups.roproxy.com/v1/users/${uid}/groups/roles`);
-                const rankData = await rankRes.json();
-                const isDev = rankData.data.some(g => g.group.id == GROUP_ID); // Check if they are in your group
-
-                localStorage.setItem('nexus_session', JSON.stringify({
-                    name: data.data[0].displayName,
-                    handle: `@${user}`,
-                    pfp: pfpData.data[0].imageUrl,
-                    isDev: isDev
-                }));
-
-                location.reload();
-            } catch(e) { alert("Sync failed. Check connection."); }
-        }
-
-        function pushPost() {
-            const text = document.getElementById('postContent').value;
-            if(!text.trim()) return;
-            const session = JSON.parse(localStorage.getItem('nexus_session'));
-            const posts = JSON.parse(localStorage.getItem('nexus_posts')) || [];
-            
-            posts.unshift({...session, content: text, likes: 0, id: Date.now()});
-            localStorage.setItem('nexus_posts', JSON.stringify(posts));
-            document.getElementById('postContent').value = '';
-            render();
-        }
-
-        function render() {
-            const posts = JSON.parse(localStorage.getItem('nexus_posts')) || [];
-            document.getElementById('timeline').innerHTML = posts.map(p => `
-                <div class="post">
-                    <img src="${p.pfp}" class="user-pfp">
-                    <div style="flex:1">
-                        <div style="font-weight:800;">
-                            ${p.name} ${p.isDev ? '<span class="badge dev-badge">DEVELOPER</span>' : '<span class="badge">USER</span>'}
-                            <span style="color:var(--text-dim); font-weight:400; font-size:0.8rem;">${p.handle}</span>
-                        </div>
-                        <p style="margin:5px 0; color:#eee;">${p.content}</p>
-                    </div>
-                </div>
-            `).join('');
-
-            // Sidebar Trends
-            const sorted = [...posts].sort((a,b) => b.likes - a.likes).slice(0, 3);
-            document.getElementById('trends-list').innerHTML = sorted.map(s => `
-                <div class="trend-item">
-                    <div class="trend-label">Trending in Nexus</div>
-                    <div style="font-weight:800;">${s.content.substring(0, 25)}...</div>
-                </div>
-            `).join('');
-        }
+        // ABLY CONFIG (Same as your chat)
+        const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        const threadChan = ably.channels.get('nexus-threads');
 
         window.onload = () => {
-            const session = JSON.parse(localStorage.getItem('nexus_session'));
-            if(session) {
-                document.getElementById('login-gate').style.display = 'none';
-                document.getElementById('main-ui').style.display = 'grid';
-                document.getElementById('uPFP').src = session.pfp;
-                render();
+            if(!localStorage.getItem('rbx_user')) {
+                document.getElementById('login-gate').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+            } else {
+                initThreads();
             }
         };
+
+        function initThreads() {
+            document.getElementById('my-pic').src = localStorage.getItem('rbx_pic');
+            
+            // Subscribe to live threads
+            threadChan.subscribe('new-thread', (m) => {
+                addThreadToUI(m.data, true);
+            });
+
+            // Load existing threads from history/local (Optional: Ably history can be used here)
+            const saved = JSON.parse(localStorage.getItem('cached_threads')) || [];
+            saved.forEach(t => addThreadToUI(t, false));
+        }
+
+        function postThread() {
+            const input = document.getElementById('thread-input');
+            if(!input.value.trim()) return;
+
+            const data = {
+                user: localStorage.getItem('rbx_user'),
+                pic: localStorage.getItem('rbx_pic'),
+                text: input.value,
+                id: Date.now()
+            };
+
+            threadChan.publish('new-thread', data);
+            
+            // Save to local cache so they don't vanish on refresh
+            const saved = JSON.parse(localStorage.getItem('cached_threads')) || [];
+            saved.unshift(data);
+            localStorage.setItem('cached_threads', JSON.stringify(saved.slice(0, 50)));
+
+            input.value = '';
+        }
+
+        function addThreadToUI(data, isNew) {
+            const list = document.getElementById('thread-list');
+            const post = document.createElement('div');
+            post.className = 'post';
+            post.innerHTML = `
+                <img src="${data.pic}" class="user-pic">
+                <div class="post-content">
+                    <div class="post-header">
+                        <span class="username">${data.user}</span>
+                        <span class="handle">@${data.user.toLowerCase()}</span>
+                    </div>
+                    <div class="post-text">${data.text}</div>
+                </div>
+            `;
+            if(isNew) list.prepend(post);
+            else list.appendChild(post);
+        }
     </script>
 </body>
 </html>
