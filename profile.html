@@ -3,71 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Hub | Profile</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
+    <title>Profile / Nexus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000; --panel: #0a0a0a; --accent: #00A2FF; --border: #1a1a1a; --text-main: #FFFFFF; }
-        body { background: var(--bg); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        :root { --bg: #000; --accent: #1D9BF0; --border: #2F3336; --text-dim: #71767B; }
+        body { background: var(--bg); color: white; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; justify-content: center; }
         
-        .profile-container { width: 400px; background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 40px; text-align: center; }
-        .pfp-main { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--accent); margin-bottom: 20px; background: #111; }
-        .username { font-size: 1.5rem; font-weight: 800; margin: 0; }
-        .handle { color: #555; font-size: 0.9rem; margin-bottom: 25px; }
+        .profile-wrapper { width: 600px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; position: relative; }
         
-        .stat-card { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .stat-label { font-size: 0.7rem; color: #444; font-weight: 800; text-transform: uppercase; }
+        /* Banner & PFP Header */
+        .banner { height: 200px; background: #333; transition: 0.3s; }
+        .pfp-container { position: relative; height: 75px; padding: 0 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .pfp-overlap { width: 140px; height: 140px; border-radius: 50%; border: 4px solid #000; background: #111; position: absolute; top: -70px; object-fit: cover; }
         
-        .back-btn { margin-top: 20px; display: inline-block; color: var(--accent); text-decoration: none; font-size: 0.8rem; font-weight: 800; }
+        /* Profile Info */
+        .info-section { padding: 16px; margin-top: 10px; }
+        .display-name { font-size: 1.5rem; font-weight: 800; margin: 0; }
+        .handle { color: var(--text-dim); font-size: 1rem; margin-bottom: 12px; }
+        .bio { font-size: 1rem; line-height: 1.4; margin-bottom: 12px; min-height: 20px; }
+        
+        .meta-data { display: flex; gap: 15px; color: var(--text-dim); font-size: 0.9rem; margin-bottom: 12px; }
+        .stats { display: flex; gap: 20px; font-size: 0.9rem; }
+        .stats b { color: white; }
+        .stats span { color: var(--text-dim); }
+
+        /* Tabs */
+        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-top: 20px; }
+        .tab { flex: 1; text-align: center; padding: 15px 0; cursor: pointer; color: var(--text-dim); font-weight: 600; }
+        .tab.active { color: white; border-bottom: 4px solid var(--accent); }
+
+        /* Buttons */
+        .btn-action { background: white; color: black; border: none; padding: 10px 20px; border-radius: 50px; font-weight: 800; cursor: pointer; margin-bottom: 10px; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: white; padding: 10px 20px; border-radius: 50px; font-weight: 800; cursor: pointer; margin-bottom: 10px; }
+
+        /* Edit Modal */
+        #edit-modal { display: none; position: fixed; inset: 0; background: rgba(91, 112, 131, 0.4); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-content { background: #000; border-radius: 16px; width: 400px; padding: 20px; border: 1px solid var(--border); }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 5px; }
+        .input-group input, .input-group textarea { width: 100%; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: white; padding: 10px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-    <div class="profile-container">
-        <img id="pfp" class="pfp-main" src="">
-        <h1 id="name" class="username">Loading...</h1>
-        <div id="handle" class="handle">@fetching</div>
-
-        <div class="stat-card">
-            <span class="stat-label">Nexus Status</span>
-            <span style="color: #00ff00; font-weight: 800; font-size: 0.8rem;">VERIFIED</span>
+    <div class="profile-wrapper">
+        <div id="banner-bg" class="banner"></div>
+        
+        <div class="pfp-container">
+            <img id="pfp" class="pfp-overlap" src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-Png-720-720-True/420/420/AvatarHeadshot/Png/Circular">
+            <div style="flex:1"></div>
+            <div id="action-area">
+                <button class="btn-action">Follow</button>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <span class="stat-label">Origin</span>
-            <span style="font-weight: 800; font-size: 0.8rem;">ROBLOX OAUTH2</span>
+        <div class="info-section">
+            <h1 id="view-name" class="display-name">Loading...</h1>
+            <div id="view-handle" class="handle">@fetching</div>
+            
+            <div id="view-bio" class="bio">Nexus Developer 🛠️</div>
+            
+            <div class="meta-data">
+                <span>📍 Roblox Studio</span>
+                <span>📅 Joined Feb 2026</span>
+            </div>
+
+            <div class="stats">
+                <span><b>0</b> Following</span>
+                <span><b>0</b> Followers</span>
+            </div>
         </div>
 
-        <a href="threads.html" class="back-btn">← BACK TO FEED</a>
+        <div class="tabs">
+            <div class="tab active">Posts</div>
+            <div class="tab">Replies</div>
+            <div class="tab">Media</div>
+            <div class="tab">Likes</div>
+        </div>
+
+        <div id="posts-feed" style="padding: 40px; text-align: center; color: var(--text-dim);">
+            No posts found for this user.
+        </div>
+    </div>
+
+    <div id="edit-modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2 style="margin:0;">Edit profile</h2>
+                <button onclick="saveProfile()" class="btn-action">Save</button>
+            </div>
+            
+            <div class="input-group">
+                <label>Banner Color</label>
+                <input type="color" id="edit-color" style="height:50px;">
+            </div>
+
+            <div class="input-group">
+                <label>Bio</label>
+                <textarea id="edit-bio" rows="3"></textarea>
+            </div>
+            <button onclick="closeEdit()" class="btn-outline" style="width:100%;">Cancel</button>
+        </div>
     </div>
 
     <script>
+        const params = new URLSearchParams(window.location.search);
+        const targetUser = params.get('user');
+        const myUser = localStorage.getItem('rbx_user');
+
         window.onload = async () => {
-            const params = new URLSearchParams(window.location.search);
-            const user = params.get('user');
+            if (!targetUser) return;
 
-            if (!user) {
-                document.body.innerHTML = "<h1>User not found.</h1>";
-                return;
+            // Setup UI for current user
+            document.getElementById('view-name').innerText = targetUser;
+            document.getElementById('view-handle').innerText = `@${targetUser.toLowerCase()}`;
+
+            // Check if viewing own profile
+            if (targetUser === myUser) {
+                document.getElementById('action-area').innerHTML = `
+                    <button class="btn-outline" onclick="openEdit()">Edit Profile</button>
+                `;
             }
 
-            document.getElementById('name').innerText = user;
-            document.getElementById('handle').innerText = `@${user.toLowerCase()}`;
+            // Load saved Bio/Banner from localStorage
+            const savedBio = localStorage.getItem(`bio_${targetUser}`);
+            const savedColor = localStorage.getItem(`color_${targetUser}`);
+            if(savedBio) document.getElementById('view-bio').innerText = savedBio;
+            if(savedColor) document.getElementById('banner-bg').style.background = savedColor;
 
+            // Fetch Roblox Data
             try {
-                // Fetch Roblox PFP via RoProxy to avoid CORS
-                const userRes = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${user}&limit=1`);
-                const userData = await userRes.json();
-                
-                if(userData.data && userData.data[0]) {
-                    const userId = userData.data[0].id;
-                    const thumbRes = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`);
-                    const thumbData = await thumbRes.json();
-                    document.getElementById('pfp').src = thumbData.data[0].imageUrl;
+                const search = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${targetUser}&limit=1`);
+                const sData = await search.json();
+                if(sData.data && sData.data[0]) {
+                    const thumb = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${sData.data[0].id}&size=150x150&format=Png&isCircular=true`);
+                    const tData = await thumb.json();
+                    document.getElementById('pfp').src = tData.data[0].imageUrl;
                 }
-            } catch(e) {
-                console.error("Profile sync error");
-            }
+            } catch(e) { console.warn("Roblox fetch failed, using placeholder"); }
         };
+
+        function openEdit() {
+            document.getElementById('edit-modal').style.display = 'flex';
+            document.getElementById('edit-bio').value = document.getElementById('view-bio').innerText;
+        }
+
+        function closeEdit() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        function saveProfile() {
+            const bioVal = document.getElementById('edit-bio').value;
+            const colorVal = document.getElementById('edit-color').value;
+
+            // Save locally
+            localStorage.setItem(`bio_${targetUser}`, bioVal);
+            localStorage.setItem(`color_${targetUser}`, colorVal);
+
+            // Update UI
+            document.getElementById('view-bio').innerText = bioVal;
+            document.getElementById('banner-bg').style.background = colorVal;
+            
+            closeEdit();
+        }
     </script>
 </body>
 </html>
