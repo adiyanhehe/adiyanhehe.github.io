@@ -1,31 +1,44 @@
-# 👨‍💻 Adiyan | Lead Developer @ Clover Gamez
+# 🏛️ ADIYAN
+**Lead Developer @ Clover Gamez**
 
-<div align="center">
-  <img src="https://img.shields.io/badge/Role-Lead_Developer-00fbff?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Specialty-Scripting_%26_Animation-white?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Studio-Clover_Gamez-green?style=for-the-badge" />
-</div>
-
----
-
-### 🚀 About Me
-I am a professional Roblox Developer specializing in high-end **Luau Scripting** and **Stylized Animations**. My goal is to create seamless, optimized, and engaging experiences for the Roblox platform.
-
-- 🛠️ **Lead Developer** at Clover Gamez.
-- ⚡ **Expertise:** Modular Frameworks, Combat Systems, R6/R15 Animation.
-- 💼 **Available for Hire:** Open for commissions and long-term projects.
+<p align="left">
+  <img src="https://img.shields.io/badge/STATUS-AVAILABLE_FOR_HIRE-00fbff?style=flat-square" />
+  <img src="https://img.shields.io/badge/LOCATION-GLOBAL-white?style=flat-square" />
+</p>
 
 ---
 
-### 🛠️ Technical Skills
-- **Languages:** Luau (Advanced), Python (Basics), HTML/CSS.
-- **Systems:** DataStore2/ProfileService, Raycast Hitboxes, Custom Physics.
-- **Tools:** Roblox Studio, Blender, Moon Animator, VS Code.
+### 🖋️ PERSPECTIVE
+I approach development as a blend of technical precision and creative fluidty. As the **Lead Developer at Clover Gamez**, I specialize in high-performance Luau frameworks and stylized character kinematics. My work is focused on creating seamless, high-end experiences that push the boundaries of the Roblox engine.
 
 ---
 
-### 🔗 Connect With Me
-[<img src="https://img.shields.io/badge/Fiverr-Hire_Me-green?style=for-the-badge&logo=fiverr">](https://www.fiverr.com/sellers/adiyan_official)
-[<img src="https://img.shields.io/badge/Telegram-Chat_Now-0088cc?style=for-the-badge&logo=telegram">](https://t.me/Adiyan_official11)
+### 🛠️ TECHNICAL STACK
+* **CORE:** Luau (Advanced), Modular Architecture, OOP.
+* **SYSTEMS:** Custom Combat, Physics-based Animation, Data Management.
+* **TOOLS:** VS Code, Rojo, Moon Animator, Blender.
 
-**Discord:** `adigusi`
+---
+
+### 📊 STATISTICS
+| CATEGORY | METRIC |
+| :--- | :--- |
+| **Experience** | 4+ Years |
+| **Specialization** | Scripting & Animation |
+| **Current Studio** | Clover Gamez |
+
+---
+
+### 🔗 CONNECT
+> [!IMPORTANT]
+> For business inquiries regarding commissions or long-term partnerships.
+
+* **Telegram:** [@Adiyan_official11](https://t.me/Adiyan_official11)
+* **Fiverr:** [Hire Me](https://www.fiverr.com/sellers/adiyan_official)
+* **Discord:** `adigusi`
+
+---
+
+<p align="center">
+  <img src="https://img.shields.io/badge/2026-ESTABLISHED-0c0b09?style=for-the-badge" />
+</p>
