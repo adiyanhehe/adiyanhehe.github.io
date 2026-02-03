@@ -109,7 +109,33 @@
                 initThreads();
             }
         };
+async function reportPost(postId, offenderName, content) {
+    const reporter = localStorage.getItem('rbx_user') || "Anonymous";
+    
+    // UI Feedback
+    if(!confirm(`Are you sure you want to report ${offenderName}?`)) return;
 
+    try {
+        const response = await fetch('/api/report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                postId: postId,
+                offenderName: offenderName,
+                content: content,
+                reporter: reporter
+            })
+        });
+
+        if (response.ok) {
+            alert("Report submitted successfully.");
+        } else {
+            alert("Error submitting report.");
+        }
+    } catch (e) {
+        alert("Connection error.");
+    }
+}
         function initThreads() {
             document.getElementById('my-pic').src = localStorage.getItem('rbx_pic');
             
