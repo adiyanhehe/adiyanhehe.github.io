@@ -239,5 +239,40 @@ allLinks.forEach(link => {
             alert('Discord ID Copied: adigusi');
         }
     </script>
+    <script>
+function syncNexus() {
+    // 1. Sync Hero & Video
+    const config = JSON.parse(localStorage.getItem('nexus_config'));
+    if(config) {
+        if(config.heroTitle) document.querySelector('.hero-title').innerHTML = `${config.heroTitle}<span>.</span><br>Future.`;
+        if(config.heroSub) document.querySelector('.hero-subtitle').innerText = config.heroSub;
+        if(config.bgVid) {
+            const vid = document.getElementById('bg-video');
+            if(!vid.src.includes(config.bgVid)) {
+                vid.src = config.bgVid;
+                vid.play();
+            }
+        }
+    }
+
+    // 2. Sync Staff
+    const savedStaff = JSON.parse(localStorage.getItem('nexus_staff'));
+    if(savedStaff) {
+        const container = document.getElementById('team-display') || document.querySelector('.team-row');
+        if(container) {
+            container.innerHTML = savedStaff.map(member => `
+                <div class="team-card reveal visible">
+                    <img src="${member.img}" class="team-img" onerror="this.src='images/adiyan.png'">
+                    <h3>${member.name}</h3>
+                    <p style="font-size: 0.8rem; color: #888;">${member.role}</p>
+                </div>
+            `).join('');
+        }
+    }
+}
+
+// Run sync on load
+window.addEventListener('DOMContentLoaded', syncNexus);
+</script>
 </body>
 </html>
