@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Feed | Live Dev Hub</title>
+    <title>Nexus Feed | Adiyan Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     
@@ -23,98 +23,129 @@
 
         .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
         
-        /* --- REAL TIME CHAT BOX --- */
+        /* --- CHAT INTERFACE --- */
         #chat-container {
             background: var(--card-bg); border: 1px solid var(--border);
             border-radius: 25px; padding: 30px; margin-bottom: 40px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px); display: none; /* Hidden until logged in */
         }
 
         #message-window {
-            height: 350px; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 10px;
+            height: 400px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 12px;
             padding-right: 10px; margin-bottom: 20px;
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
         }
 
         .msg-bubble {
-            background: rgba(255,255,255,0.05); padding: 12px 18px;
-            border-radius: 15px; border-left: 3px solid var(--accent);
-            max-width: 80%; animation: fadeIn 0.3s ease;
+            background: rgba(255,255,255,0.05); padding: 14px 20px;
+            border-radius: 18px; border-left: 2px solid var(--accent);
+            max-width: 85%; align-self: flex-start;
+            animation: slideUp 0.3s ease;
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-bubble.me {
+            align-self: flex-end; border-left: none; border-right: 2px solid #555;
+            background: rgba(255,255,255,0.1);
+        }
 
-        .msg-user { font-size: 0.7rem; font-weight: 800; color: #888; margin-bottom: 5px; text-transform: uppercase; }
-        .msg-text { font-size: 0.95rem; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .chat-input-area { display: flex; gap: 10px; }
+        .msg-user { font-size: 0.65rem; font-weight: 800; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .msg-text { font-size: 0.95rem; line-height: 1.5; }
+
+        .chat-input-area { display: flex; gap: 12px; }
         input {
             flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            padding: 15px; border-radius: 12px; color: white; outline: none;
+            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s;
         }
+        input:focus { border-color: #fff; background: rgba(255,255,255,0.08); }
 
         .s-btn {
-            background: #fff; color: #000; padding: 12px 25px; border-radius: 12px;
+            background: #fff; color: #000; padding: 12px 28px; border-radius: 14px;
             font-weight: 800; border: none; cursor: pointer; transition: var(--transition);
         }
+        .s-btn:hover { transform: scale(1.03); opacity: 0.9; }
 
-        /* --- LOGIN OVERLAY --- */
+        /* --- LOGIN SCREEN --- */
         #login-overlay {
             position: fixed; inset: 0; background: #000; z-index: 1000;
             display: flex; align-items: center; justify-content: center; text-align: center;
         }
+        
+        .logout-link { font-size: 0.7rem; color: #555; cursor: pointer; text-decoration: underline; margin-left: 15px; }
+        .logout-link:hover { color: #fff; }
     </style>
 </head>
 <body>
 
     <div id="login-overlay">
-        <div>
-            <h1 style="font-family: 'Space Grotesk'; margin-bottom: 20px;">Identity Required</h1>
-            <input type="text" id="username-input" placeholder="Enter Dev Alias..." style="width: 250px; text-align: center; margin-bottom: 20px;"><br>
-            <button onclick="startApp()" class="s-btn">ACCESS NEXUS FEED</button>
+        <div class="reveal" style="opacity: 1; transform: translateY(0);">
+            <h1 style="font-family: 'Space Grotesk'; margin-bottom: 10px; font-size: 2.5rem;">Nexus Access</h1>
+            <p style="color: #666; margin-bottom: 30px;">Identify yourself to enter the global dev feed.</p>
+            <input type="text" id="username-input" placeholder="Developer Alias..." style="width: 280px; text-align: center; margin-bottom: 20px;"><br>
+            <button onclick="startApp()" class="s-btn">INITIALIZE</button>
         </div>
     </div>
 
     <nav>
         <a href="index.html" class="logo">ADIYAN HUB</a>
-        <div id="user-display" style="font-size: 0.8rem; color: #888;"></div>
+        <div style="display: flex; align-items: center;">
+            <div id="user-display" style="font-size: 0.8rem; color: #888; font-weight: 600;"></div>
+            <span id="logout-btn" class="logout-link" onclick="logout()" style="display:none;">LOGOUT</span>
+        </div>
     </nav>
 
     <div class="container">
-        <h2 style="font-family: 'Space Grotesk'; margin-bottom: 10px;">Live Developer Network</h2>
-        <p style="color: #555; margin-bottom: 30px;">Real-time collaboration across the collective.</p>
+        <div style="margin-bottom: 40px;">
+            <h2 style="font-family: 'Space Grotesk'; font-size: 2rem; margin-bottom: 10px;">Live Collective Chat</h2>
+            <p style="color: #555;">Real-time communication for Adiyan Studio developers and partners.</p>
+        </div>
 
         <div id="chat-container">
             <div id="message-window">
                 </div>
             <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Broadcasting a message...">
+                <input type="text" id="chat-input" placeholder="Type a message to the hub...">
                 <button onclick="publishMessage()" class="s-btn">SEND</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ABLY REAL-TIME CONFIG (Free Tier Key)
-        // Note: For a production site, you'd hide this in a backend.
+        // API KEY - Valid for Adiyan Dev Hub
         const ably = new Ably.Realtime('8_p8_w.Y-S57A:E-8j2q-u-S0S-O-T'); 
-        const channel = ably.channels.get('adiyan-dev-hub');
-        let currentUser = "";
+        const channel = ably.channels.get('adiyan-global-v1');
+        let currentUser = localStorage.getItem('dev_alias');
+
+        // Check if already logged in on Load
+        window.onload = () => {
+            if (currentUser) {
+                setupUI(currentUser);
+            }
+        };
 
         function startApp() {
-            const user = document.getElementById('username-input').value;
-            if (user.trim().length > 2) {
-                currentUser = user;
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('user-display').innerText = `ID: ${currentUser}`;
-                
-                // Subscribe to real-time messages
-                channel.subscribe('msg', (message) => {
-                    displayMessage(message.data.user, message.data.text);
-                });
+            const input = document.getElementById('username-input').value.trim();
+            if (input.length >= 3) {
+                localStorage.setItem('dev_alias', input);
+                currentUser = input;
+                setupUI(currentUser);
             } else {
-                alert("Enter a longer name!");
+                alert("Alias must be at least 3 characters.");
             }
+        }
+
+        function setupUI(user) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'block';
+            document.getElementById('logout-btn').style.display = 'inline';
+            document.getElementById('user-display').innerText = `DEV: ${user.toUpperCase()}`;
+            
+            // Connect to Real-time Stream
+            channel.subscribe('msg', (message) => {
+                displayMessage(message.data.user, message.data.text);
+            });
         }
 
         function publishMessage() {
@@ -126,20 +157,28 @@
         }
 
         function displayMessage(user, text) {
-            const window = document.getElementById('message-window');
+            const windowEl = document.getElementById('message-window');
             const div = document.createElement('div');
-            div.className = 'msg-bubble';
-            if(user === currentUser) div.style.alignSelf = "flex-end";
+            
+            // Style differently if message is from me
+            const isMe = user === currentUser;
+            div.className = isMe ? 'msg-bubble me' : 'msg-bubble';
             
             div.innerHTML = `
-                <div class="msg-user">${user}</div>
+                <div class="msg-user">${isMe ? 'You' : user}</div>
                 <div class="msg-text">${text}</div>
             `;
-            window.appendChild(div);
-            window.scrollTop = window.scrollHeight;
+            
+            windowEl.appendChild(div);
+            windowEl.scrollTo({ top: windowEl.scrollHeight, behavior: 'smooth' });
         }
 
-        // Handle Enter Key
+        function logout() {
+            localStorage.removeItem('dev_alias');
+            location.reload();
+        }
+
+        // Enter Key Support
         document.getElementById('chat-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') publishMessage();
         });
