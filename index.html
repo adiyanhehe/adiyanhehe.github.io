@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adiyan | Lead Developer @ Clover Gamez</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Luckiest+Guy&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #030303;
+            --card-bg: #0a0a0a;
+            --accent: #00fbff;
+            --text-dim: #888;
+            --border: #151515;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); color: white; line-height: 1.6; overflow-x: hidden; scroll-behavior: smooth; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+
+        /* Navigation */
+        nav { height: 100px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.4rem; font-weight: 900; letter-spacing: -1px; }
+        .logo span { color: var(--accent); }
+
+        /* Hero Section */
+        .hero { padding: 100px 0 80px; text-align: center; }
+        .hero h1 { font-size: clamp(3.5rem, 10vw, 6rem); font-weight: 900; letter-spacing: -4px; margin: 20px 0; line-height: 0.9; }
+        .hero p { color: var(--text-dim); font-size: 1.25rem; max-width: 650px; margin: 0 auto 40px; }
+
+        /* About Section (Custom for you) */
+        .about-box {
+            background: linear-gradient(145deg, #0d0d0d, #050505);
+            border: 1px solid var(--border);
+            padding: 50px;
+            border-radius: 30px;
+            margin-bottom: 80px;
+            text-align: left;
+        }
+        .about-box h2 { font-family: 'Luckiest Guy', cursive; font-size: 2.5rem; color: var(--accent); margin-bottom: 20px; letter-spacing: 2px; }
+        .about-box p { font-size: 1.1rem; color: #ccc; margin-bottom: 15px; }
+
+        /* Expertise Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { 
+            background: var(--card-bg); border: 1px solid var(--border); 
+            padding: 40px; border-radius: 24px; transition: 0.4s;
+        }
+        .card:hover { border-color: var(--accent); transform: translateY(-5px); }
+        .card i { font-size: 2.5rem; color: var(--accent); margin-bottom: 20px; display: block; }
+        .card h3 { font-size: 1.6rem; margin-bottom: 15px; }
+        .card p { color: var(--text-dim); }
+
+        /* Buttons */
+        .btn { 
+            padding: 18px 40px; border-radius: 15px; text-decoration: none; 
+            font-weight: 800; transition: 0.3s; display: inline-block;
+        }
+        .btn-primary { background: var(--accent); color: black; }
+        .btn-primary:hover { box-shadow: 0 0 30px rgba(0, 251, 255, 0.4); transform: scale(1.02); }
+
+        footer { padding: 60px 0; text-align: center; border-top: 1px solid var(--border); color: #333; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <nav>
+            <div class="logo">CLOVER<span>GAMEZ</span></div>
+            <div style="display: flex; gap: 20px;">
+                <a href="https://t.me/Adiyan_official11" style="color:white; text-decoration:none; font-weight:700;">TELEGRAM</a>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <h1>Lead Developer.</h1>
+            <p>I specialize in building high-performance Roblox systems and elite animations for professional studios.</p>
+            <a href="https://www.fiverr.com/sellers/adiyan_official" class="btn btn-primary">HIRE ADIYAN</a>
+        </section>
+
+        <div class="about-box">
+            <h2>WHO IS ADIYAN?</h2>
+            <p>I am the Lead Developer at <b>Clover Gamez</b>, dedicated to pushing the technical limits of the Roblox platform.</p>
+            <p>With a focus on <b>Luau scripting</b> and <b>Advanced Animation</b>, I transform complex ideas into smooth, playable experiences. Whether it's modular game frameworks or frame-perfect R6/R15 movement, I ensure every project is optimized and professional.</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <i class="fa-solid fa-code"></i>
+                <h3>Core Scripting</h3>
+                <p>Clean, modular Luau code. Optimized DataStores, placement systems, and combat engines.</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-bolt"></i>
+                <h3>Animations</h3>
+                <p>Custom movement sets, weapon handling, and stylized combat animations for all rig types.</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-gears"></i>
+                <h3>Game Systems</h3>
+                <p>Complete game loops, UI integration, and back-end architecture for simulators and RPGs.</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 ADIYAN | ADIGUSI ON DISCORD</p>
+        </footer>
+    </div>
+
+</body>
+</html>
