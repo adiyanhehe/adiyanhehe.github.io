@@ -9,6 +9,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     
     <style>
+        /* Restores the Button Hovers */
+.s-btn:hover, .social-btn:hover {
+    background: #fff !important;
+    color: #000 !important;
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+}
+
+/* Cursor scaling effect on hover */
+.cursor-main.active {
+    transform: scale(2);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #00A2FF;
+}
+
+/* Team card hover restoration */
+.team-card:hover {
+    transform: translateY(-10px);
+    border-color: #fff;
+    background: rgba(255,255,255,0.08);
+}
         :root {
             --bg: #030303;
             --card-bg: rgba(255, 255, 255, 0.03);
@@ -175,6 +196,13 @@
     </footer>
 
     <script>
+        // Add this to your existing mousemove logic
+const allLinks = document.querySelectorAll('a, button, .social-btn');
+
+allLinks.forEach(link => {
+    link.addEventListener('mouseenter', () => cursor.classList.add('active'));
+    link.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+});
         const bgVideo = document.getElementById('bg-video');
         const projectCards = document.querySelectorAll('.gallery-item');
 
