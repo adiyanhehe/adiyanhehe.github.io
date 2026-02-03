@@ -9,14 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     
     <style>
-        * {
-    cursor: auto !important; /* Forces the mouse to show up */
-}
-
-/* If you have a custom cursor div, hide it for now to debug */
-.cursor-main {
-    display: none !important;
-}
         :root {
             --bg: #030303;
             --card-bg: rgba(255, 255, 255, 0.03);
@@ -27,7 +19,12 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @media (min-width: 1024px) { * { cursor: none !important; } }
+        
+        /* FIX: Mouse visibility */
+        @media (min-width: 1024px) { 
+            body { cursor: none !important; } 
+            a, button, input, select, textarea { cursor: none !important; }
+        }
 
         body {
             background-color: var(--bg);
@@ -37,146 +34,95 @@
             line-height: 1.4;
         }
 
-        /* --- BACKGROUND --- */
-        #video-bg-wrapper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; background: #000; }
-        #bg-video { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.15) blur(8px); transition: opacity 1s ease; }
-        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.9) 100%); z-index: -1; }
+        /* --- BACKGROUND FIX --- */
+        #video-bg-wrapper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; background: #000; overflow: hidden; }
+        #bg-video { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.3) blur(4px); transition: opacity 1s ease; }
+        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%); z-index: -1; pointer-events: none; }
 
         /* --- CURSOR --- */
-        .cursor-main { width: 25px; height: 25px; border: 1px solid var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; display: none; }
+        .cursor-main { width: 25px; height: 25px; border: 1px solid var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; display: none; transition: transform 0.1s ease-out; background: rgba(255,255,255,0.1); }
         @media (min-width: 1024px) { .cursor-main { display: block; } }
 
         header { position: fixed; top: 0; width: 100%; padding: 20px 5%; display: flex; justify-content: space-between; align-items: center; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
         .logo { font-family: 'Space Grotesk'; font-weight: 700; letter-spacing: 2px; }
 
-        section { padding: 80px 8%; position: relative; }
+        section { padding: 80px 8%; position: relative; background: transparent; }
         .reveal { opacity: 0; transform: translateY(20px); transition: var(--transition); }
         .reveal.visible { opacity: 1; transform: translateY(0); }
 
         /* --- HERO --- */
-        .hero { height: 80vh; display: flex; flex-direction: column; justify-content: center; }
+        .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; }
         .hero-title { font-size: clamp(2.5rem, 10vw, 6.5rem); font-weight: 800; line-height: 0.85; letter-spacing: -3px; }
         .hero-title span { color: transparent; -webkit-text-stroke: 1px var(--accent); }
+        .hero-subtitle { color: #888; margin-top: 15px; font-size: 1.1rem; }
 
-        .social-links { display: flex; gap: 15px; margin-top: 30px; }
-        .s-btn { padding: 12px 25px; border: 1px solid var(--border); border-radius: 50px; text-decoration: none; color: #fff; font-weight: 600; font-size: 0.85rem; transition: var(--transition); background: rgba(255,255,255,0.02); }
-        .s-btn:hover { transform: translateY(-5px) scale(1.05); background: #fff; color: #000; box-shadow: 0 10px 20px rgba(255,255,255,0.1); }
+        /* --- BUTTONS & ARROW FIX --- */
+        .btn-container { margin-top: 30px; }
+        .s-btn { display: inline-flex; align-items: center; gap: 12px; padding: 15px 30px; border: 1px solid var(--border); border-radius: 50px; text-decoration: none; color: #fff; font-weight: 600; font-size: 0.85rem; transition: var(--transition); background: rgba(255,255,255,0.02); backdrop-filter: blur(5px); }
+        .s-btn:hover { transform: translateY(-5px); background: #fff; color: #000; }
+        
+        .btn-icon svg { width: 18px !important; height: 18px !important; display: block; transition: transform 0.3s ease; }
+        .s-btn:hover .btn-icon svg { transform: translateX(5px); stroke: #000; }
 
-        /* --- PROJECTS GALLERY --- */
+        .social-links { display: flex; gap: 15px; margin-top: 20px; }
+        .social-btn { padding: 10px 25px; border: 1px solid var(--border); border-radius: 50px; text-decoration: none; color: #fff; font-size: 0.8rem; font-weight: 600; transition: 0.3s; background: rgba(255,255,255,0.05); }
+        .social-btn:hover { background: #fff; color: #000; }
+
+        /* --- GALLERY --- */
         .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 30px; }
         .gallery-item { position: relative; border-radius: 20px; height: 380px; overflow: hidden; display: flex; align-items: flex-end; border: 1px solid var(--border); transition: var(--transition); }
         .gallery-item.wide { grid-column: span 2; height: 420px; }
-        .gallery-video-card { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+        .gallery-video-card { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; }
         .gallery-content { position: relative; z-index: 1; padding: 25px; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
-        .gallery-item:hover { border-color: var(--accent); transform: scale(0.99); }
 
-        /* --- TEAM SECTION --- */
+        /* --- TEAM & FORMS --- */
         .team-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 30px; }
-        .team-card { padding: 30px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; text-align: center; backdrop-filter: blur(10px); transition: var(--transition); }
-        .team-card:hover { transform: translateY(-10px); border-color: var(--accent); background: rgba(255,255,255,0.08); }
+        .team-card { padding: 30px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; text-align: center; backdrop-filter: blur(10px); }
         .team-img { width: 90px; height: 90px; border-radius: 50%; margin-bottom: 15px; border: 2px solid var(--border); object-fit: cover; }
 
-        /* --- FORM STYLES --- */
         .form-container { max-width: 600px; margin: 40px 0; background: var(--card-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--border); }
-        input, select, textarea { 
-            width: 100%; padding: 15px; margin-bottom: 15px; background: rgba(255,255,255,0.05); 
-            border: 1px solid var(--border); color: white; border-radius: 10px; font-family: inherit;
-        }
-        input:focus { outline: none; border-color: var(--accent); }
-        .submit-btn { width: 100%; padding: 15px; background: #fff; color: #000; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: var(--transition); }
-        .submit-btn:hover { transform: scale(1.02); background: #eee; }
+        input, select, textarea { width: 100%; padding: 15px; margin-bottom: 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 10px; font-family: inherit; }
+        .submit-btn { width: 100%; padding: 15px; background: #fff; color: #000; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
         footer { padding: 40px 8%; text-align: center; border-top: 1px solid var(--border); font-size: 0.75rem; color: #555; }
-
-        /* ADD THIS TO YOUR CSS TO FIX THE GIANT ARROW */
-.btn-icon svg {
-    width: 20px !important;  /* Force the arrow to be small */
-    height: 20px !important;
-    display: block;
-}
-
-/* Ensure the button container handles the icon correctly */
-.s-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 15px 30px;
-    text-decoration: none;
-    /* ... keep your other button styles ... */
-}
-
-/* Fix the video background to stay behind everything */
-#video-bg-wrapper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -2;
-}
-
-#bg-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-        /* Better spacing for the Social Links */
-.social-links {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
-    justify-content: flex-start; /* Aligns them under the text */
-}
-
-/* Specific style for Social Buttons so they aren't "weird" */
-.social-btn {
-    padding: 10px 25px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50px; /* Makes them pill-shaped */
-    color: #fff;
-    text-decoration: none;
-    font-size: 0.8rem;
-    font-weight: 600;
-    transition: 0.3s;
-}
-
-.social-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: #00A2FF;
-}
-
-/* Fix that Giant Arrow from before */
-.btn-icon svg {
-    width: 18px !important;
-    height: 18px !important;
-}
     </style>
 </head>
 <body>
 
- <section class="hero">
-    <div class="reveal" style="text-align: left; padding-left: 50px;">
-        <h1 class="hero-title">Beyond The<span>.</span><br>Future.</h1>
-        <p class="hero-subtitle">Secure terminal for the Nexus Collective.</p>
-        
-        <div class="btn-container">
-            <a href="discuss.html" class="s-btn">
-                <span class="btn-text">ACCESS DISCUSSIONS</span>
-                <div class="btn-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                </div>
-            </a>
-        </div>
-
-        <div class="social-links">
-            <a href="#" class="social-btn" onclick="copyDiscord(event)">Discord</a>
-            <a href="https://t.me/Adiyan_official11" class="social-btn">Telegram</a>
-        </div>
+    <div id="video-bg-wrapper">
+        <video id="bg-video" autoplay loop muted playsinline>
+            <source src="videos/combat-system.mp4" type="video/mp4">
+        </video>
     </div>
-</section>
+    <div class="bg-overlay"></div>
+    <div class="cursor-main"></div>
+
+    <header>
+        <div class="logo">ADIYAN STUDIO</div>
+    </header>
+
+    <section class="hero">
+        <div class="reveal" style="text-align: left;">
+            <h1 class="hero-title">Beyond The<span>.</span><br>Future.</h1>
+            <p class="hero-subtitle">Secure terminal for the Nexus Collective.</p>
+            
+            <div class="btn-container">
+                <a href="discuss.html" class="s-btn">
+                    <span class="btn-text">ACCESS DISCUSSIONS</span>
+                    <div class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+
+            <div class="social-links">
+                <a href="#" class="social-btn" onclick="copyDiscord(event)">Discord</a>
+                <a href="https://t.me/Adiyan_official11" class="social-btn">Telegram</a>
+            </div>
+        </div>
+    </section>
 
     <section id="gallery">
         <h2 class="reveal" style="font-family: 'Space Grotesk'; margin-bottom: 15px;">Development Preview</h2>
@@ -191,7 +137,7 @@
             </div>
             <div class="gallery-item reveal" data-video="videos/vfx-system.mp4">
                 <video autoplay loop muted playsinline class="gallery-video-card"><source src="videos/vfx-system.mp4" type="video/mp4"></video>
-                <div class="gallery-content"><h3>Vfx</h3><p>Very Realistic High Quality Vfx.</p></div>
+                <div class="gallery-content"><h3>Vfx</h3><p>High Quality VFX Systems.</p></div>
             </div>
         </div>
     </section>
@@ -207,8 +153,7 @@
 
     <section id="apply">
         <h2 class="reveal" style="font-family: 'Space Grotesk';">Join The Team</h2>
-        <p class="reveal" style="color: #888; margin-top: 10px;">Payment: Revenue Share (Robux). Fill out the form to apply.</p>
-        
+        <p class="reveal" style="color: #888; margin-top: 10px;">Payment: Revenue Share. Fill out the form to apply.</p>
         <div class="form-container reveal">
             <form action="https://formspree.io/f/xykpvwdb" method="POST">
                 <input type="text" name="name" placeholder="Roblox Username" required>
@@ -219,7 +164,7 @@
                     <option value="animator">Animator</option>
                     <option value="tester">Game Tester</option>
                 </select>
-                <textarea name="portfolio" rows="4" placeholder="Link to your work / Experience" required></textarea>
+                <textarea name="portfolio" rows="4" placeholder="Experience / Portfolio Link" required></textarea>
                 <button type="submit" class="submit-btn">SEND APPLICATION</button>
             </form>
         </div>
@@ -233,7 +178,6 @@
         const bgVideo = document.getElementById('bg-video');
         const projectCards = document.querySelectorAll('.gallery-item');
 
-        // Logic for Dynamic Video Background Change
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
