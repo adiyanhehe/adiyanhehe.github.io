@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Profile // Nexus</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --bg: #030303; --accent: #00A2FF; --border: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; justify-content: center; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; justify-content: center; }
         .wrapper { width: 600px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; }
         .banner { height: 160px; background: #111; border-bottom: 1px solid var(--border); }
         .pfp-row { padding: 0 20px; display: flex; justify-content: space-between; align-items: flex-end; margin-top: -50px; }
         .pfp { width: 110px; height: 110px; border-radius: 12px; border: 4px solid #000; background: #111; object-fit: cover; }
-        .btn { background: transparent; border: 1px solid #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-weight: 800; cursor: pointer; }
         .content { padding: 25px; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); align-items: center; justify-content: center; z-index: 100; }
-        .modal-box { background: #0a0a0a; padding: 25px; border-radius: 12px; width: 320px; border: 1px solid var(--border); }
-        input, textarea { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 12px; margin-top: 10px; border-radius: 8px; box-sizing: border-box; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 100; }
+        .modal-box { background: #0a0a0a; padding: 20px; border-radius: 12px; width: 300px; }
+        input, textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -27,19 +25,19 @@
             <div id="btn-slot"></div>
         </div>
         <div class="content">
-            <h1 id="name-ui" style="margin:0;">Loading Profile...</h1>
-            <p id="bio-ui" style="color:#888;">Welcome to the Nexus.</p>
-            <button class="btn" style="margin-top:20px;" onclick="location.href='threads.html'">Back Home</button>
+            <h1 id="name-ui">Loading...</h1>
+            <p id="bio-ui">Nexus user profile.</p>
+            <button onclick="location.href='threads.html'" style="background:transparent; border:1px solid #333; color:white; padding:8px 16px; border-radius:20px; cursor:pointer;">Back</button>
         </div>
     </div>
 
     <div id="edit-modal" class="modal">
         <div class="modal-box">
-            <h3 style="margin-top:0;">Update Profile</h3>
-            <input type="text" id="edit-pfp" placeholder="Custom Photo Link">
-            <input type="color" id="edit-color" style="height:40px;">
-            <textarea id="edit-bio" placeholder="Write something..."></textarea>
-            <button class="btn" onclick="save()" style="background:var(--accent); color:black; width:100%; margin-top:10px; border:none;">SAVE CHANGES</button>
+            <h3>Edit Profile</h3>
+            <input type="text" id="edit-pfp" placeholder="PFP URL">
+            <input type="color" id="edit-color">
+            <textarea id="edit-bio" placeholder="Bio"></textarea>
+            <button onclick="save()" style="width:100%; background:var(--accent); border:none; padding:10px; margin-top:10px; font-weight:800; cursor:pointer;">SAVE</button>
         </div>
     </div>
 
@@ -49,15 +47,14 @@
         const user = new URLSearchParams(window.location.search).get('user');
         const me = localStorage.getItem('rbx_user');
 
-        window.onload = async () => {
+        window.onload = () => {
             document.getElementById('name-ui').innerText = user;
-            if(user === me) document.getElementById('btn-slot').innerHTML = `<button class="btn" onclick="document.getElementById('edit-modal').style.display='flex'">Edit Profile</button>`;
-
+            if(user === me) document.getElementById('btn-slot').innerHTML = `<button onclick="document.getElementById('edit-modal').style.display='flex'">EDIT</button>`;
+            
             sync.subscribe('update', (m) => { if(m.data.user === user) apply(m.data); });
             sync.history({limit: 50}, (err, page) => {
                 const latest = page.items.find(m => m.data.user === user);
                 if(latest) apply(latest.data);
-                else fetchRbx();
             });
         };
 
@@ -65,14 +62,6 @@
             if(d.bio) document.getElementById('bio-ui').innerText = d.bio;
             if(d.color) document.getElementById('banner-ui').style.background = d.color;
             if(d.pfp) document.getElementById('pfp-ui').src = d.pfp;
-        }
-
-        async function fetchRbx() {
-            const s = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${user}&limit=1`);
-            const sd = await s.json();
-            const t = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${sd.data[0].id}&size=150x150&format=Png`);
-            const td = await t.json();
-            document.getElementById('pfp-ui').src = td.data[0].imageUrl;
         }
 
         function save() {
