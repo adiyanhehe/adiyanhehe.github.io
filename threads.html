@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus // Timeline</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #000000; --border: #2F3336; --accent: #1D9BF0; --text-dim: #71767B; }
+        body { background: var(--bg); color: white; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; }
+        
+        /* Layout */
+        .feed-container { max-width: 600px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; }
+        .feed-header { position: sticky; top: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); padding: 15px; border-bottom: 1px solid var(--border); z-index: 10; }
+        
+        /* Compose Box */
+        .compose { padding: 15px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; }
+        .user-pfp { width: 48px; height: 48px; background: #222; border-radius: 50%; object-fit: cover; }
+        .compose-main { flex: 1; }
+        textarea { width: 100%; background: transparent; border: none; color: white; font-size: 1.2rem; resize: none; outline: none; margin-bottom: 10px; }
+        .compose-actions { display: flex; justify-content: flex-end; padding-top: 10px; border-top: 1px solid #16181c; }
+        
+        /* Post Styling */
+        .post { padding: 15px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; transition: 0.2s; cursor: pointer; }
+        .post:hover { background: rgba(255,255,255,0.03); }
+        .post-content { flex: 1; }
+        .post-header { display: flex; gap: 5px; align-items: center; margin-bottom: 2px; }
+        .post-name { font-weight: 800; }
+        .post-handle { color: var(--text-dim); font-size: 0.9rem; }
+        .post-text { line-height: 1.5; font-size: 0.95rem; margin-top: 4px; color: #E7E9EA; }
+        
+        /* Blue Checkmark */
+        .verified { width: 18px; fill: var(--accent); }
+
+        .btn-post { background: var(--accent); color: white; border: none; padding: 8px 20px; border-radius: 50px; font-weight: 800; cursor: pointer; }
+        .btn-post:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div class="feed-container">
+        <div class="feed-header">
+            <h2 style="font-size: 1.2rem; font-weight: 800;">Home</h2>
+        </div>
+
+        <div class="compose">
+            <img src="images/adiyan.png" class="user-pfp" onerror="this.src='https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png'">
+            <div class="compose-main">
+                <textarea id="postInput" placeholder="What's happening?" oninput="checkInput()"></textarea>
+                <div class="compose-actions">
+                    <button id="postBtn" class="btn-post" onclick="createPost()" disabled>Post</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="timeline"></div>
+    </div>
+
+    <script>
+        function checkInput() {
+            const input = document.getElementById('postInput').value;
+            document.getElementById('postBtn').disabled = input.trim().length === 0;
+        }
+
+        function createPost() {
+            const text = document.getElementById('postInput').value;
+            const posts = JSON.parse(localStorage.getItem('nexus_posts')) || [];
+            
+            const newPost = {
+                id: Date.now(),
+                user: "Adiyan", // We can make this dynamic later
+                handle: "@adiyan_dev",
+                content: text,
+                isVerified: true,
+                time: "Just now"
+            };
+
+            posts.unshift(newPost);
+            localStorage.setItem('nexus_posts', JSON.stringify(posts));
+            document.getElementById('postInput').value = '';
+            loadPosts();
+        }
+
+        function loadPosts() {
+            const posts = JSON.parse(localStorage.getItem('nexus_posts')) || [];
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = posts.map(p => `
+                <div class="post">
+                    <img src="images/adiyan.png" class="user-pfp">
+                    <div class="post-content">
+                        <div class="post-header">
+                            <span class="post-name">${p.user}</span>
+                            ${p.isVerified ? `<svg class="verified" viewBox="0 0 22 22"><g><path d="M20.396 11c0 4.355-3.41 7.897-7.614 7.897-4.204 0-7.614-3.542-7.614-7.897 0-4.355 3.41-7.897 7.614-7.897 4.204 0 7.614 3.542 7.614 7.897zM6.164 12.015l2.427 2.427 4.853-4.853-1.214-1.214-3.639 3.639-1.214-1.214-1.213 1.214z"></path></g></svg>` : ''}
+                            <span class="post-handle">${p.handle} · ${p.time}</span>
+                        </div>
+                        <div class="post-text">${p.content}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.onload = loadPosts;
+    </script>
+</body>
+</html>
