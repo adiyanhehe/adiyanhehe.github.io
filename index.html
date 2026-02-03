@@ -196,6 +196,23 @@
     </footer>
 
     <script>
+        function syncNexus() {
+    // ... existing hero/staff sync code ...
+
+    // 3. Sync Gallery
+    const savedGallery = JSON.parse(localStorage.getItem('nexus_gallery'));
+    if(savedGallery) {
+        const items = document.querySelectorAll('.gallery-item');
+        savedGallery.forEach((data, i) => {
+            if(items[i] && data.title) {
+                items[i].querySelector('h3').innerText = data.title;
+                items[i].querySelector('p').innerText = data.desc;
+                items[i].querySelector('video source').src = data.vid;
+                items[i].querySelector('video').load();
+            }
+        });
+    }
+}
         // Add this to your existing mousemove logic
 const allLinks = document.querySelectorAll('a, button, .social-btn');
 
