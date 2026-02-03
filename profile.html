@@ -17,7 +17,6 @@
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); align-items: center; justify-content: center; z-index: 100; }
         .modal-box { background: #0a0a0a; padding: 25px; border-radius: 12px; width: 320px; border: 1px solid var(--border); }
         input, textarea { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 12px; margin-top: 10px; border-radius: 8px; box-sizing: border-box; }
-        .save-btn { background: var(--accent); color: #000; width: 100%; border: none; padding: 12px; border-radius: 8px; font-weight: 800; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -28,20 +27,19 @@
             <div id="btn-slot"></div>
         </div>
         <div class="content">
-            <h1 id="name-ui" style="margin:0;">Loading...</h1>
-            <p id="bio-ui" style="color:#888;">No bio set.</p>
-            <button class="btn" style="margin-top:20px;" onclick="location.href='threads.html'">Return Home</button>
+            <h1 id="name-ui" style="margin:0;">Loading Profile...</h1>
+            <p id="bio-ui" style="color:#888;">Welcome to the Nexus.</p>
+            <button class="btn" style="margin-top:20px;" onclick="location.href='threads.html'">Back Home</button>
         </div>
     </div>
 
     <div id="edit-modal" class="modal">
         <div class="modal-box">
-            <h3>Edit Profile</h3>
-            <input type="text" id="edit-pfp" placeholder="PFP Link (Imgur/Discord)">
-            <input type="color" id="edit-color">
-            <textarea id="edit-bio" placeholder="Bio..."></textarea>
-            <button class="save-btn" onclick="save()">Save to Web</button>
-            <button onclick="document.getElementById('edit-modal').style.display='none'" style="background:none; border:none; color:#555; width:100%; margin-top:10px; cursor:pointer;">Cancel</button>
+            <h3 style="margin-top:0;">Update Profile</h3>
+            <input type="text" id="edit-pfp" placeholder="Custom Photo Link">
+            <input type="color" id="edit-color" style="height:40px;">
+            <textarea id="edit-bio" placeholder="Write something..."></textarea>
+            <button class="btn" onclick="save()" style="background:var(--accent); color:black; width:100%; margin-top:10px; border:none;">SAVE CHANGES</button>
         </div>
     </div>
 
@@ -55,29 +53,30 @@
             document.getElementById('name-ui').innerText = user;
             if(user === me) document.getElementById('btn-slot').innerHTML = `<button class="btn" onclick="document.getElementById('edit-modal').style.display='flex'">Edit Profile</button>`;
 
-            sync.subscribe('update', (m) => { if(m.data.user === user) applyData(m.data); });
+            sync.subscribe('update', (m) => { if(m.data.user === user) apply(m.data); });
             sync.history({limit: 50}, (err, page) => {
                 const latest = page.items.find(m => m.data.user === user);
-                if(latest) applyData(latest.data);
-                else fetchDefault();
+                if(latest) apply(latest.data);
+                else fetchRbx();
             });
         };
 
-        function applyData(d) {
+        function apply(d) {
             if(d.bio) document.getElementById('bio-ui').innerText = d.bio;
             if(d.color) document.getElementById('banner-ui').style.background = d.color;
             if(d.pfp) document.getElementById('pfp-ui').src = d.pfp;
         }
 
-        function fetchDefault() { document.getElementById('pfp-ui').src = "https://via.placeholder.com/150"; }
+        async function fetchRbx() {
+            const s = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${user}&limit=1`);
+            const sd = await s.json();
+            const t = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${sd.data[0].id}&size=150x150&format=Png`);
+            const td = await t.json();
+            document.getElementById('pfp-ui').src = td.data[0].imageUrl;
+        }
 
         function save() {
-            sync.publish('update', {
-                user: me,
-                bio: document.getElementById('edit-bio').value,
-                color: document.getElementById('edit-color').value,
-                pfp: document.getElementById('edit-pfp').value
-            });
+            sync.publish('update', { user: me, bio: document.getElementById('edit-bio').value, color: document.getElementById('edit-color').value, pfp: document.getElementById('edit-pfp').value });
             location.reload();
         }
     </script>
