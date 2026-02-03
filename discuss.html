@@ -2,72 +2,90 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus // Chat</title>
+    <title>Nexus // Messages</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        :root { --bg: #000; --accent: #00A2FF; --border: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 260px; background: #0a0a0a; border-right: 1px solid var(--border); }
+        :root { --bg: #000; --panel: #0a0a0a; --accent: #00A2FF; --border: #1a1a1a; }
+        body { background: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 280px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .side-head { padding: 20px; font-weight: 800; color: var(--accent); border-bottom: 1px solid var(--border); }
+        .user-link { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #080808; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+        .user-link:hover { background: #111; }
         .main { flex: 1; display: flex; flex-direction: column; }
+        .chat-head { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         #msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { max-width: 70%; padding: 12px; border-radius: 12px; }
-        .me { align-self: flex-end; background: var(--accent); color: #000; font-weight: 800; }
+        .bubble { max-width: 70%; padding: 10px 15px; border-radius: 12px; font-size: 0.9rem; }
+        .me { align-self: flex-end; background: var(--accent); color: #000; font-weight: 600; }
         .not-me { align-self: flex-start; background: #1a1a1a; border: 1px solid #333; }
-        .input-area { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
-        input { flex: 1; background: #000; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; outline: none; }
+        .input-box { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        input { flex: 1; background: #0a0a0a; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; outline: none; }
         button { background: var(--accent); border: none; padding: 0 20px; border-radius: 8px; font-weight: 800; cursor: pointer; }
-        #typing { padding: 5px 20px; font-size: 0.7rem; color: var(--accent); min-height: 15px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div style="padding:20px; font-weight:800; color:var(--accent);">CHATS</div>
-        <div style="padding:15px 20px; cursor:pointer; background:#111;"># Global Hub</div>
+        <div class="side-head">CHATS</div>
+        <div class="user-link" onclick="setMode('global')"># general-hub</div>
+        <div id="dm-list"></div>
     </div>
     <div class="main">
-        <div style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
-            <span style="font-weight:800;">GLOBAL HUB</span>
-            <a href="threads.html" style="color:var(--accent); text-decoration:none; font-size:0.8rem;">HOME</a>
+        <div class="chat-head">
+            <span id="chat-title" style="font-weight:800;"># general-hub</span>
+            <a href="threads.html" style="color:var(--accent); font-size:0.7rem; text-decoration:none; font-weight:800;">BACK TO FEED</a>
         </div>
         <div id="msgs"></div>
-        <div id="typing"></div>
-        <div class="input-area">
-            <input type="text" id="mIn" placeholder="Type a message...">
+        <div class="input-box">
+            <input type="text" id="mIn" placeholder="Send a message...">
             <button onclick="send()">SEND</button>
         </div>
     </div>
     <script>
         const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
-        const chan = ably.channels.get('global-hub');
-        const typeChan = ably.channels.get('typing');
+        const globalChan = ably.channels.get('global-hub');
         const me = localStorage.getItem('rbx_user');
-        let tTO;
+        let mode = 'global'; let target = null;
 
         window.onload = () => {
-            if(!me) return location.href='threads.html';
-            chan.subscribe('msg', (m) => render(m.data));
-            typeChan.subscribe('status', (m) => {
-                if(m.data.user !== me) document.getElementById('typing').innerText = m.data.is ? m.data.user + ' is typing...' : '';
+            if(!me) return;
+            globalChan.subscribe('msg', (m) => { 
+                if(mode === 'global') render(m.data);
+                if(m.data.user !== me) addList(m.data.user, m.data.pic);
             });
-
-            document.getElementById('mIn').oninput = () => {
-                typeChan.publish('status', { user: me, is: true });
-                clearTimeout(tTO);
-                tTO = setTimeout(() => typeChan.publish('status', { user: me, is: false }), 1000);
-            };
+            ably.channels.get('dm-'+me).subscribe('priv', (m) => {
+                addList(m.data.user, m.data.pic);
+                if(mode === 'dm' && target === m.data.user) render(m.data);
+            });
         };
+
+        function addList(u, p) {
+            if(document.getElementById('u-'+u)) return;
+            const d = document.createElement('div');
+            d.id = 'u-'+u; d.className = 'user-link'; d.onclick = () => setMode('dm', u);
+            d.innerHTML = `<img src="${p}" style="width:24px; border-radius:4px;"> ${u}`;
+            document.getElementById('dm-list').appendChild(d);
+        }
+
+        function setMode(m, u=null) {
+            mode = m; target = u;
+            document.getElementById('msgs').innerHTML = '';
+            document.getElementById('chat-title').innerText = m === 'global' ? '# general-hub' : '@ ' + u;
+        }
 
         function send() {
             const i = document.getElementById('mIn'); if(!i.value.trim()) return;
-            chan.publish('msg', { user: me, text: i.value, pic: localStorage.getItem('rbx_pic') });
+            const d = { user: me, text: i.value, pic: localStorage.getItem('rbx_pic') };
+            if(mode === 'global') globalChan.publish('msg', d);
+            else { ably.channels.get('dm-'+target).publish('priv', d); render(d); }
             i.value = '';
         }
 
         function render(d) {
             const b = document.getElementById('msgs');
+            const isMe = d.user === me;
             const div = document.createElement('div');
-            div.className = d.user === me ? 'bubble me' : 'bubble not-me';
-            div.innerHTML = `<span style="font-size:0.6rem; opacity:0.6; display:block;">${d.user}</span>${d.text}`;
+            div.className = isMe ? 'bubble me' : 'bubble not-me';
+            div.innerHTML = `${!isMe ? `<div style="font-size:0.6rem;opacity:0.5;">${d.user}</div>` : ''}${d.text}`;
             b.appendChild(div); b.scrollTop = b.scrollHeight;
         }
     </script>
