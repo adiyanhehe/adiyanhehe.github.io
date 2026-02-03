@@ -63,10 +63,31 @@
         .gallery-content p { color: var(--text-dim); font-size: 0.9rem; }
 
         /* --- Team --- */
-        .team-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 40px; }
-        .team-card { background: var(--glass); padding: 40px; border-radius: 30px; border: 1px solid var(--border); text-align: center; backdrop-filter: blur(10px); }
-        .team-avatar { width: 100px; height: 100px; background: var(--accent); border-radius: 50%; margin: 0 auto 20px; opacity: 0.1; }
+        /* This fixes the image breaking out of the card */
+.team-img {
+    width: 100px;           /* Fixed width */
+    height: 100px;          /* Fixed height */
+    border-radius: 50%;     /* Makes it a circle */
+    object-fit: cover;      /* Crops the image to fit the circle without stretching */
+    margin: 0 auto 20px;    /* Centers it and adds space below */
+    display: block;         /* Ensures margin auto works */
+    border: 2px solid var(--border);
+}
 
+.team-card {
+    text-align: center;     /* Keeps name and text centered under the image */
+    padding: 30px;
+    background: var(--card-bg);
+    border-radius: 20px;
+    overflow: hidden;       /* Safety net to keep content inside */
+}
+
+.team-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
         /* --- Social Buttons --- */
         .social-wrap { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 50px; }
         .btn { 
@@ -99,36 +120,43 @@
         </div>
     </section>
 
-    <section id="gallery">
-        <span class="section-label reveal">Portfolio Gallery</span>
-        <h2 class="reveal">Project Previews</h2>
-        <div class="gallery-grid">
-            <div class="gallery-item wide reveal delay-1">
-                <div class="gallery-content">
-                    <h3>Neural Combat System</h3>
-                    <p>Advanced physics-based interaction model.</p>
-                </div>
-            </div>
-            <div class="gallery-item reveal delay-2">
-                <div class="gallery-content">
-                    <h3>Data Arch</h3>
-                    <p>Global cloud data scaling.</p>
-                </div>
-            </div>
-            <div class="gallery-item reveal delay-3">
-                <div class="gallery-content">
-                    <h3>Nexus UI</h3>
-                    <p>Dynamic glassmorphism framework.</p>
-                </div>
-            </div>
-            <div class="gallery-item wide reveal delay-4">
-                <div class="gallery-content">
-                    <h3>Procedural Worlds</h3>
-                    <p>Infinite terrain generation logic.</p>
-                </div>
+   <section id="gallery">
+    <span class="section-label reveal">Portfolio Gallery</span>
+    <h2 class="reveal">Project Previews</h2>
+    <div class="gallery-grid">
+        <div class="gallery-item wide reveal delay-1">
+            <img src="images/game1.jpg" alt="Combat System" class="gallery-img">
+            <div class="gallery-content">
+                <h3>Neural Combat System</h3>
+                <p>Advanced physics-based interaction model.</p>
             </div>
         </div>
-    </section>
+
+        <div class="gallery-item reveal delay-2">
+            <img src="images/game2.jpg" alt="Data Arch" class="gallery-img">
+            <div class="gallery-content">
+                <h3>Data Arch</h3>
+                <p>Global cloud data scaling.</p>
+            </div>
+        </div>
+
+        <div class="gallery-item reveal delay-3">
+            <img src="images/game3.jpg" alt="Nexus UI" class="gallery-img">
+            <div class="gallery-content">
+                <h3>Nexus UI</h3>
+                <p>Dynamic glassmorphism framework.</p>
+            </div>
+        </div>
+
+        <div class="gallery-item wide reveal delay-4">
+            <img src="images/game4.jpg" alt="Procedural Worlds" class="gallery-img">
+            <div class="gallery-content">
+                <h3>Procedural Worlds</h3>
+                <p>Infinite terrain generation logic.</p>
+            </div>
+        </div>
+    </div>
+</section>
 
     <section id="team">
     <span class="section-label reveal">Collaboration</span>
