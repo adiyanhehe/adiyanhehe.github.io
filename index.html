@@ -9,6 +9,48 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     
     <style>
+        /* 1. Center the entire Header content */
+.nav-container {
+    display: flex;
+    flex-direction: column; /* Puts links under logo */
+    align-items: center;    /* Centers them horizontally */
+    gap: 15px;
+    padding: 20px;
+}
+
+/* 2. Create the "Bubbles" */
+.nav-links {
+    display: flex;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.05); /* Subtle dark bubble container */
+    padding: 8px 15px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+/* 3. Style individual link buttons */
+.nav-item {
+    text-decoration: none !important;
+    color: #fff !important;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 6px 15px;
+    border-radius: 20px;
+    transition: 0.3s;
+    background: transparent;
+}
+
+/* 4. Hover effect for the bubbles */
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    background: #fff;
+    color: #000 !important;
+}
         /* 1. Fix the ugly blue/purple links */
 .nav-links a {
     text-decoration: none !important;
