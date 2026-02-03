@@ -91,15 +91,26 @@
     <div class="bg-overlay"></div>
     <div class="cursor-main"></div>
 
-    <header>
+<header>
     <div class="logo">ADIYAN STUDIO</div>
     <div style="display: flex; align-items: center; gap: 20px;">
         <a href="discuss.html" class="s-btn">DISCUSSIONS</a>
-        <div id="auth-area">
-            <button onclick="login()" class="s-btn" style="background: #fff; color: #000;">LOGIN</button>
+        <div id="auth-status">
+            <a href="discuss.html" class="s-btn" style="background: #fff; color: #000;">LOGIN</a>
         </div>
     </div>
 </header>
+
+<script>
+    // Check if user is already logged in
+    const savedUser = localStorage.getItem('dev_alias');
+    if (savedUser) {
+        document.getElementById('auth-status').innerHTML = 
+            `<span style="font-size:0.8rem; border:1px solid var(--border); padding:10px 20px; border-radius:50px;">
+                READY: ${savedUser}
+             </span>`;
+    }
+</script>
 
     <section class="hero">
         <div class="reveal">
