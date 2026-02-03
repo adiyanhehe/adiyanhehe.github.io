@@ -9,6 +9,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     
     <style>
+        * {
+    cursor: auto !important; /* Forces the mouse to show up */
+}
+
+/* If you have a custom cursor div, hide it for now to debug */
+.cursor-main {
+    display: none !important;
+}
         :root {
             --bg: #030303;
             --card-bg: rgba(255, 255, 255, 0.03);
@@ -112,23 +120,47 @@
     height: 100%;
     object-fit: cover;
 }
+        /* Better spacing for the Social Links */
+.social-links {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: flex-start; /* Aligns them under the text */
+}
+
+/* Specific style for Social Buttons so they aren't "weird" */
+.social-btn {
+    padding: 10px 25px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px; /* Makes them pill-shaped */
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.social-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #00A2FF;
+}
+
+/* Fix that Giant Arrow from before */
+.btn-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+}
     </style>
 </head>
 <body>
 
-  <div id="video-bg-wrapper">
-    <video id="bg-video" autoplay loop muted playsinline>
-        <source src="videos/combat-system.mp4" type="video/mp4">
-    </video>
-</div>
-<div class="bg-overlay"></div>
-
-<section class="hero">
-    <div class="reveal">
+ <section class="hero">
+    <div class="reveal" style="text-align: left; padding-left: 50px;">
         <h1 class="hero-title">Beyond The<span>.</span><br>Future.</h1>
         <p class="hero-subtitle">Secure terminal for the Nexus Collective.</p>
         
-        <div class="btn-container" style="margin-bottom: 20px;">
+        <div class="btn-container">
             <a href="discuss.html" class="s-btn">
                 <span class="btn-text">ACCESS DISCUSSIONS</span>
                 <div class="btn-icon">
@@ -140,8 +172,8 @@
         </div>
 
         <div class="social-links">
-            <a href="#" class="s-btn" onclick="copyDiscord(event)">Discord</a>
-            <a href="https://t.me/Adiyan_official11" class="s-btn">Telegram</a>
+            <a href="#" class="social-btn" onclick="copyDiscord(event)">Discord</a>
+            <a href="https://t.me/Adiyan_official11" class="social-btn">Telegram</a>
         </div>
     </div>
 </section>
