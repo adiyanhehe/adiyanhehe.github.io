@@ -2,166 +2,73 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus // Chat Hub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
+    <title>Nexus // Chat</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        :root { --bg: #000; --accent: #00A2FF; --panel: #0a0a0a; --border: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar */
-        .sidebar { width: 280px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .side-header { padding: 25px; border-bottom: 1px solid var(--border); }
-        .user-row { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
-        .user-row:hover { background: #111; }
-        .user-row img { width: 32px; height: 32px; border-radius: 8px; background: #222; }
-
-        /* Main Chat Area */
-        .main { flex: 1; display: flex; flex-direction: column; background: #030303; }
-        .chat-header { padding: 15px 25px; border-bottom: 1px solid var(--border); background: var(--panel); display: flex; justify-content: space-between; align-items: center; }
-        
-        #msgs { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        
-        /* Typing Indicator */
-        #typing-box { padding: 5px 25px; font-size: 0.75rem; color: var(--accent); height: 20px; font-style: italic; }
-
-        /* Bubbles */
-        .bubble { max-width: 70%; padding: 12px 16px; border-radius: 15px; font-size: 0.95rem; line-height: 1.4; position: relative; }
-        .me { align-self: flex-end; background: var(--accent); color: #000; font-weight: 800; border-bottom-right-radius: 2px; }
-        .not-me { align-self: flex-start; background: #1a1a1a; border: 1px solid var(--border); border-bottom-left-radius: 2px; }
-        .msg-info { font-size: 0.65rem; opacity: 0.5; margin-bottom: 4px; display: block; }
-
-        /* Input Area */
-        .input-area { padding: 20px; background: var(--panel); border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
-        input { flex: 1; background: #000; border: 1px solid var(--border); color: #fff; padding: 14px; border-radius: 10px; outline: none; font-family: inherit; }
-        button { background: var(--accent); border: none; padding: 14px 25px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        button:hover { transform: scale(1.05); }
+        :root { --bg: #000; --accent: #00A2FF; --border: #1a1a1a; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; background: #0a0a0a; border-right: 1px solid var(--border); }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        #msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 70%; padding: 12px; border-radius: 12px; }
+        .me { align-self: flex-end; background: var(--accent); color: #000; font-weight: 800; }
+        .not-me { align-self: flex-start; background: #1a1a1a; border: 1px solid #333; }
+        .input-area { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        input { flex: 1; background: #000; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; outline: none; }
+        button { background: var(--accent); border: none; padding: 0 20px; border-radius: 8px; font-weight: 800; cursor: pointer; }
+        #typing { padding: 5px 20px; font-size: 0.7rem; color: var(--accent); min-height: 15px; }
     </style>
 </head>
 <body>
-
     <div class="sidebar">
-        <div class="side-header">
-            <h2 style="margin:0; font-size:1.2rem; color:var(--accent);">NEXUS_CHAT</h2>
-            <p style="font-size:0.6rem; color:#555; margin-top:5px;">REAL-TIME ROBLOX SYNC</p>
-        </div>
-        <div class="user-row" onclick="setMode('global')">
-            <div style="width:32px; height:32px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#000;">#</div>
-            <span>Global Hub</span>
-        </div>
-        <div id="dm-list"></div>
+        <div style="padding:20px; font-weight:800; color:var(--accent);">CHATS</div>
+        <div style="padding:15px 20px; cursor:pointer; background:#111;"># Global Hub</div>
     </div>
-
     <div class="main">
-        <div class="chat-header">
-            <div>
-                <span id="chat-title" style="font-weight:800; font-size:1.1rem;"># Global Hub</span>
-            </div>
-            <a href="threads.html" style="color:#555; text-decoration:none; font-size:0.8rem; font-weight:800;">[ LEAVE ]</a>
+        <div style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
+            <span style="font-weight:800;">GLOBAL HUB</span>
+            <a href="threads.html" style="color:var(--accent); text-decoration:none; font-size:0.8rem;">HOME</a>
         </div>
-
         <div id="msgs"></div>
-        
-        <div id="typing-box"></div>
-
+        <div id="typing"></div>
         <div class="input-area">
-            <input type="text" id="mIn" placeholder="Say something..." autocomplete="off">
+            <input type="text" id="mIn" placeholder="Type a message...">
             <button onclick="send()">SEND</button>
         </div>
     </div>
-
     <script>
         const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
-        const globalChan = ably.channels.get('global-hub');
-        const typingChan = ably.channels.get('typing-status');
-        
+        const chan = ably.channels.get('global-hub');
+        const typeChan = ably.channels.get('typing');
         const me = localStorage.getItem('rbx_user');
-        const myPic = localStorage.getItem('rbx_pic');
-        
-        let mode = 'global';
-        let typingTimeout;
+        let tTO;
 
         window.onload = () => {
-            // Kick to login if no Roblox data
-            if(!me) { location.href = 'threads.html'; return; }
-
-            // Listen for Global Messages
-            globalChan.subscribe('msg', (m) => { 
-                if(mode === 'global') render(m.data);
-                if(m.data.user !== me) addToList(m.data.user, m.data.pic);
+            if(!me) return location.href='threads.html';
+            chan.subscribe('msg', (m) => render(m.data));
+            typeChan.subscribe('status', (m) => {
+                if(m.data.user !== me) document.getElementById('typing').innerText = m.data.is ? m.data.user + ' is typing...' : '';
             });
 
-            // Listen for Typing Status
-            typingChan.subscribe('status', (m) => {
-                if(m.data.user !== me) {
-                    const box = document.getElementById('typing-box');
-                    box.innerText = m.data.isTyping ? `${m.data.user} is typing...` : '';
-                }
-            });
-
-            // Handle Input Typing Signal
-            const input = document.getElementById('mIn');
-            input.addEventListener('input', () => {
-                typingChan.publish('status', { user: me, isTyping: true });
-                clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(() => {
-                    typingChan.publish('status', { user: me, isTyping: false });
-                }, 1500);
-            });
-            
-            // Allow Enter key to send
-            input.addEventListener('keypress', (e) => { if(e.key === 'Enter') send(); });
+            document.getElementById('mIn').oninput = () => {
+                typeChan.publish('status', { user: me, is: true });
+                clearTimeout(tTO);
+                tTO = setTimeout(() => typeChan.publish('status', { user: me, is: false }), 1000);
+            };
         };
 
         function send() {
-            const i = document.getElementById('mIn');
-            if(!i.value.trim()) return;
-
-            const payload = {
-                user: me,
-                pic: myPic,
-                text: i.value,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-
-            if(mode === 'global') {
-                globalChan.publish('msg', payload);
-            }
-            
-            // Reset typing status immediately on send
-            typingChan.publish('status', { user: me, isTyping: false });
+            const i = document.getElementById('mIn'); if(!i.value.trim()) return;
+            chan.publish('msg', { user: me, text: i.value, pic: localStorage.getItem('rbx_pic') });
             i.value = '';
         }
 
         function render(d) {
-            const container = document.getElementById('msgs');
+            const b = document.getElementById('msgs');
             const div = document.createElement('div');
-            const isMe = d.user === me;
-            
-            div.className = `bubble ${isMe ? 'me' : 'not-me'}`;
-            div.innerHTML = `
-                <span class="msg-info">${d.user} • ${d.time}</span>
-                ${d.text}
-            `;
-            
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function addToList(u, p) {
-            if(document.getElementById('u-'+u)) return;
-            const list = document.getElementById('dm-list');
-            const d = document.createElement('div');
-            d.id = 'u-'+u;
-            d.className = 'user-row';
-            d.innerHTML = `<img src="${p}"> <span>${u}</span>`;
-            list.appendChild(d);
-        }
-
-        function setMode(m) {
-            mode = m;
-            document.getElementById('msgs').innerHTML = '';
-            document.getElementById('chat-title').innerText = '# Global Hub';
+            div.className = d.user === me ? 'bubble me' : 'bubble not-me';
+            div.innerHTML = `<span style="font-size:0.6rem; opacity:0.6; display:block;">${d.user}</span>${d.text}`;
+            b.appendChild(div); b.scrollTop = b.scrollHeight;
         }
     </script>
 </body>
