@@ -79,7 +79,8 @@
         // OAUTH CONFIG (Matches your callback logic)
         const CLIENT_ID = "4112872619143689543";
         const SITE_URL = "https://adiyanhehe-github-io.vercel.app";
-        document.getElementById('auth-link').href = `https://apis.roblox.com/oauth/v1/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(SITE_URL + '/api/callback')}&scope=openid+profile&response_type=code`;
+        // Add &state=threads to the end of the URL
+document.getElementById('auth-link').href = `https://apis.roblox.com/oauth/v1/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(SITE_URL + '/api/callback')}&scope=openid+profile&response_type=code&state=threads`;
 
         // ABLY CONFIG (Same as your chat)
         const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
