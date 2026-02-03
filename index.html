@@ -54,6 +54,14 @@
         .s-btn { padding: 12px 25px; border: 1px solid var(--border); border-radius: 50px; text-decoration: none; color: #fff; font-weight: 600; font-size: 0.85rem; transition: var(--transition); background: rgba(255,255,255,0.02); }
         .s-btn:hover { transform: translateY(-5px) scale(1.05); background: #fff; color: #000; box-shadow: 0 10px 20px rgba(255,255,255,0.1); }
 
+        /* --- PROJECTS GALLERY --- */
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 30px; }
+        .gallery-item { position: relative; border-radius: 20px; height: 380px; overflow: hidden; display: flex; align-items: flex-end; border: 1px solid var(--border); transition: var(--transition); }
+        .gallery-item.wide { grid-column: span 2; height: 420px; }
+        .gallery-video-card { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+        .gallery-content { position: relative; z-index: 1; padding: 25px; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
+        .gallery-item:hover { border-color: var(--accent); transform: scale(0.99); }
+
         /* --- TEAM SECTION --- */
         .team-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 30px; }
         .team-card { padding: 30px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; text-align: center; backdrop-filter: blur(10px); transition: var(--transition); }
@@ -98,6 +106,24 @@
         </div>
     </section>
 
+    <section id="gallery">
+        <h2 class="reveal" style="font-family: 'Space Grotesk'; margin-bottom: 15px;">Development Preview</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item wide reveal" data-video="videos/combat-system.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card"><source src="videos/combat-system.mp4" type="video/mp4"></video>
+                <div class="gallery-content"><h3>Combat Architecture</h3><p>Advanced physics systems.</p></div>
+            </div>
+            <div class="gallery-item reveal" data-video="videos/npc-system.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card"><source src="videos/npc-system.mp4" type="video/mp4"></video>
+                <div class="gallery-content"><h3>AI Systems</h3><p>Dynamic NPC behavior.</p></div>
+            </div>
+            <div class="gallery-item reveal" data-video="videos/nexus-ui.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card"><source src="videos/nexus-ui.mp4" type="video/mp4"></video>
+                <div class="gallery-content"><h3>Interface Design</h3><p>High-end UI frameworks.</p></div>
+            </div>
+        </div>
+    </section>
+
     <section id="team">
         <h2 class="reveal" style="font-family: 'Space Grotesk'; margin-bottom: 20px;">The Core Team</h2>
         <div class="team-row">
@@ -132,7 +158,27 @@
     </footer>
 
     <script>
-        // Reveal & Cursor Logic
+        const bgVideo = document.getElementById('bg-video');
+        const projectCards = document.querySelectorAll('.gallery-item');
+
+        // Logic for Dynamic Video Background Change
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const newVid = entry.target.getAttribute('data-video');
+                    if (newVid && !bgVideo.src.includes(newVid)) {
+                        bgVideo.style.opacity = 0;
+                        setTimeout(() => {
+                            bgVideo.src = newVid;
+                            bgVideo.play();
+                            bgVideo.style.opacity = 1;
+                        }, 500);
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+        projectCards.forEach(card => videoObserver.observe(card));
+
         const revealObs = new IntersectionObserver(entries => {
             entries.forEach(en => { if(en.isIntersecting) en.target.classList.add('visible'); });
         }, { threshold: 0.1 });
