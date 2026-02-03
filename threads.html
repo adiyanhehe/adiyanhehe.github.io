@@ -144,6 +144,24 @@
 
             input.value = '';
         }
+        function addThreadToUI(data, isNew) {
+    const list = document.getElementById('thread-list');
+    const post = document.createElement('div');
+    post.className = 'post';
+    post.innerHTML = `
+        <img src="${data.pic}" class="user-pic" onclick="location.href='profile.html?user=${data.user}'" style="cursor:pointer;">
+        <div class="post-content">
+            <div class="post-header">
+                <span class="username" onclick="location.href='profile.html?user=${data.user}'" style="cursor:pointer;">${data.user}</span>
+                <span class="handle">@${data.user.toLowerCase()}</span>
+                <span style="margin-left:auto; color:red; font-size:0.7rem; cursor:pointer;" onclick="reportPost('${data.id}')">REPORT</span>
+            </div>
+            <div class="post-text">${data.text}</div>
+        </div>
+    `;
+    if(isNew) list.prepend(post);
+    else list.appendChild(post);
+}
 
         function addThreadToUI(data, isNew) {
             const list = document.getElementById('thread-list');
