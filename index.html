@@ -3,217 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adiyan Studio | Architect Hub</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&family=Space+Grotesk:wght@500;900&display=swap" rel="stylesheet">
+    <title>Adiyan Studio | Professional Index</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.0.27/build/spline-viewer.js"></script>
 
     <style>
-        /* --- THEME SYSTEM --- */
         :root {
             --bg: #030303;
+            --deep-purple: #0f0221;
+            --accent: #a855f7;
             --text: #ffffff;
-            --box-bg: rgba(255, 255, 255, 0.05);
+            --card-glass: rgba(255, 255, 255, 0.04);
             --border: rgba(255, 255, 255, 0.1);
-            --accent: #ffffff;
-            --nav-bg: rgba(255, 255, 255, 0.05);
-        }
-
-        [data-theme="light"] {
-            --bg: #f5f5f7;
-            --text: #000000;
-            --box-bg: rgba(0, 0, 0, 0.03);
-            --border: rgba(0, 0, 0, 0.1);
-            --accent: #000000;
-            --nav-bg: rgba(0, 0, 0, 0.05);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            overflow: hidden; 
-            height: 100vh;
-            transition: background 0.5s ease;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
         }
 
-        @media (min-width: 1024px) { 
-            body { cursor: none !important; } 
-            a, button { cursor: none !important; }
-        }
-
-        /* --- FANCY BUBBLE HEADER --- */
-        .main-nav {
-            position: fixed; top: 0; width: 100%; z-index: 10000;
-            padding: 25px 0; display: flex; flex-direction: column; align-items: center; gap: 15px;
-            background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
-        }
-
-        .logo { 
-            font-family: 'Space Grotesk'; font-weight: 900; letter-spacing: 4px; 
-            font-size: 1.1rem; color: var(--text);
-        }
-
-        .nav-links {
-            display: flex; gap: 10px; background: var(--nav-bg); 
-            padding: 8px 15px; border-radius: 50px; border: 1px solid var(--border);
+        /* --- HEADER --- */
+        header {
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 25px 8%; background: rgba(3, 3, 3, 0.8);
             backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .logo { font-family: 'Space Grotesk'; font-weight: 900; letter-spacing: 3px; font-size: 1.1rem; }
+        .nav-links { display: flex; gap: 40px; }
+        .nav-links a { text-decoration: none; color: #888; font-size: 0.75rem; font-weight: 800; transition: 0.3s; letter-spacing: 1px; }
+        .nav-links a:hover { color: var(--accent); }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 85vh; position: relative; display: flex; align-items: center; padding: 0 8%;
+            background: radial-gradient(circle at 80% 40%, var(--deep-purple) 0%, var(--bg) 60%);
+        }
+        .robot-container { 
+            position: absolute; top: 0; right: 0; width: 55%; height: 100%; 
+            z-index: 1; pointer-events: auto; 
+        }
+        .hero-text { position: relative; z-index: 10; max-width: 600px; }
+        .hero-text h1 { font-family: 'Space Grotesk'; font-size: 5rem; line-height: 0.9; margin-bottom: 20px; }
+        .hero-text p { color: #888; font-size: 1rem; max-width: 450px; }
+
+        /* --- WIDE PROJECT SECTIONS --- */
+        .portfolio-sections { padding: 40px 8% 100px; display: flex; flex-direction: column; gap: 50px; }
+
+        .section-card {
+            width: 100%; min-height: 450px;
+            background: var(--card-glass);
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            display: grid; grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            transition: 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .nav-item {
-            text-decoration: none; color: var(--text); font-size: 0.7rem;
-            font-weight: 800; padding: 6px 15px; border-radius: 20px;
-            transition: 0.3s; opacity: 0.6;
+        /* Swaps the order for a staggered look */
+        .section-card.reverse { grid-template-columns: 1fr 1fr; }
+        .section-card.reverse .card-content { order: 2; }
+        .section-card.reverse .video-display { order: 1; }
+
+        .section-card:hover { 
+            border-color: var(--accent); 
+            background: rgba(168, 85, 247, 0.06);
+            transform: translateY(-5px);
         }
 
-        .nav-item:hover, .nav-item.active { opacity: 1; background: var(--box-bg); }
-        .nav-item.active { background: var(--text); color: var(--bg); }
+        .card-content { padding: 80px; display: flex; flex-direction: column; justify-content: center; }
+        .card-content .category { color: var(--accent); font-weight: 800; font-size: 0.65rem; letter-spacing: 3px; margin-bottom: 12px; }
+        .card-content h2 { font-family: 'Space Grotesk'; font-size: 3rem; margin-bottom: 20px; }
+        .card-content p { color: #777; margin-bottom: 35px; }
 
-        /* --- THEME TOGGLE --- */
-        .theme-toggle {
-            position: fixed; bottom: 30px; right: 30px; z-index: 10001;
-            padding: 12px 20px; border-radius: 50px; background: var(--nav-bg);
-            border: 1px solid var(--border); color: var(--text);
-            font-family: 'Space Grotesk'; font-size: 0.6rem; font-weight: 900;
-            backdrop-filter: blur(10px); cursor: pointer;
+        .btn-action {
+            width: fit-content; padding: 14px 35px; border: 1px solid #fff;
+            border-radius: 100px; color: #fff; text-decoration: none;
+            font-weight: 800; font-size: 0.8rem; transition: 0.3s;
         }
+        .btn-action:hover { background: #fff; color: #000; }
 
-        /* --- BACKGROUND --- */
-        #video-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; object-fit: cover; opacity: 0.15; filter: blur(8px);
+        /* --- VIDEO DISPLAY --- */
+        .video-display { background: #000; position: relative; overflow: hidden; }
+        .video-display video { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+        .video-tag { position: absolute; bottom: 30px; left: 30px; font-size: 0.6rem; font-weight: 900; color: #fff; opacity: 0.4; letter-spacing: 2px; }
+
+        @media (max-width: 1000px) {
+            .section-card, .section-card.reverse { grid-template-columns: 1fr; }
+            .hero-text h1 { font-size: 3.5rem; }
+            .robot-container { width: 100%; opacity: 0.5; }
         }
-
-        /* --- PHYSICS BOXES --- */
-        .physics-box {
-            position: absolute; padding: 40px 60px;
-            background: var(--box-bg); border: 1px solid var(--border);
-            backdrop-filter: blur(20px); border-radius: 24px;
-            text-decoration: none; color: var(--text);
-            display: flex; flex-direction: column; align-items: center;
-            user-select: none; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-
-        .physics-box h2 { font-family: 'Space Grotesk'; font-size: 2.8rem; pointer-events: none; line-height: 1; }
-        .physics-box span { font-size: 0.65rem; letter-spacing: 3px; color: #888; pointer-events: none; margin-bottom: 10px; }
-
-        /* --- CURSOR --- */
-        .cursor-main { 
-            width: 20px; height: 20px; border: 1px solid var(--text); border-radius: 50%; 
-            position: fixed; pointer-events: none; z-index: 99999; 
-            mix-blend-mode: difference; transition: transform 0.1s ease-out;
-        }
-        .cursor-active { transform: scale(3); background: rgba(255,255,255,0.2); }
     </style>
 </head>
-<body data-theme="dark">
+<body>
 
-    <div class="cursor-main"></div>
-
-    <header class="main-nav">
-        <div class="logo">ADIYAN STUDIO<span>.</span></div>
-        <nav class="nav-links">
-            <a href="index.html" class="nav-item active">PORTAL</a>
-            <a href="website.html" class="nav-item">WEB PORTFOLIO</a>
-            <a href="roblox.html" class="nav-item">ROBLOX</a>
-            <a href="discuss.html" class="nav-item">DISCUSS</a>
-        </nav>
+    <header>
+        <div class="logo">ADIYAN STUDIO</div>
+        <div class="nav-links">
+            <a href="#web">WEBSITE</a>
+            <a href="#roblox">ROBLOX</a>
+            <a href="#">ARCHIVE</a>
+        </div>
     </header>
 
-    <button class="theme-toggle" id="themeBtn">SWITCH_ATMOSPHERE</button>
+    <section class="hero">
+        <div class="robot-container">
+            <spline-viewer url="https://prod.spline.design/qIxteV-06X-qW-nF/scene.splinecode"></spline-viewer>
+        </div>
+        <div class="hero-text">
+            <h1>ENGINEERING<br>INTERACTION.</h1>
+            <p>High-end web architecture and immersive game development environments.</p>
+        </div>
+    </section>
 
-    <video id="video-bg" autoplay loop muted playsinline>
-        <source src="videos/hub-glitch.mp4" type="video/mp4">
-    </video>
-
-    <a href="website.html" class="physics-box" id="web-box">
-        <span>SECTOR_01</span>
-        <h2>WEB_DEV</h2>
-    </a>
-
-    <a href="roblox.html" class="physics-box" id="roblox-box">
-        <span>SECTOR_02</span>
-        <h2>ROBLOX</h2>
-    </a>
-
-    <script>
-        // --- THEME LOGIC ---
-        const themeBtn = document.getElementById('themeBtn');
-        themeBtn.addEventListener('click', () => {
-            const isDark = document.body.getAttribute('data-theme') === 'dark';
-            document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        });
-
-        // --- PHYSICS ENGINE (Matter.js) ---
-        const { Engine, Bodies, Composite, MouseConstraint, Mouse } = Matter;
-        const engine = Engine.create();
+    <div class="portfolio-sections">
         
-        // Boundaries (Floor, Walls, Ceiling)
-        const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight + 50, window.innerWidth, 100, { isStatic: true });
-        const leftWall = Bodies.rectangle(-50, window.innerHeight/2, 100, window.innerHeight, { isStatic: true });
-        const rightWall = Bodies.rectangle(window.innerWidth + 50, window.innerHeight/2, 100, window.innerHeight, { isStatic: true });
-        const ceiling = Bodies.rectangle(window.innerWidth/2, -500, window.innerWidth, 100, { isStatic: true });
-        Composite.add(engine.world, [ground, leftWall, rightWall, ceiling]);
+        <div class="section-card" id="web">
+            <div class="card-content">
+                <span class="category">SECTOR_01</span>
+                <h2>Web Systems</h2>
+                <p>Developing scalable, full-stack applications with advanced UI interactions and modern architecture.</p>
+                <a href="website.html" class="btn-action">Enter Sector</a>
+            </div>
+            <div class="video-display">
+                <video autoplay muted loop playsinline>
+                    <source src="web2.mp4" type="video/mp4">
+                </video>
+                <div class="video-tag">WEB_LIVE_PREVIEW_01</div>
+            </div>
+        </div>
 
-        // Box Creator
-        function initBox(id, x, y) {
-            const el = document.getElementById(id);
-            const body = Bodies.rectangle(x, y, el.offsetWidth, el.offsetHeight, {
-                restitution: 0.5, friction: 0.1, chamfer: { radius: 24 }
-            });
-            return { body, el };
-        }
+        <div class="section-card reverse" id="roblox">
+            <div class="card-content">
+                <span class="category">SECTOR_02</span>
+                <h2>Roblox Studio</h2>
+                <p>Creating immersive 3D worlds and complex Lua scripting systems for the next generation of gaming.</p>
+                <a href="roblox.html" class="btn-action">Enter Sector</a>
+            </div>
+            <div class="video-display">
+                <video autoplay muted loop playsinline>
+                    <source src="combat-system.mp4" type="video/mp4">
+                </video>
+                <div class="video-tag">GAME_ENGINE_PREVIEW_02</div>
+            </div>
+        </div>
 
-        const boxes = [
-            initBox('web-box', window.innerWidth * 0.3, -200),
-            initBox('roblox-box', window.innerWidth * 0.6, -500)
-        ];
-        boxes.forEach(b => Composite.add(engine.world, b.body));
+    </div>
 
-        // Mouse Grab Interaction
-        const mouse = Mouse.create(document.body);
-        const mouseConstraint = MouseConstraint.create(engine, {
-            mouse: mouse,
-            constraint: { stiffness: 0.2, render: { visible: false } }
-        });
-        Composite.add(engine.world, mouseConstraint);
-
-        // Update Loop
-        (function renderLoop() {
-            Engine.update(engine);
-            boxes.forEach(b => {
-                b.el.style.left = `${b.body.position.x - b.el.offsetWidth/2}px`;
-                b.el.style.top = `${b.body.position.y - b.el.offsetHeight/2}px`;
-                b.el.style.transform = `rotate(${b.body.angle}rad)`;
-            });
-            requestAnimationFrame(renderLoop);
-        })();
-
-        // Click Logic (Dragging vs Clicking)
-        boxes.forEach(b => {
-            b.el.addEventListener('click', e => {
-                if (b.body.speed > 2) e.preventDefault();
-            });
-        });
-
-        // --- CUSTOM CURSOR ---
-        const cursor = document.querySelector('.cursor-main');
-        window.addEventListener('mousemove', e => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-        });
-
-        document.querySelectorAll('a, button').forEach(el => {
-            el.addEventListener('mouseenter', () => cursor.classList.add('cursor-active'));
-            el.addEventListener('mouseleave', () => cursor.classList.remove('cursor-active'));
-        });
-
-        window.addEventListener('resize', () => location.reload());
-    </script>
 </body>
 </html>
