@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adiyan Studio | Developer Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 1. Center the entire Header content */
+.nav-container {
+    display: flex;
+    flex-direction: column; /* Puts links under logo */
+    align-items: center;    /* Centers them horizontally */
+    gap: 15px;
+    padding: 20px;
+}
+
+/* 2. Create the "Bubbles" */
+.nav-links {
+    display: flex;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.05); /* Subtle dark bubble container */
+    padding: 8px 15px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+/* 3. Style individual link buttons */
+.nav-item {
+    text-decoration: none !important;
+    color: #fff !important;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 6px 15px;
+    border-radius: 20px;
+    transition: 0.3s;
+    background: transparent;
+}
+
+/* 4. Hover effect for the bubbles */
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    background: #fff;
+    color: #000 !important;
+}
+        /* 1. Fix the ugly blue/purple links */
+.nav-links a {
+    text-decoration: none !important;
+    color: #71767B !important; /* Dim gray like X */
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: 0.3s ease;
+}
+
+/* 2. Make them glow white when you hover */
+.nav-links a:hover {
+    color: #ffffff !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* 3. Fix the "Fighting" Spacing */
+.main-nav {
+    padding: 25px 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+    backdrop-filter: blur(10px);
+}
+
+.hero {
+    padding-top: 15vh !important; /* Pushes "Future." down away from the logo */
+}
+
+.logo {
+    color: #ffffff !important;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
+        /* Fix the overlap fighting */
+.hero {
+    padding-top: 120px !important; /* Pushes text below the header */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Ensure the header stays on top of everything */
+.main-nav {
+    z-index: 10000 !important; 
+}
+        /* Restores the Button Hovers */
+.s-btn:hover, .social-btn:hover {
+    background: #fff !important;
+    color: #000 !important;
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+}
+
+/* Cursor scaling effect on hover */
+.cursor-main.active {
+    transform: scale(2);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #00A2FF;
+}
+
+/* Team card hover restoration */
+.team-card:hover {
+    transform: translateY(-10px);
+    border-color: #fff;
+    background: rgba(255,255,255,0.08);
+}
+        :root {
+            --bg: #030303;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --accent: #ffffff;
+            --text-main: #ffffff;
+            --border: rgba(255, 255, 255, 0.1);
+            --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* FIX: Mouse visibility */
+        @media (min-width: 1024px) { 
+            body { cursor: none !important; } 
+            a, button, input, select, textarea { cursor: none !important; }
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.4;
+        }
+
+        /* --- BACKGROUND FIX --- */
+        #video-bg-wrapper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; background: #000; overflow: hidden; }
+        #bg-video { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.3) blur(4px); transition: opacity 1s ease; }
+        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%); z-index: -1; pointer-events: none; }
+
+        /* --- CURSOR --- */
+        .cursor-main { width: 25px; height: 25px; border: 1px solid var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; display: none; transition: transform 0.1s ease-out; background: rgba(255,255,255,0.1); }
+        @media (min-width: 1024px) { .cursor-main { display: block; } }
+
+        header { position: fixed; top: 0; width: 100%; padding: 20px 5%; display: flex; justify-content: space-between; align-items: center; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+        .logo { font-family: 'Space Grotesk'; font-weight: 700; letter-spacing: 2px; }
+
+        section { padding: 80px 8%; position: relative; background: transparent; }
+        .reveal { opacity: 0; transform: translateY(20px); transition: var(--transition); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* --- HERO --- */
+        .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+        .hero-title { font-size: clamp(2.5rem, 10vw, 6.5rem); font-weight: 800; line-height: 0.85; letter-spacing: -3px; }
+        .hero-title span { color: transparent; -webkit-text-stroke: 1px var(--accent); }
+        .hero-subtitle { color: #888; margin-top: 15px; font-size: 1.1rem; }
+
+        /* --- BUTTONS & ARROW FIX --- */
+        .btn-container { margin-top: 30px; }
+        .s-btn { display: inline-flex; align-items: center; gap: 12px; padding: 15px 30px; border: 1px solid var(--border); border-radius: 50px; text-decoration: none; color: #fff; font-weight: 600; font-size: 0.85rem; transition: var(--transition); background: rgba(255,255,255,0.02); backdrop-filter: blur(5px); }
+        .s-btn:hover { transform: translateY(-5px); background: #fff; color: #000; }
+        
+        .btn-icon svg { width: 18px !important; height: 18px !important; display: block; transition: transform 0.3s ease; }
+        .s-btn:hover .btn-icon svg { transform: translateX(5px); stroke: #000; }
+
+        .social-links { display: flex; gap: 15px; margin-top: 20px; }
+        .social-btn { padding: 10px 25px; border: 1px solid var(--border); border-radius: 50px; text-decoration: none; color: #fff; font-size: 0.8rem; font-weight: 600; transition: 0.3s; background: rgba(255,255,255,0.05); }
+        .social-btn:hover { background: #fff; color: #000; }
+
+        /* --- GALLERY --- */
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 30px; }
+        .gallery-item { position: relative; border-radius: 20px; height: 380px; overflow: hidden; display: flex; align-items: flex-end; border: 1px solid var(--border); transition: var(--transition); }
+        .gallery-item.wide { grid-column: span 2; height: 420px; }
+        .gallery-video-card { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; }
+        .gallery-content { position: relative; z-index: 1; padding: 25px; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
+
+        /* --- TEAM & FORMS --- */
+        .team-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 30px; }
+        .team-card { padding: 30px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; text-align: center; backdrop-filter: blur(10px); }
+        .team-img { width: 90px; height: 90px; border-radius: 50%; margin-bottom: 15px; border: 2px solid var(--border); object-fit: cover; }
+
+        .form-container { max-width: 600px; margin: 40px 0; background: var(--card-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--border); }
+        input, select, textarea { width: 100%; padding: 15px; margin-bottom: 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 10px; font-family: inherit; }
+        .submit-btn { width: 100%; padding: 15px; background: #fff; color: #000; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; }
+
+        footer { padding: 40px 8%; text-align: center; border-top: 1px solid var(--border); font-size: 0.75rem; color: #555; }
+    </style>
+    <header class="main-nav">
+    <div class="nav-container">
+        <div class="logo">ADIYAN STUDIO<span>.</span></div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item active">HUB</a>
+            <a href="threads.html" class="nav-item">THREADS</a>
+            <a href="discuss.html" class="nav-item">DISCUSSIONS</a>
+            
+        </nav>
+    </div>
+</header>
+</head>
+<body>
+
+    <div id="video-bg-wrapper">
+        <video id="bg-video" autoplay loop muted playsinline>
+            <source src="videos/combat-system.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="bg-overlay"></div>
+    <div class="cursor-main"></div>
+
+    <header>
+        <div class="logo">ADIYAN STUDIO</div>
+    </header>
+
+    <section class="hero">
+        <div class="reveal" style="text-align: left;">
+            <h1 class="hero-title">Beyond The<span>.</span><br>Future.</h1>
+            <p class="hero-subtitle">Secure terminal for the Nexus Collective.</p>
+            
+            <div class="btn-container">
+                <a href="discuss.html" class="s-btn">
+                    <span class="btn-text">ACCESS DISCUSSIONS</span>
+                    <div class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+
+            <div class="social-links">
+                <a href="#" class="social-btn" onclick="copyDiscord(event)">Discord</a>
+                <a href="https://t.me/Adiyan_official11" class="social-btn">Telegram</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery">
+        <h2 class="reveal" style="font-family: 'Space Grotesk'; margin-bottom: 15px;">Development Preview</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item wide reveal" data-video="videos/combat-system.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card"><source src="videos/combat-system.mp4" type="video/mp4"></video>
+                <div class="gallery-content"><h3>Combat Architecture</h3><p>Advanced physics systems.</p></div>
+            </div>
+            <div class="gallery-item reveal" data-video="videos/npc-system.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card"><source src="videos/npc-system.mp4" type="video/mp4"></video>
+                <div class="gallery-content"><h3>AI Systems</h3><p>Dynamic NPC behavior.</p></div>
+            </div>
+            <div class="gallery-item reveal" data-video="videos/vfx-system.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card"><source src="videos/vfx-system.mp4" type="video/mp4"></video>
+                <div class="gallery-content"><h3>Vfx</h3><p>High Quality VFX Systems.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="team">
+        <h2 class="reveal" style="font-family: 'Space Grotesk'; margin-bottom: 20px;">The Core Team</h2>
+        <div class="team-row">
+            <div class="team-card reveal"><img src="images/adiyan.png" class="team-img"><h3>Adiyan</h3><p style="font-size: 0.8rem; color: #888;">Lead Developer</p></div>
+            <div class="team-card reveal"><img src="images/itachi.png" class="team-img"><h3>Itachi</h3><p style="font-size: 0.8rem; color: #888;">UI Designer</p></div>
+            <div class="team-card reveal"><img src="images/pari.png" class="team-img"><h3>Pari</h3><p style="font-size: 0.8rem; color: #888;">Lead Builder</p></div>
+        </div>
+    </section>
+
+    <section id="apply">
+        <h2 class="reveal" style="font-family: 'Space Grotesk';">Join The Team</h2>
+        <p class="reveal" style="color: #888; margin-top: 10px;">Payment: Revenue Share. Fill out the form to apply.</p>
+        <div class="form-container reveal">
+            <form action="https://formspree.io/f/xykpvwdb" method="POST">
+                <input type="text" name="name" placeholder="Roblox Username" required>
+                <select name="role" required>
+                    <option value="" disabled selected>Select Role</option>
+                    <option value="scripter">Scripter</option>
+                    <option value="ui">UI Designer</option>
+                    <option value="animator">Animator</option>
+                    <option value="tester">Game Tester</option>
+                </select>
+                <textarea name="portfolio" rows="4" placeholder="Experience / Portfolio Link" required></textarea>
+                <button type="submit" class="submit-btn">SEND APPLICATION</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div>© 2026 ADIYAN STUDIO. ARCHITECTING THE FUTURE.</div>
+    </footer>
+
+    <script>
+        function syncNexus() {
+    // ... existing hero/staff sync code ...
+
+    // 3. Sync Gallery
+    const savedGallery = JSON.parse(localStorage.getItem('nexus_gallery'));
+    if(savedGallery) {
+        const items = document.querySelectorAll('.gallery-item');
+        savedGallery.forEach((data, i) => {
+            if(items[i] && data.title) {
+                items[i].querySelector('h3').innerText = data.title;
+                items[i].querySelector('p').innerText = data.desc;
+                items[i].querySelector('video source').src = data.vid;
+                items[i].querySelector('video').load();
+            }
+        });
+    }
+}
+        // Add this to your existing mousemove logic
+const allLinks = document.querySelectorAll('a, button, .social-btn');
+
+allLinks.forEach(link => {
+    link.addEventListener('mouseenter', () => cursor.classList.add('active'));
+    link.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+});
+        const bgVideo = document.getElementById('bg-video');
+        const projectCards = document.querySelectorAll('.gallery-item');
+
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const newVid = entry.target.getAttribute('data-video');
+                    if (newVid && !bgVideo.src.includes(newVid)) {
+                        bgVideo.style.opacity = 0;
+                        setTimeout(() => {
+                            bgVideo.src = newVid;
+                            bgVideo.play();
+                            bgVideo.style.opacity = 1;
+                        }, 500);
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+        projectCards.forEach(card => videoObserver.observe(card));
+
+        const revealObs = new IntersectionObserver(entries => {
+            entries.forEach(en => { if(en.isIntersecting) en.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+        const cursor = document.querySelector('.cursor-main');
+        window.addEventListener('mousemove', e => {
+            cursor.style.transform = `translate3d(${e.clientX - 12}px, ${e.clientY - 12}px, 0)`;
+        });
+
+        function copyDiscord(e) {
+            e.preventDefault();
+            navigator.clipboard.writeText('adigusi');
+            alert('Discord ID Copied: adigusi');
+        }
+    </script>
+    <script>
+function syncNexus() {
+    // 1. Sync Hero & Video
+    const config = JSON.parse(localStorage.getItem('nexus_config'));
+    if(config) {
+        if(config.heroTitle) document.querySelector('.hero-title').innerHTML = `${config.heroTitle}<span>.</span><br>Future.`;
+        if(config.heroSub) document.querySelector('.hero-subtitle').innerText = config.heroSub;
+        if(config.bgVid) {
+            const vid = document.getElementById('bg-video');
+            if(!vid.src.includes(config.bgVid)) {
+                vid.src = config.bgVid;
+                vid.play();
+            }
+        }
+    }
+
+    // 2. Sync Staff
+    const savedStaff = JSON.parse(localStorage.getItem('nexus_staff'));
+    if(savedStaff) {
+        const container = document.getElementById('team-display') || document.querySelector('.team-row');
+        if(container) {
+            container.innerHTML = savedStaff.map(member => `
+                <div class="team-card reveal visible">
+                    <img src="${member.img}" class="team-img" onerror="this.src='images/adiyan.png'">
+                    <h3>${member.name}</h3>
+                    <p style="font-size: 0.8rem; color: #888;">${member.role}</p>
+                </div>
+            `).join('');
+        }
+    }
+}
+
+// Run sync on load
+window.addEventListener('DOMContentLoaded', syncNexus);
+</script>
+    <script>
+function syncSite() {
+    // Sync Staff Members
+    const staff = JSON.parse(localStorage.getItem('nexus_staff')) || [];
+    const staffContainer = document.querySelector('.team-row');
+    if(staff.length > 0) {
+        staffContainer.innerHTML = staff.map(s => `
+            <div class="team-card reveal visible">
+                <img src="${s.img}" class="team-img">
+                <h3>${s.name}</h3>
+                <p>${s.role}</p>
+            </div>
+        `).join('');
+    }
+
+    // Sync Gallery Projects
+    const gallery = JSON.parse(localStorage.getItem('nexus_gallery')) || [];
+    const galleryContainer = document.querySelector('.gallery-grid');
+    if(gallery.length > 0) {
+        galleryContainer.innerHTML = gallery.map((g, i) => `
+            <div class="gallery-item ${i === 0 ? 'wide' : ''} reveal visible" data-video="${g.vid}">
+                <video autoplay loop muted playsinline class="gallery-video-card">
+                    <source src="${g.vid}" type="video/mp4">
+                </video>
+                <div class="gallery-content"><h3>${g.title}</h3><p>${g.desc}</p></div>
+            </div>
+        `).join('');
+    }
+}
+window.addEventListener('DOMContentLoaded', syncSite);
+</script>
+</body>
+</html>

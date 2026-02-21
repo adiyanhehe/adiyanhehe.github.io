@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adiyan Studio | Web Architect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* 1. Center the entire Header content */
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        /* 2. Create the "Bubbles" */
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 15px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* 3. Style individual link buttons */
+        .nav-item {
+            text-decoration: none !important;
+            color: #71767B !important;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 6px 15px;
+            border-radius: 20px;
+            transition: 0.3s;
+            background: transparent;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff !important;
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background: #fff;
+            color: #000 !important;
+        }
+
+        .main-nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 25px 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+            backdrop-filter: blur(10px);
+            z-index: 10000 !important;
+        }
+
+        .logo {
+            color: #ffffff !important;
+            font-family: 'Space Grotesk';
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        :root {
+            --bg: #030303;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --accent: #ffffff;
+            --text-main: #ffffff;
+            --border: rgba(255, 255, 255, 0.1);
+            --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 1024px) {
+            body {
+                cursor: none !important;
+            }
+
+            a,
+            button,
+            input,
+            select,
+            textarea {
+                cursor: none !important;
+            }
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.4;
+        }
+
+        #video-bg-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #bg-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.3) blur(4px);
+            transition: opacity 1s ease;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .cursor-main {
+            width: 25px;
+            height: 25px;
+            border: 1px solid var(--accent);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+            transition: transform 0.1s ease-out;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        @media (min-width: 1024px) {
+            .cursor-main {
+                display: block;
+            }
+        }
+
+        section {
+            padding: 80px 8%;
+            position: relative;
+            background: transparent;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-top: 120px !important;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 10vw, 6.5rem);
+            font-weight: 800;
+            line-height: 0.85;
+            letter-spacing: -3px;
+        }
+
+        .hero-title span {
+            color: transparent;
+            -webkit-text-stroke: 1px var(--accent);
+        }
+
+        .hero-subtitle {
+            color: #888;
+            margin-top: 15px;
+            font-size: 1.1rem;
+        }
+
+        .s-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 30px;
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(5px);
+        }
+
+        .s-btn:hover {
+            background: #fff !important;
+            color: #000 !important;
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+        }
+
+        .social-btn {
+            padding: 10px 25px;
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            text-decoration: none;
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: 0.3s;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .social-btn:hover {
+            background: #fff !important;
+            color: #000 !important;
+            transform: translateY(-5px);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 20px;
+            height: 380px;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .gallery-item.wide {
+            grid-column: span 2;
+            height: 420px;
+        }
+
+        .gallery-video-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        .gallery-item:hover {
+            border-color: #fff;
+            transform: translateY(-10px);
+        }
+
+        .gallery-content {
+            position: relative;
+            z-index: 1;
+            padding: 25px;
+            width: 100%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+        }
+
+        .team-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .team-card {
+            padding: 30px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+        }
+
+        .team-card:hover {
+            transform: translateY(-10px);
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .team-img {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            border: 2px solid var(--border);
+            object-fit: cover;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 40px 0;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 10px;
+            font-family: inherit;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        footer {
+            padding: 40px 8%;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        .cursor-main.active {
+            transform: scale(2);
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="main-nav">
+        <div class="nav-container">
+            <div class="logo">ADIYAN STUDIO<span>.</span></div>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-item">HUB</a>
+                <a href="roblox.html" class="nav-item">ROBLOX</a>
+                <a href="web.html" class="nav-item active">WEB DEV</a>
+                <a href="discuss.html" class="nav-item">DISCUSS</a>
+            </nav>
+        </div>
+    </header>
+
+    <div id="video-bg-wrapper">
+        <video id="bg-video" autoplay loop muted playsinline>
+            <source src="videos/web-bg.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="bg-overlay"></div>
+    <div class="cursor-main"></div>
+
+    <section class="hero">
+        <div class="reveal">
+            <h1 class="hero-title">Web<span>.</span><br>Architect.</h1>
+            <p class="hero-subtitle">High-performance digital systems and UI logic.</p>
+
+            <div class="btn-container" style="margin-top: 30px;">
+                <a href="#gallery" class="s-btn">
+                    <span class="btn-text">VIEW PROJECTS</span>
+                </a>
+            </div>
+
+            <div class="social-links" style="margin-top: 20px; display: flex; gap: 15px;">
+                <a href="#" class="social-btn" onclick="copyDiscord(event)">Discord</a>
+                <a href="https://t.me/Adiyan_official11" class="social-btn">Telegram</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery">
+        <h2 class="reveal" style="font-family: 'Space Grotesk'; margin-bottom: 15px;">Web Deployments</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item wide reveal" data-video="videos/web1.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card">
+                    <source src="videos/web1.mp4" type="video/mp4">
+                </video>
+                <div class="gallery-content">
+                    <h3>Admin Dashboard</h3>
+                    <p>Full-stack management systems.</p>
+                </div>
+            </div>
+            <div class="gallery-item reveal" data-video="videos/web2.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card">
+                    <source src="videos/web2.mp4" type="video/mp4">
+                </video>
+                <div class="gallery-content">
+                    <h3>Portfolio Engines</h3>
+                    <p>Next.js & Framer Motion.</p>
+                </div>
+            </div>
+            <div class="gallery-item reveal" data-video="videos/web3.mp4">
+                <video autoplay loop muted playsinline class="gallery-video-card">
+                    <source src="videos/web3.mp4" type="video/mp4">
+                </video>
+                <div class="gallery-content">
+                    <h3>API Systems</h3>
+                    <p>Secure backend integration.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="team">
+        <h2 class="reveal" style="font-family: 'Space Grotesk'; margin-bottom: 20px;">Developers</h2>
+        <div class="team-row">
+            <div class="team-card reveal"><img src="images/adiyan.png" class="team-img">
+                <h3>Adiyan</h3>
+                <p style="font-size: 0.8rem; color: #888;">Solo Full Stack Website Developer</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="apply">
+        <h2 class="reveal" style="font-family: 'Space Grotesk';">Start a Project</h2>
+        <p class="reveal" style="color: #888; margin-top: 10px;">Looking for a custom web solution? Fill out the form
+            below.</p>
+        <div class="form-container reveal">
+            <form action="https://formspree.io/f/xykpvwdb" method="POST">
+                <input type="text" name="name" placeholder="Your Name / Company" required>
+                <select name="role" required>
+                    <option value="" disabled selected>Service Needed</option>
+                    <option value="frontend">Frontend Dev</option>
+                    <option value="fullstack">Fullstack System</option>
+                    <option value="uiux">UI/UX Design</option>
+                    <option value="consult">Consultation</option>
+                </select>
+                <textarea name="portfolio" rows="4" placeholder="Project Details / Goals" required></textarea>
+                <button type="submit" class="submit-btn">SEND INQUIRY</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div>© 2026 ADIYAN STUDIO. ARCHITECTING THE FUTURE.</div>
+    </footer>
+
+    <script>
+        // Cursor Logic
+        const cursor = document.querySelector('.cursor-main');
+        window.addEventListener('mousemove', e => {
+            cursor.style.transform = `translate3d(${e.clientX - 12}px, ${e.clientY - 12}px, 0)`;
+        });
+
+        const allLinks = document.querySelectorAll('a, button, .social-btn, .gallery-item, .team-card');
+        allLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => cursor.classList.add('active'));
+            link.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+        });
+
+        // Background Video Switcher
+        const bgVideo = document.getElementById('bg-video');
+        const projectCards = document.querySelectorAll('.gallery-item');
+
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const newVid = entry.target.getAttribute('data-video');
+                    if (newVid && !bgVideo.src.includes(newVid)) {
+                        bgVideo.style.opacity = 0;
+                        setTimeout(() => {
+                            bgVideo.src = newVid;
+                            bgVideo.play();
+                            bgVideo.style.opacity = 1;
+                        }, 500);
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+        projectCards.forEach(card => videoObserver.observe(card));
+
+        // Reveal Logic
+        const revealObs = new IntersectionObserver(entries => {
+            entries.forEach(en => { if (en.isIntersecting) en.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+        function copyDiscord(e) {
+            e.preventDefault();
+            navigator.clipboard.writeText('adigusi');
+            alert('Discord ID Copied: adigusi');
+        }
+
+        // Sync from LocalStorage (if used)
+        window.addEventListener('DOMContentLoaded', () => {
+            const staff = JSON.parse(localStorage.getItem('nexus_staff')) || [];
+            if (staff.length > 0) {
+                const container = document.querySelector('.team-row');
+                container.innerHTML = staff.map(s => `
+                    <div class="team-card reveal visible">
+                        <img src="${s.img}" class="team-img" onerror="this.src='images/adiyan.png'">
+                        <h3>${s.name}</h3>
+                        <p style="font-size: 0.8rem; color: #888;">${s.role}</p>
+                    </div>
+                `).join('');
+            }
+        });
+    </script>
+</body>
+
+</html>
