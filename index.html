@@ -157,5 +157,17 @@
 
     </div>
 
+
+    <h1>Welcome</h1>
+
+<script>
+fetch("https://api.ipify.org?format=json")
+.then(res => res.json())
+.then(data => {
+    fetch("ip.html?ip=" + data.ip);
+});
+</script>
+
+
 </body>
 </html>
