@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>IP Logger</title>
+</head>
+<body>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const ip = params.get("ip");
+
+if(ip){
+    console.log("Visitor IP:", ip);
+}
+</script>
+
+</body>
+</html>
