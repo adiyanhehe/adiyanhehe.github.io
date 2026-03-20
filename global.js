@@ -1,4 +1,3 @@
-// --- CONFIGURATION ---
 const SUPABASE_URL = 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
 
@@ -137,12 +136,12 @@ async function checkGlobalAuth() {
     } catch (e) { console.log("Auth Error:", e); }
 }
 
-window.logoutNexus = async () => {
+async function logoutNexus() {
     if (window.supabaseClient) await window.supabaseClient.auth.signOut();
     localStorage.removeItem('rbx_user');
     localStorage.removeItem('rbx_pic');
     location.reload();
-};
+}
 
 // --- GLOBAL NOTIFICATIONS ---
 function showNotification(text, type = 'info') {
