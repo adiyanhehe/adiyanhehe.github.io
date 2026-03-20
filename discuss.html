@@ -9,13 +9,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         :root {
-            --bg: #1e1f22;
-            --surface: #313338;
-            --panel: #2b2d31;
-            --border: rgba(255, 255, 255, 0.04);
-            --text-main: #dbdee1;
-            --text-muted: #949ba4;
-            --accent: #5865f2;
+            --bg: #000000;
+            --surface: #050505;
+            --panel: rgba(10, 10, 10, 0.85);
+            --border: rgba(255, 255, 255, 0.06);
+            --text-main: #ffffff;
+            --text-muted: #8b8c8f;
+            --accent: #00A2FF;
             --transition: cubic-bezier(0.76, 0, 0.24, 1);
         }
 
@@ -39,14 +39,14 @@
         /* --- DISCORD LAYOUT --- */
         .server-sidebar {
             width: 72px;
-            background: #1e1f22;
+            background: #000000;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 12px 0;
             gap: 8px;
-            border-right: 1px solid rgba(0,0,0,0.2);
-            padding-top: 80px; /* Space for fixed header */
+            border-right: 1px solid var(--border);
+            padding-top: 80px;
         }
         .server-icon {
             width: 48px;
@@ -136,6 +136,18 @@
             text-align: center;
         }
 
+        #user-slot {
+            margin-top:auto; 
+            padding: 15px 20px;
+            display:flex; 
+            align-items:center; 
+            gap:15px; 
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid var(--border);
+            transition: 0.3s;
+        }
+        #user-slot:hover { background: rgba(255,255,255,0.04); }
+
         .main {
             flex: 1;
             display: flex;
@@ -167,11 +179,15 @@
             transition: 0.1s;
             position: relative;
         }
-        .bubble:hover { background: rgba(255,255,255,0.02) !important; }
+        .bubble:hover { 
+            background: rgba(255,255,255,0.03) !important; 
+            box-shadow: inset 4px 0 0 var(--accent);
+        }
         
         .bubble img.msg-pfp {
-            width: 40px; height: 40px; border-radius: 50%; margin-top: 5px; cursor: pointer;
-            transition: 0.2s;
+            width: 42px; height: 42px; border-radius: 12px; margin-top: 5px; cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         .bubble img.msg-pfp:hover { filter: brightness(1.2); }
         
@@ -187,14 +203,13 @@
             right: 10px;
             top: 2px;
             display: none;
-            background: #2b2d31;
-            border: 1px solid rgba(0,0,0,0.2);
-            border-radius: 4px;
-            padding: 0;
-            gap: 0;
-            z-index: 10000; /* Very high but below the global header */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            overflow: hidden;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2px;
+            z-index: 10000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
         }
         
         .msg-action-btn {
@@ -251,13 +266,20 @@
         }
 
         .input-inner {
-            background: #383a40;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             display: flex;
-            padding: 0 15px;
+            padding: 0 18px;
             align-items: center;
             gap: 15px;
-            min-height: 44px;
+            min-height: 52px;
+            transition: 0.3s;
+        }
+        .input-inner:focus-within {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 30px rgba(0, 162, 255, 0.1);
         }
 
         input {
@@ -314,23 +336,25 @@
         }
 
         .f-tab {
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.85rem;
+            font-weight: 700;
             color: var(--text-muted);
             cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: 0.2s;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .f-tab:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .f-tab.active { background: rgba(255,255,255,0.1); color: #fff; }
-        .f-tab.add { background: #248046; color: #fff; }
-        .f-tab.add:hover { background: #1a6334; }
+        .f-tab.active { background: var(--accent); color: #fff; box-shadow: 0 5px 15px rgba(0, 162, 255, 0.3); }
+        .f-tab.add { background: #248046; color: #fff; margin-left: auto; }
+        .f-tab.add:hover { background: #1a6334; transform: scale(1.05); }
 
         .friends-list {
             flex: 1;
-            padding: 20px;
+            padding: 30px;
             overflow-y: auto;
         }
 
@@ -338,42 +362,47 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px;
-            border-top: 1px solid var(--border);
-            transition: 0.2s;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid transparent;
+            transition: 0.3s;
             cursor: pointer;
         }
 
         .friend-item:hover {
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            border-top-color: transparent;
+            background: rgba(255,255,255,0.04);
+            border-color: var(--border);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
 
         .friend-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
         }
 
         .friend-actions {
             display: flex;
-            gap: 8px;
+            gap: 10px;
         }
 
         .f-action-btn {
-            width: 36px;
-            height: 36px;
-            background: #1e1f22;
-            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
-            transition: 0.2s;
+            transition: 0.3s;
+            border: 1px solid var(--border);
         }
 
-        .f-action-btn:hover { background: #313338; color: #fff; }
+        .f-action-btn:hover { background: var(--accent); color: #fff; border-color: transparent; transform: rotate(5deg) scale(1.1); }
         .f-action-btn.accept:hover { background: #248046; color: #fff; }
         .f-action-btn.decline:hover { background: #da373c; color: #fff; }
 
@@ -479,7 +508,7 @@
         <div class="side-head" style="margin-top:10px;">Direct Contacts <span onclick="promptNewDM()" style="cursor:pointer; opacity:0.5;">+</span></div>
         <div id="dm-list" style="flex:1;"></div>
 
-        <div id="user-slot" style="margin-top:auto; background:rgba(0,0,0,0.1); padding:10px; display:flex; align-items:center; gap:10px; border-top:1px solid rgba(0,0,0,0.2);">
+        <div id="user-slot">
             <div style="position:relative; width:32px; height:32px;">
                 <img id="my-pfp" src="https://via.placeholder.com/32" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
                 <div style="width:10px; height:10px; background:#43b581; border:2px solid #232428; border-radius:50%; position:absolute; bottom:0; right:0;"></div>
