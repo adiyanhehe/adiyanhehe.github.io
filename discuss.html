@@ -25,18 +25,6 @@
             box-sizing: border-box;
         }
 
-        @media (min-width: 1024px) {
-
-            body,
-            a,
-            button,
-            input,
-            select,
-            textarea {
-                cursor: none !important;
-            }
-        }
-
         body {
             background: var(--bg);
             color: var(--text-main);
@@ -155,6 +143,7 @@
             position: relative;
             background: var(--surface);
             padding-top: 80px;
+            overflow: hidden; /* Ensure messages don't bleed into header */
         }
 
         .member-sidebar {
@@ -195,16 +184,16 @@
         
         .msg-actions {
             position: absolute;
-            right: 20px;
-            top: 5px; /* Moved inside the message row */
+            right: 10px;
+            top: 2px;
             display: none;
             background: #2b2d31;
             border: 1px solid rgba(0,0,0,0.2);
             border-radius: 4px;
             padding: 0;
             gap: 0;
-            z-index: 100;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 10000; /* Very high but below the global header */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             overflow: hidden;
         }
         
@@ -438,8 +427,7 @@
 </head>
 
 <body>
-    <!-- CUSTOM CURSOR -->
-    <div id="cursor-dot"></div>
+    <!-- Login Gate -->
     <div id="login-gate"
         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000001; align-items:center; justify-content:center; flex-direction:column; text-align:center; backdrop-filter:blur(10px);">
         <div style="font-size:4rem; font-weight:900; letter-spacing:-3px; margin-bottom:10px;">CHAT</div>
@@ -489,9 +477,19 @@
         </div>
         
         <div class="side-head" style="margin-top:10px;">Direct Contacts <span onclick="promptNewDM()" style="cursor:pointer; opacity:0.5;">+</span></div>
-        <div id="dm-list"></div>
-        
-        <div class="user-link interactable" onclick="setStatus()" style="margin-top:auto; border-top:1px solid var(--border); opacity:0.5; font-size:0.75rem;">📡 SET STATUS</div>
+        <div id="dm-list" style="flex:1;"></div>
+
+        <div id="user-slot" style="margin-top:auto; background:rgba(0,0,0,0.1); padding:10px; display:flex; align-items:center; gap:10px; border-top:1px solid rgba(0,0,0,0.2);">
+            <div style="position:relative; width:32px; height:32px;">
+                <img id="my-pfp" src="https://via.placeholder.com/32" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                <div style="width:10px; height:10px; background:#43b581; border:2px solid #232428; border-radius:50%; position:absolute; bottom:0; right:0;"></div>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <div id="my-name" style="font-weight:700; font-size:0.85rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">...</div>
+                <div id="my-status" style="font-size:0.65rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Online</div>
+            </div>
+            <div onclick="setStatus()" title="Set Status" style="opacity:0.6; cursor:pointer;" class="interactable"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
+        </div>
     </div>
 
     <div class="main">
@@ -526,22 +524,6 @@
     </div>
 
     <script>
-        // --- CUSTOM CURSOR LOGIC ---
-        const cursorDot = document.getElementById('cursor-dot');
-        const cursorBg = document.getElementById('cursor-bg');
-        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
-        let dotX = mouseX, dotY = mouseY; let bgX = mouseX, bgY = mouseY;
-        window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
-
-        gsap.ticker.add(() => {
-            dotX += (mouseX - dotX) * 0.2; dotY += (mouseY - dotY) * 0.2;
-            gsap.set(cursorDot, { x: dotX, y: dotY });
-            bgX += (mouseX - bgX) * 0.1; bgY += (mouseY - bgY) * 0.1;
-            gsap.set(cursorBg, { x: bgX, y: bgY });
-        });
-
-
-
         // --- ABLY CHAT LOGIC ---
         const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
         const globalChan = ably.channels.get('global-hub');
@@ -558,6 +540,9 @@
                 return;
             }
             me = user;
+            
+            // Sync self-profile from cloud
+            syncSelf();
             
             // Set initial mode
             setMode('friends');
@@ -632,6 +617,27 @@
                 }
             });
         };
+
+        async function syncSelf() {
+            if (!window.supabaseClient) { setTimeout(syncSelf, 500); return; }
+            
+            document.getElementById('my-name').innerText = me;
+            const fallbackPic = 'https://via.placeholder.com/32';
+            document.getElementById('my-pfp').src = localStorage.getItem('rbx_pic') || fallbackPic;
+
+            try {
+                const { data } = await window.supabaseClient.from('profiles').select('*').eq('username', me).maybeSingle();
+                if (data) {
+                    if (data.avatar_url) {
+                        localStorage.setItem('rbx_pic', data.avatar_url);
+                        document.getElementById('my-pfp').src = data.avatar_url;
+                        // Also update presence so others see the new pic
+                        globalChan.presence.update({ user: me, pic: data.avatar_url, status: 'Online' });
+                    }
+                    if (data.display_name) document.getElementById('my-name').innerText = data.display_name;
+                }
+            } catch (e) { console.error("Self sync failed", e); }
+        }
 
         function updateUnreadUI(u) {
             const count = unreadCounts[u] || 0;
@@ -709,8 +715,9 @@
             const isAdminUser = window.isAdmin && window.isAdmin(me);
             const timeStr = new Date(d.time || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            const pfpId = 'msg-pfp-' + Math.random().toString(36).substr(2, 9);
             div.innerHTML = `
-                <img src="${d.pic || 'https://via.placeholder.com/40'}" class="msg-pfp" onclick="showProfileSummary('${d.user}')">
+                <img id="${pfpId}" src="${d.pic || 'https://via.placeholder.com/40'}" class="msg-pfp" onclick="showProfileSummary('${d.user}')">
                 <div class="msg-content">
                     <div class="msg-meta">
                         <span class="msg-user" onclick="showProfileSummary('${d.user}')">${d.user}</span>
@@ -726,6 +733,13 @@
                         <div class="msg-action-btn" onclick="saveMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" title="Save"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></div>
                     </div>
                 </div>`;
+
+            // Back-fill PFP if missing
+            if (!d.pic && window.supabaseClient) {
+                window.supabaseClient.from('profiles').select('avatar_url').eq('username', d.user).maybeSingle().then(({data}) => {
+                    if (data && data.avatar_url) document.getElementById(pfpId).src = data.avatar_url;
+                });
+            }
 
             div.onmouseenter = () => { div.querySelector('.msg-actions').style.display = 'flex'; };
             div.onmouseleave = () => { div.querySelector('.msg-actions').style.display = 'none'; };
