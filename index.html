@@ -175,81 +175,21 @@
 
         /* --- SPACE BOXES ENGINE --- */
         #space-container {
-            position: fixed;
-            inset: 0;
-            z-index: -3;
-            perspective: 1000px;
-            overflow: hidden;
+            position: fixed; inset: 0; z-index: -3;
+            perspective: 1000px; overflow: hidden;
             background: #000;
         }
-
         .space-box {
-            position: absolute;
-            width: 40px;
-            height: 40px;
+            position: absolute; width: 40px; height: 40px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
             transform-style: preserve-3d;
             pointer-events: none;
         }
 
-        /* SECTOR CUBES */
-        .sector-cube {
-            position: relative;
-            /* Relative inside module */
-            width: clamp(280px, 40vw, 400px);
-            aspect-ratio: 1;
-            transform-style: preserve-3d;
-            cursor: pointer;
-            z-index: 100;
-        }
-
-        .cube-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 10, 10, 0.4);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 20px;
-            transition: 0.5s;
-        }
-
-        .sector-cube:hover .cube-face {
-            background: rgba(168, 85, 247, 0.1);
-            border-color: var(--accent);
-            box-shadow: 0 0 50px var(--accent-glow);
-        }
-
-        .cube-label {
-            font-weight: 900;
-            font-size: 1.5rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .cube-sub {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-top: 10px;
-        }
-
         #fixed-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -2;
-            object-fit: cover;
-            opacity: 0.1;
-            filter: grayscale(1);
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -2; object-fit: cover; opacity: 0.1; filter: grayscale(1);
             pointer-events: none;
         }
 
@@ -296,22 +236,26 @@
             clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
         }
 
+        /* --- SECTIONS --- */
         .portfolio-sections {
-            position: relative;
-            padding: 0 5vw 40vh;
+            padding: 80px 5vw;
             display: flex;
             flex-direction: column;
-            gap: 100vh;
-            /* Large vertical gaps for scrolling */
+            gap: 8vw;
+            position: relative;
             z-index: 2;
         }
 
-        .sector-module {
-            min-height: 80vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            perspective: 1200px;
+        .section-card {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            overflow: hidden;
+            transition: 0.5s var(--transition);
+            background: rgba(255, 255, 255, 0.01);
+            backdrop-filter: blur(10px);
         }
 
         .section-card.reverse {
@@ -515,53 +459,31 @@
     </section>
 
     <div class="portfolio-sections">
-        <div class="sector-module" id="mod-web">
-            <div class="sector-cube interactable" onclick="window.location.href='web.html'">
-                <div class="cube-face" style="transform: translateZ(200px)">
-                    <span class="category">Sector 01</span>
-                    <div class="cube-label">Web Systems</div>
-                    <p style="font-size:0.9rem; margin-top:20px; color:var(--text-muted);">Developing scalable,
-                        full-stack applications with advanced UI interactions.</p>
-                </div>
-                <div class="cube-face" style="transform: rotateY(90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateY(-90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateX(90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateX(-90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateY(180deg) translateZ(200px)"></div>
+        <div class="section-card interactable" id="web">
+            <div class="card-content">
+                <span class="category">Sector 01</span>
+                <h2>Web Systems</h2>
+                <p>Developing scalable, full-stack applications with advanced UI interactions and modern architecture.
+                </p>
+                <a href="web.html" class="btn-action magnetic">Enter Web Sector</a>
+            </div>
+            <div class="video-display">
+                <video autoplay muted loop playsinline src="videos/web2.mp4"
+                    onerror="this.src='videos/vfx-system.mp4'"></video>
+                <div class="video-tag">WEB_LIVE_PREVIEW</div>
             </div>
         </div>
 
-        <div class="sector-module" id="mod-roblox">
-            <div class="sector-cube interactable" onclick="window.location.href='roblox.html'">
-                <div class="cube-face" style="transform: translateZ(200px)">
-                    <span class="category">Sector 02</span>
-                    <div class="cube-label">Roblox Studio</div>
-                    <p style="font-size:0.9rem; margin-top:20px; color:var(--text-muted);">Creating immersive 3D worlds
-                        and complex Lua scripting systems.</p>
-                </div>
-                <!-- ... other faces ... -->
-                <div class="cube-face" style="transform: rotateY(90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateY(-90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateX(90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateX(-90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateY(180deg) translateZ(200px)"></div>
+        <div class="section-card reverse interactable" id="roblox">
+            <div class="card-content">
+                <span class="category">Sector 02</span>
+                <h2>Roblox Studio</h2>
+                <p>Creating immersive 3D worlds and complex Lua scripting systems for the next generation of gaming.</p>
+                <a href="roblox.html" class="btn-action magnetic">Enter Game Sector</a>
             </div>
-        </div>
-
-        <div class="sector-module" id="mod-discuss">
-            <div class="sector-cube interactable" onclick="window.location.href='discuss.html'">
-                <div class="cube-face" style="transform: translateZ(200px)">
-                    <span class="category">Sector 03</span>
-                    <div class="cube-label">Nexus Discuss</div>
-                    <p style="font-size:0.9rem; margin-top:20px; color:var(--text-muted);">Global hub for community
-                        transmissions and developer protocols.</p>
-                </div>
-                <!-- ... other faces ... -->
-                <div class="cube-face" style="transform: rotateY(90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateY(-90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateX(90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateX(-90deg) translateZ(200px)"></div>
-                <div class="cube-face" style="transform: rotateY(180deg) translateZ(200px)"></div>
+            <div class="video-display">
+                <video autoplay muted loop playsinline src="videos/combat-system.mp4"></video>
+                <div class="video-tag">GAME_ENGINE_PREVIEW</div>
             </div>
         </div>
     </div>
@@ -581,9 +503,9 @@
         // --- SPACE BOXES ENGINE ---
         const space = document.getElementById('space-container');
         const count = 40;
-        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+        let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
 
-        for (let i = 0; i < count; i++) {
+        for(let i=0; i<count; i++) {
             createBox();
         }
 
@@ -598,9 +520,9 @@
             const x = Math.random() * window.innerWidth;
             const y = Math.random() * window.innerHeight;
             const z = -2000 - (Math.random() * 2000);
-
-            gsap.set(box, { x, y, z, opacity: 0, scale: 0.2, rotationX: Math.random() * 360, rotationY: Math.random() * 360 });
-
+            
+            gsap.set(box, { x, y, z, opacity: 0, scale: 0.2, rotationX: Math.random()*360, rotationY: Math.random()*360 });
+            
             gsap.to(box, {
                 z: 1500, opacity: 0.5, scale: 2.5,
                 duration: 5 + Math.random() * 8,
@@ -608,60 +530,28 @@
                 repeat: -1,
                 delay: Math.random() * -10,
                 onRepeat: () => {
-                    gsap.set(box, {
-                        x: Math.random() * window.innerWidth,
-                        y: Math.random() * window.innerHeight,
-                        rotationX: Math.random() * 360,
-                        rotationY: Math.random() * 360
+                    gsap.set(box, { 
+                        x: Math.random() * window.innerWidth, 
+                        y: Math.random() * window.innerHeight, 
+                        rotationX: Math.random()*360, 
+                        rotationY: Math.random()*360 
                     });
                 }
             });
         }
 
-        // --- SPATIAL SCROLL ENGINE ---
-        const cubes = document.querySelectorAll('.sector-cube');
-        cubes.forEach((cube, i) => {
-            // Idle floating
-            gsap.to(cube, {
-                y: "+=30", rotationX: "+=360", rotationY: "+=360",
-                duration: 15 + Math.random() * 10,
-                repeat: -1,
-                ease: "none"
-            });
-
-            // Scroll trigger for entrance
-            gsap.from(cube, {
-                scrollTrigger: {
-                    trigger: cube,
-                    start: "top bottom",
-                    end: "top 20%",
-                    scrub: 1
-                },
-                z: -3000,
-                scale: 0.1,
-                opacity: 0
-            });
-
-            // Mouse Parallax
-            window.addEventListener('mousemove', (e) => {
-                const moveX = (e.clientX - window.innerWidth / 2) * 0.05;
-                const moveY = (e.clientY - window.innerHeight / 2) * 0.05;
-                gsap.to(cube, { x: moveX, y: moveY, duration: 1.5, ease: 'power2.out' });
-            });
-        });
-
         window.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
-
+            
             const boxes = document.querySelectorAll('.space-box');
             boxes.forEach(box => {
                 const rect = box.getBoundingClientRect();
                 const boxX = rect.left + 20;
                 const boxY = rect.top + 20;
                 const dist = Math.hypot(mouseX - boxX, mouseY - boxY);
-
-                if (dist < 300) {
+                
+                if(dist < 300) {
                     const angle = Math.atan2(boxY - mouseY, boxX - mouseX);
                     const push = (300 - dist) * 0.5;
                     gsap.to(box, {
@@ -744,13 +634,10 @@
                     y: 50, opacity: 0, stagger: 0.1, duration: 1, ease: 'back.out(1.5)', delay: 0.3
                 });
 
-                const v = card.querySelector('video');
-                if (v) {
-                    gsap.to(v, {
-                        scrollTrigger: { trigger: card, start: "top bottom", end: "bottom top", scrub: true },
-                        yPercent: 20, ease: "none"
-                    });
-                }
+                gsap.to(card.querySelector('video'), {
+                    scrollTrigger: { trigger: card, start: "top bottom", end: "bottom top", scrub: true },
+                    yPercent: 20, ease: "none"
+                });
             });
         });
     </script>
