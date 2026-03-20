@@ -173,24 +173,50 @@
             }
         }
 
-        /* --- INTERACTIVE GRID BG --- */
-        #grid-bg {
+        /* --- SPACE BOXES ENGINE --- */
+        #space-container {
             position: fixed; inset: 0; z-index: -3;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            grid-template-rows: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 1px; background: rgba(255,255,255,0.02);
+            perspective: 1000px; overflow: hidden;
+            background: #000;
+        }
+        .space-box {
+            position: absolute; width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform-style: preserve-3d;
             pointer-events: none;
         }
-        .grid-box {
-            background: #030303; width: 100%; height: 100%;
-            border: 0.5px solid rgba(255,255,255,0.02);
-            transition: background 0.5s, box-shadow 0.5s;
+        
+        /* SECTOR CUBES */
+        .sector-cube {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            transform-style: preserve-3d;
+            cursor: pointer;
+            z-index: 100;
         }
+        .cube-face {
+            position: absolute; width: 100%; height: 100%;
+            background: rgba(10, 10, 10, 0.4);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 20px;
+            transition: 0.5s;
+        }
+        .sector-cube:hover .cube-face {
+            background: rgba(168, 85, 247, 0.1);
+            border-color: var(--accent);
+            box-shadow: 0 0 50px var(--accent-glow);
+        }
+        .cube-label { font-weight: 900; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        .cube-sub { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 10px; }
 
         #fixed-bg {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: -2; object-fit: cover; opacity: 0.1; filter: grayscale(1);
+            pointer-events: none;
         }
 
         /* --- HERO --- */
@@ -238,24 +264,7 @@
 
         /* --- SECTIONS --- */
         .portfolio-sections {
-            padding: 80px 5vw;
-            display: flex;
-            flex-direction: column;
-            gap: 8vw;
-            position: relative;
-            z-index: 2;
-        }
-
-        .section-card {
-            width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            overflow: hidden;
-            transition: 0.5s var(--transition);
-            background: rgba(255, 255, 255, 0.01);
-            backdrop-filter: blur(10px);
+            display: none; /* Removed static boxes */
         }
 
         .section-card.reverse {
@@ -431,7 +440,7 @@
     <div id="cursor-dot"></div>
     <div id="cursor-bg"></div>
 
-    <div id="grid-bg"></div>
+    <div id="space-container"></div>
     <video id="fixed-bg" autoplay loop muted playsinline>
         <source src="videos/vfx-system.mp4" type="video/mp4" onerror="this.src='videos/web2.mp4'">
     </video>
@@ -459,33 +468,7 @@
     </section>
 
     <div class="portfolio-sections">
-        <div class="section-card interactable" id="web">
-            <div class="card-content">
-                <span class="category">Sector 01</span>
-                <h2>Web Systems</h2>
-                <p>Developing scalable, full-stack applications with advanced UI interactions and modern architecture.
-                </p>
-                <a href="web.html" class="btn-action magnetic">Enter Web Sector</a>
-            </div>
-            <div class="video-display">
-                <video autoplay muted loop playsinline src="videos/web2.mp4"
-                    onerror="this.src='videos/vfx-system.mp4'"></video>
-                <div class="video-tag">WEB_LIVE_PREVIEW</div>
-            </div>
-        </div>
-
-        <div class="section-card reverse interactable" id="roblox">
-            <div class="card-content">
-                <span class="category">Sector 02</span>
-                <h2>Roblox Studio</h2>
-                <p>Creating immersive 3D worlds and complex Lua scripting systems for the next generation of gaming.</p>
-                <a href="roblox.html" class="btn-action magnetic">Enter Game Sector</a>
-            </div>
-            <div class="video-display">
-                <video autoplay muted loop playsinline src="videos/combat-system.mp4"></video>
-                <div class="video-tag">GAME_ENGINE_PREVIEW</div>
-            </div>
-        </div>
+        <!-- Replaced with Spatial Cubes -->
     </div>
 
     <!-- SCRIPTS -->
@@ -500,48 +483,117 @@
         gsap.ticker.add((time) => { lenis.raf(time * 1000) });
         gsap.ticker.lagSmoothing(0);
 
-        // --- INTERACTIVE GRID ENGINE ---
-        const grid = document.getElementById('grid-bg');
-        const boxSize = 80;
-        const columns = Math.ceil(window.innerWidth / boxSize);
-        const rows = Math.ceil(window.innerHeight / boxSize);
-        const totalBoxes = columns * rows;
+        // --- SPACE BOXES ENGINE ---
+        const space = document.getElementById('space-container');
+        const count = 40;
+        let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
 
-        for (let i = 0; i < totalBoxes; i++) {
-            const box = document.createElement('div');
-            box.className = 'grid-box';
-            grid.appendChild(box);
+        for(let i=0; i<count; i++) {
+            createBox();
         }
 
-        const boxes = document.querySelectorAll('.grid-box');
-        window.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
+        function createBox() {
+            const box = document.createElement('div');
+            box.className = 'space-box';
+            space.appendChild(box);
+            resetBox(box);
+        }
 
-            boxes.forEach((box) => {
+        function resetBox(box) {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            const z = -2000 - (Math.random() * 2000);
+            
+            gsap.set(box, { x, y, z, opacity: 0, scale: 0.2, rotationX: Math.random()*360, rotationY: Math.random()*360 });
+            
+            gsap.to(box, {
+                z: 1500, opacity: 0.5, scale: 2.5,
+                duration: 5 + Math.random() * 8,
+                ease: "none",
+                repeat: -1,
+                delay: Math.random() * -10,
+                onRepeat: () => {
+                    gsap.set(box, { 
+                        x: Math.random() * window.innerWidth, 
+                        y: Math.random() * window.innerHeight, 
+                        rotationX: Math.random()*360, 
+                        rotationY: Math.random()*360 
+                    });
+                }
+            });
+        }
+
+        // --- SPATIAL MENU ENGINE ---
+        const sectors = [
+            { name: "Web Systems", sub: "Sector 01", link: "web.html", x: 20, y: 30 },
+            { name: "Roblox Studio", sub: "Sector 02", link: "roblox.html", x: 70, y: 50 },
+            { name: "Nexus Discuss", sub: "Sector 03", link: "discuss.html", x: 40, y: 70 }
+        ];
+
+        sectors.forEach(s => {
+            const cube = document.createElement('div');
+            cube.className = 'sector-cube interactable';
+            cube.innerHTML = `
+                <div class="cube-face" style="transform: translateZ(125px)">
+                    <div class="cube-label">${s.name}</div>
+                    <div class="cube-sub">${s.sub}</div>
+                </div>
+                <div class="cube-face" style="transform: rotateY(90deg) translateZ(125px)"></div>
+                <div class="cube-face" style="transform: rotateY(-90deg) translateZ(125px)"></div>
+                <div class="cube-face" style="transform: rotateX(90deg) translateZ(125px)"></div>
+                <div class="cube-face" style="transform: rotateX(-90deg) translateZ(125px)"></div>
+                <div class="cube-face" style="transform: rotateY(180deg) translateZ(125px)"></div>
+            `;
+            space.appendChild(cube);
+            
+            gsap.set(cube, { left: `${s.x}%`, top: `${s.y}%`, z: -500 });
+            
+            // Floating Animation
+            gsap.to(cube, {
+                y: "+=30", rotationX: "+=360", rotationY: "+=360",
+                duration: 15 + Math.random() * 10,
+                repeat: -1,
+                ease: "none"
+            });
+            
+            // Parallax
+            window.addEventListener('mousemove', (e) => {
+                const moveX = (e.clientX - window.innerWidth/2) * 0.05;
+                const moveY = (e.clientY - window.innerHeight/2) * 0.05;
+                gsap.to(cube, { x: moveX, y: moveY, duration: 1, ease: 'power2.out' });
+            });
+            
+            cube.onclick = () => window.location.href = s.link;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const boxes = document.querySelectorAll('.space-box');
+            boxes.forEach(box => {
                 const rect = box.getBoundingClientRect();
-                const boxX = rect.left + rect.width / 2;
-                const boxY = rect.top + rect.height / 2;
-                
+                const boxX = rect.left + 20;
+                const boxY = rect.top + 20;
                 const dist = Math.hypot(mouseX - boxX, mouseY - boxY);
-                if (dist < 200) {
-                    const power = (200 - dist) / 200;
+                
+                if(dist < 300) {
+                    const angle = Math.atan2(boxY - mouseY, boxX - mouseX);
+                    const push = (300 - dist) * 0.5;
                     gsap.to(box, {
-                        backgroundColor: `rgba(168, 85, 247, ${power * 0.2})`,
-                        borderColor: `rgba(168, 85, 247, ${power * 0.4})`,
-                        scale: 1 + (power * 0.1),
-                        z: 20 * power,
-                        duration: 0.4,
-                        overwrite: 'auto'
+                        x: `+=${Math.cos(angle) * push}`,
+                        y: `+=${Math.sin(angle) * push}`,
+                        backgroundColor: "rgba(168, 85, 247, 0.4)",
+                        borderColor: "rgba(168, 85, 247, 0.8)",
+                        duration: 0.6,
+                        overwrite: "auto"
                     });
                 } else {
                     gsap.to(box, {
-                        backgroundColor: '#030303',
-                        borderColor: 'rgba(255,255,255,0.02)',
-                        scale: 1,
-                        z: 0,
-                        duration: 1,
-                        overwrite: 'auto'
+                        backgroundColor: "rgba(255,255,255,0.03)",
+                        borderColor: "rgba(255,255,255,0.1)",
+                        duration: 2,
+                        overwrite: "auto"
                     });
                 }
             });
@@ -608,10 +660,13 @@
                     y: 50, opacity: 0, stagger: 0.1, duration: 1, ease: 'back.out(1.5)', delay: 0.3
                 });
 
-                gsap.to(card.querySelector('video'), {
-                    scrollTrigger: { trigger: card, start: "top bottom", end: "bottom top", scrub: true },
-                    yPercent: 20, ease: "none"
-                });
+                const v = card.querySelector('video');
+                if(v) {
+                    gsap.to(v, {
+                        scrollTrigger: { trigger: card, start: "top bottom", end: "bottom top", scrub: true },
+                        yPercent: 20, ease: "none"
+                    });
+                }
             });
         });
     </script>
