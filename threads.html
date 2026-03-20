@@ -275,11 +275,11 @@
             const div = document.createElement('div'); div.className = 'post'; div.id = postId;
             div.innerHTML = `
                 <div class="post-left">
-                    <img src="${d.pic}" class="user-pic interactable" onclick="location.href='profile.html?user=${d.user}'">
+                    <img src="${d.pic}" class="user-pic interactable" onclick="showProfileSummary('${d.user}')">
                 </div>
                 <div class="post-right">
                     <div class="post-header">
-                        <span class="username interactable" onclick="location.href='profile.html?user=${d.user}'">${d.user}</span>
+                        <span class="username interactable" onclick="showProfileSummary('${d.user}')">${d.user}</span>
                         <span style="color:var(--text-dim); font-size:0.8rem; font-weight:800;">${formatTime(d.time)}</span>
                     </div>
                     <div class="post-text">${d.text}</div>
