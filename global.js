@@ -27,6 +27,10 @@ applyTheme(currentTheme);
 
 // --- GLOBAL INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
+    // 1. Inject Universal Header Structure if missing
+    injectUniversalHeader();
+
+    // 2. Initialize Supabase
     if(typeof window.supabase === 'undefined') {
         const s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
@@ -39,41 +43,52 @@ window.addEventListener('DOMContentLoaded', () => {
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         checkGlobalAuth();
     }
-
-    // Theme Toggle Injection
-    const hasToggle = document.querySelector('.theme-toggle');
-    const navLinks = document.querySelector('.nav-links');
-    const container = navLinks || document.body;
-    const toggler = document.createElement('button');
-    toggler.className = 'nav-item interactable theme-toggle';
-    toggler.innerHTML = currentTheme === 'light' ? '🌙' : '☀️';
-    toggler.onclick = window.toggleTheme;
-    if(!hasToggle) container.appendChild(toggler);
 });
+
+function injectUniversalHeader() {
+    let header = document.querySelector('.header');
+    if(!header) {
+        header = document.createElement('header');
+        header.className = 'header';
+        document.body.prepend(header);
+    }
+
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+
+    header.innerHTML = `
+        <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item ${currentPage === 'index.html' ? 'active' : ''}">Nexus</a>
+            <a href="threads.html" class="nav-item ${currentPage === 'threads.html' ? 'active' : ''}">Threads</a>
+            <a href="discuss.html" class="nav-item ${currentPage === 'discuss.html' ? 'active' : ''}">Discuss</a>
+            <a href="roblox.html" class="nav-item ${currentPage === 'roblox.html' ? 'active' : ''}">Roblox</a>
+            <div id="auth-nav"></div>
+            <button class="nav-item interactable theme-toggle" onclick="toggleTheme(event)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); border-radius:50px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer; color:#fff;">${currentTheme === 'light' ? '🌙' : '☀️'}</button>
+        </nav>
+    `;
+    
+    // Header Animation
+    if(window.gsap) {
+        gsap.from(header, { y: -100, opacity: 0, duration: 1, ease: 'power4.out' });
+    }
+}
 
 async function checkGlobalAuth() {
     const authNav = document.getElementById('auth-nav');
     if(!authNav) return;
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
-    if (session) {
-        const user = session.user;
-        const name = user.user_metadata.full_name || user.email.split('@')[0];
-        const pic = user.user_metadata.avatar_url || 'https://via.placeholder.com/100';
-        localStorage.setItem('rbx_user', name);
-        localStorage.setItem('rbx_pic', pic);
-
-        // Fetch Extended Profile from Supabase 'profiles' table
-        const { data: profile } = await window.supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-        if(profile) {
-            localStorage.setItem('rbx_pic', profile.avatar_url || pic);
-            localStorage.setItem('rbx_bio', profile.bio || '');
+    try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (session) {
+            const user = session.user;
+            const name = user.user_metadata.full_name || user.email.split('@')[0];
+            const pic = user.user_metadata.avatar_url || 'https://via.placeholder.com/100';
+            
+            authNav.innerHTML = `<a href="profile.html?user=${name}" class="nav-item interactable" style="color:var(--nexus-blue, #00A2FF); font-weight:900;">@${name}</a>
+                                 <a href="#" onclick="logoutNexus()" class="nav-item interactable" style="opacity:0.4; font-size:0.7rem;">LOGOUT</a>`;
+        } else {
+            authNav.innerHTML = `<a href="auth.html" class="nav-item interactable" style="background:#fff; color:#000; padding:8px 20px; border-radius:100px; opacity:1;">Login</a>`;
         }
-
-        authNav.innerHTML = `<a href="profile.html?user=${name}" class="nav-item interactable">@${name}</a>
-                             <a href="#" onclick="logoutNexus()" class="nav-item interactable" style="opacity:0.6;">Logout</a>`;
-    } else {
-        authNav.innerHTML = `<a href="auth.html?mode=register&redirect=${window.location.pathname.split('/').pop()}" class="nav-item interactable" style="background:var(--text-main); color:var(--bg); padding:5px 15px; border-radius:100px;">Join Nexus</a>`;
-    }
+    } catch(e) {}
 }
 
 window.logoutNexus = async () => {
@@ -83,7 +98,6 @@ window.logoutNexus = async () => {
     location.reload();
 };
 
-// --- GLOBAL TOASTS ---
 function showNotification(text, type='info') {
     const toast = document.createElement('div');
     toast.innerText = text;
@@ -99,7 +113,6 @@ function showNotification(text, type='info') {
     } else setTimeout(() => toast.remove(), 4000);
 }
 
-// --- REALTIME ABLY SYNC ---
 try {
     if (typeof Ably !== 'undefined') {
         const ablyClient = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
