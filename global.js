@@ -11,6 +11,10 @@ window.applyTheme = function (theme) {
     else { document.body.classList.remove('light-mode'); }
 };
 
+// --- AUTH & ROLES ---
+window.isAdmin = (u) => u === 'adigusi';
+window.isVerified = (u) => ['adigusi', 'Adiyan'].includes(u); // Added a few verified users for demo
+
 window.toggleTheme = function (e) {
     if (e) e.preventDefault();
     const newTheme = document.body.classList.contains('light-mode') ? 'dark' : 'light';
