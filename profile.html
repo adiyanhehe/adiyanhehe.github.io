@@ -115,18 +115,39 @@
                 }
             });
 
-            // LOAD POSTS
-            postChan.history({limit: 50}, (err, page) => {
+            // LOAD POSTS FROM CLOUD (Permanent Archive)
+            const fetchProfilePosts = async () => {
+                if(!window.supabaseClient) {
+                    setTimeout(fetchProfilePosts, 500);
+                    return;
+                }
+                const { data, error } = await window.supabaseClient
+                    .from('threads')
+                    .select('*')
+                    .eq('author', user)
+                    .order('timestamp', { ascending: false })
+                    .limit(50);
+                
                 const feed = document.querySelector('.content');
-                if(!err) page.items.forEach(m => {
-                    if(m.data.user === user) {
+                if(!error && data) {
+                    data.forEach(p => {
                         const d = document.createElement('div');
-                        d.style = "padding:15px; border-bottom:1px solid #1a1a1a; font-size:0.95rem; color:#ccc;";
-                        d.innerText = m.data.text;
+                        d.style = "padding:20px; border-bottom:1px solid #1a1a1a; background:rgba(255,255,255,0.01); border-radius:12px; margin-bottom:10px; border-left:2px solid #00A2FF;";
+                        d.innerHTML = `
+                            <div style="font-size:0.95rem; color:#eee; line-height:1.5;">${p.content}</div>
+                            <div style="font-size:0.65rem; color:#444; margin-top:10px; font-weight:900; text-transform:uppercase; letter-spacing:1px;">Transmission Lock: ${new Date(p.timestamp).toLocaleString()}</div>
+                        `;
                         feed.appendChild(d);
-                    }
-                });
-            });
+                    });
+                } else if(data.length === 0) {
+                   const empty = document.createElement('div');
+                   empty.style = "text-align:center; padding:50px; color:#333; font-weight:900; letter-spacing:2px; font-size:0.7rem; text-transform:uppercase;";
+                   empty.innerText = "No Transmissions Detected in Cloud";
+                   feed.appendChild(empty);
+                }
+            };
+
+            fetchProfilePosts();
             
             gsap.from('.banner', { height: 0, opacity: 0, duration: 1.5, ease: 'power4.out' });
             gsap.from('.pfp', { scale: 0, rotation: -180, duration: 1.2, delay: 0.5, ease: 'back.out(1.5)' });
