@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile // Nexus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #030303; --accent: #00A2FF; --border: #1a1a1a; }
+        body { background: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; justify-content: center; }
+        .wrapper { width: 600px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; }
+        .banner { height: 160px; background: #111; border-bottom: 1px solid var(--border); }
+        .pfp-row { padding: 0 20px; display: flex; justify-content: space-between; align-items: flex-end; margin-top: -50px; }
+        .pfp { width: 110px; height: 110px; border-radius: 10px; border: 4px solid #000; background: #111; object-fit: cover; }
+        .btn { background: transparent; border: 1px solid #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-weight: 800; cursor: pointer; margin-bottom: 10px; }
+        .content { padding: 20px; }
+        .name { font-size: 1.6rem; font-weight: 800; margin: 0; }
+        .bio { margin-top: 10px; color: #888; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 100; }
+        .modal-box { background: #0a0a0a; padding: 25px; border-radius: 12px; width: 320px; border: 1px solid var(--border); }
+        input, textarea { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; margin-top: 10px; border-radius: 6px; box-sizing: border-box; }
+        .save-btn { background: var(--accent); color: #000; width: 100%; border: none; padding: 10px; border-radius: 6px; font-weight: 800; margin-top: 15px; cursor: pointer; }
+    </style>
+
+    <!-- Global Control Center via Super Admin -->
+    <link rel="stylesheet" href="global.css">
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <script src="global.js" defer></script>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" class="logo interactable">ADIYAN</a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item">Home</a>
+            <a href="threads.html" class="nav-item">Threads</a>
+            <div id="auth-nav"></div>
+            <button class="interactable theme-toggle" onclick="toggleTheme(event)">🌙</button>
+        </nav>
+    </header>
+
+    <div class="wrapper" style="margin-top:80px;">
+        <div id="banner-ui" class="banner"></div>
+        <div class="pfp-row">
+            <img id="pfp-ui" class="pfp" src="">
+            <div id="btn-slot"></div>
+        </div>
+        <div class="content">
+            <h1 id="name-ui" class="name">Loading...</h1>
+            <p id="bio-ui" class="bio">No bio yet.</p>
+            <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border); color:#444; font-size:0.8rem; font-weight:800;">POSTS</div>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal">
+        <div class="modal-box">
+            <h3 style="margin:0; font-weight:900; letter-spacing:-0.5px; text-transform:uppercase;">Network Profile Edit</h3>
+            <p style="color:#555; font-size:0.75rem; margin-top:5px; font-weight:800; letter-spacing:1px; text-transform:uppercase;">Modify Global Metadata</p>
+            
+            <div style="margin-top:20px;">
+                <span style="font-size:0.65rem; font-weight:900; color:var(--accent); text-transform:uppercase; letter-spacing:2px;">Custom Avatar URL</span>
+                <input type="text" id="edit-pfp" placeholder="https://imgur.com/your-pfp.png">
+                <div style="margin:10px 0; text-align:center; font-size:0.75rem; color:#444; font-weight:800;">— OR —</div>
+                <span style="font-size:0.65rem; font-weight:900; color:var(--accent); text-transform:uppercase; letter-spacing:2px;">Upload Image</span>
+                <input type="file" id="upload-pfp" accept="image/*" onchange="previewUpload(event)" style="margin-top:5px; border:1px dashed var(--border); padding:10px; font-size:0.8rem; cursor:pointer; width:100%; border-radius:8px;">
+                <img id="upload-preview" style="display:none; width:60px; height:60px; border-radius:50%; margin:10px auto; object-fit:cover; border:2px solid var(--accent);">
+            </div>
+
+            <div style="margin-top:15px; display:flex; gap:10px; align-items:center;">
+                <span style="font-size:0.65rem; font-weight:900; color:#555; text-transform:uppercase; letter-spacing:2px;">Banner Theme</span>
+                <input type="color" id="edit-color" style="width:50px; height:30px; padding:0; border:none; border-radius:4px; cursor:pointer;">
+            </div>
+
+            <div style="margin-top:15px;">
+                <span style="font-size:0.65rem; font-weight:900; color:#555; text-transform:uppercase; letter-spacing:2px;">Transmission / Bio</span>
+                <textarea id="edit-bio" rows="3" placeholder="Identify yourself to the network..."></textarea>
+            </div>
+
+            <button class="save-btn" onclick="save()">Push Updates</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:#444; width:100%; margin-top:15px; cursor:pointer; font-weight:800; font-size:0.7rem; text-transform:uppercase; letter-spacing:1px;">Cancel Transmission</button>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const user = params.get('user');
+        const me = localStorage.getItem('rbx_user');
+
+        const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        const userChan = ably.channels.get('nexus-profiles');
+        const postChan = ably.channels.get('nexus-posts');
+
+        window.onload = async () => {
+            if(!user) return;
+            document.getElementById('name-ui').innerText = user;
+            
+            if(user === me) {
+                document.getElementById('btn-slot').innerHTML = `<button class="btn" onclick="openModal()">Edit Profile</button>`;
+            }
+
+            // LOAD DATA
+            const savedBio = localStorage.getItem(`bio_${user}`);
+            const savedColor = localStorage.getItem(`color_${user}`);
+            const savedPfp = localStorage.getItem(`pfp_${user}`);
+
+            if(savedBio) document.getElementById('bio-ui').innerText = savedBio;
+            if(savedColor) document.getElementById('banner-ui').style.background = savedColor;
+            if(savedPfp) document.getElementById('pfp-ui').src = savedPfp;
+            else fetchRoblox();
+
+            // REALTIME SYNC
+            userChan.subscribe('update', (m) => {
+                if(m.data.user === user) {
+                    document.getElementById('bio-ui').innerText = m.data.bio;
+                    document.getElementById('banner-ui').style.background = m.data.color;
+                    if(m.data.pfp) document.getElementById('pfp-ui').src = m.data.pfp;
+                }
+            });
+
+            // LOAD POSTS
+            postChan.history({limit: 50}, (err, page) => {
+                const feed = document.querySelector('.content');
+                if(!err) page.items.forEach(m => {
+                    if(m.data.user === user) {
+                        const d = document.createElement('div');
+                        d.style = "padding:15px; border-bottom:1px solid #1a1a1a; font-size:0.95rem; color:#ccc;";
+                        d.innerText = m.data.text;
+                        feed.appendChild(d);
+                    }
+                });
+            });
+            
+            gsap.from('.banner', { height: 0, opacity: 0, duration: 1.5, ease: 'power4.out' });
+            gsap.from('.pfp', { scale: 0, rotation: -180, duration: 1.2, delay: 0.5, ease: 'back.out(1.5)' });
+        };
+
+        async function fetchRoblox() {
+            try {
+                const s = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${user}&limit=1`);
+                const sd = await s.json();
+                const t = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${sd.data[0].id}&size=150x150&format=Png&isCircular=false`);
+                const td = await t.json();
+                document.getElementById('pfp-ui').src = td.data[0].imageUrl;
+            } catch(e) {}
+        }
+
+        function openModal() {
+            document.getElementById('edit-bio').value = localStorage.getItem(`bio_${me}`) || '';
+            document.getElementById('edit-pfp').value = localStorage.getItem(`pfp_${me}`) || '';
+            document.getElementById('edit-modal').style.display = 'flex';
+            gsap.from('.modal-box', { scale: 0.5, opacity: 0, y: -100, rotationX: 45, duration: 0.8, ease: 'back.out(1.5)' });
+        }
+        function closeModal() { document.getElementById('edit-modal').style.display='none'; }
+        
+        function previewUpload(e) {
+            const el = document.getElementById('upload-preview');
+            el.src = URL.createObjectURL(e.target.files[0]);
+            el.style.display = 'block';
+        }
+
+        async function save() {
+            const b = document.getElementById('edit-bio').value;
+            const c = document.getElementById('edit-color').value;
+            const pInput = document.getElementById('edit-pfp').value;
+            const fInput = document.getElementById('upload-pfp').files[0];
+
+            let p = pInput;
+
+            // Handle File Upload
+            if(fInput) {
+                p = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(fInput);
+                });
+            }
+
+            localStorage.setItem(`bio_${me}`, b);
+            localStorage.setItem(`color_${me}`, c);
+            if(p) localStorage.setItem(`pfp_${me}`, p);
+
+            // SYNC ACTIVE SESSION
+            if(p) localStorage.setItem('rbx_pic', p);
+            localStorage.setItem('rbx_bio', b);
+
+            userChan.publish('update', { user: me, bio: b, color: c, pfp: p });
+            location.reload();
+        }
+    </script>
+</body>
+</html>

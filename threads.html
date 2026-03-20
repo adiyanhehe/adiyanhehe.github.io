@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus // Threads</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg: #030303;
+            --surface: #0a0a0a;
+            --border: #1a1a1a;
+            --text-main: #ffffff;
+            --text-dim: #666;
+            --accent: #fff;
+            --nexus-blue: #00A2FF;
+            --glass: rgba(255, 255, 255, 0.03);
+            --discord: #5865F2;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { 
+            background: var(--bg); color: var(--text-main); font-family: 'Outfit', sans-serif;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- LAYOUT GRID --- */
+        .page-wrap {
+            display: grid; grid-template-columns: 300px 600px 300px; gap: 40px;
+            width: 100%; max-width: 1300px; padding-top: 100px; padding-bottom: 50px;
+        }
+
+        /* --- LEFT SIDEBAR (Profile) --- */
+        .sidebar-left { padding: 20px; position: sticky; top: 100px; height: fit-content; }
+        .user-card { 
+            background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+            padding: 30px; display: flex; flex-direction: column; align-items: center; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .user-card .name { font-weight: 900; font-size: 1.5rem; margin-top: 15px; }
+        .user-card .handle { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px; gap: 10px; }
+        .stat-item span { display: block; font-weight: 900; font-size: 1.1rem; }
+        .stat-item p { color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- MAIN FEED --- */
+        .feed-container { width: 100%; border-left: 1px solid var(--border); border-right: 1px solid var(--border); position: relative; }
+
+        .compose-area { border-bottom: 2px solid var(--border); padding: 30px; display: flex; gap: 20px; background: rgba(255,255,255,0.01); }
+        .user-pic { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #111; border: 2px solid var(--border); cursor: pointer; transition: 0.3s; }
+        .user-pic:hover { transform: scale(1.1); border-color: var(--nexus-blue); }
+        .input-wrap { flex: 1; }
+        .input-wrap textarea {
+            width: 100%; background: transparent; border: none; color: #fff; font-size: 1.25rem;
+            outline: none; resize: none; min-height: 50px; padding-top: 10px; line-height: 1.4;
+        }
+        .compose-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
+        .media-actions { display: flex; gap: 15px; }
+        .media-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text-dim); padding: 8px; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        .media-btn:hover { color: var(--nexus-blue); border-color: var(--nexus-blue); background: rgba(0, 162, 255, 0.05); }
+        .btn-post { background: var(--nexus-blue); color: #fff; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(0, 162, 255, 0.2); }
+        .btn-post:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0, 162, 255, 0.4); }
+
+        /* --- POSTS --- */
+        .post { border-bottom: 1px solid var(--border); padding: 30px; display: flex; gap: 20px; transition: 0.3s; position: relative; }
+        .post:hover { background: rgba(255, 255, 255, 0.01); }
+        .username { font-weight: 800; font-size: 1.1rem; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .username::after { content: '✔'; font-size: 0.7rem; color: var(--nexus-blue); background: rgba(0, 162, 255, 0.1); padding: 2px 4px; border-radius: 4px; }
+        .post-text { font-size: 1.1rem; line-height: 1.6; color: #ccc; margin: 12px 0 20px 0; white-space: pre-wrap; }
+        .post-actions { display: flex; gap: 35px; color: var(--text-dim); }
+        .action-icon { display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.3s; font-size: 0.9rem; font-weight: 700; }
+        .action-icon:hover { color: var(--nexus-blue); }
+        .action-icon.liked { color: #f91880; }
+        .action-icon.liked svg { fill: #f91880; stroke: #f91880; }
+        .action-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+
+        /* --- TRENDS --- */
+        .sidebar-right { padding: 20px; position: sticky; top: 100px; height: fit-content; }
+        .trend-card { background: var(--surface); border: 1px solid var(--border); padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .trend-card h3 { font-size: 0.75rem; font-weight: 900; color: var(--nexus-blue); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        .trend-item { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px; border-radius: 12px; transition: 0.3s; }
+        .trend-item:hover { background: var(--glass); transform: translateX(5px); }
+        .trend-name { font-weight: 900; font-size: 1rem; color: #fff; }
+        .trend-count { font-size: 0.8rem; color: var(--text-dim); font-weight: 800; }
+
+        #login-gate { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000001; 
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(20px);
+            flex-direction: column; text-align: center;
+        }
+        
+        @media (max-width: 1200px) {
+            .page-wrap { grid-template-columns: 1fr; max-width: 600px; padding: 100px 20px; }
+            .sidebar-left, .sidebar-right { display: none; }
+        }
+    </style>
+    <link rel="stylesheet" href="global.css">
+    <script src="global.js" defer></script>
+</head>
+<body>
+    <div id="login-gate">
+        <div style="font-size:5rem; font-weight:900; letter-spacing:-4px; margin-bottom:10px; background: linear-gradient(to bottom, #fff, #444); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">THREADS</div>
+        <p style="color:#666; margin-bottom:40px; font-size:1.2rem; max-width:400px; font-weight:500;">Access the encrypted global feed.</p>
+        <div style="display:flex; gap:15px;">
+            <a href="auth.html?mode=register&redirect=threads.html" style="background:var(--nexus-blue); color:#fff; padding:20px 50px; border-radius:100px; font-weight:900; text-decoration:none; box-shadow:0 15px 40px rgba(0, 162, 255, 0.3);" class="interactable">Initialize Link</a>
+            <a href="auth.html?mode=login&redirect=threads.html" style="background:transparent; border:2px solid #222; color:#fff; padding:20px 50px; border-radius:100px; font-weight:900; text-decoration:none;" class="interactable">Identify</a>
+        </div>
+    </div>
+    
+    <header class="header">
+        <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item">Home</a>
+            <a href="discuss.html" class="nav-item">Discuss</a>
+            <div id="auth-nav"></div>
+        </nav>
+    </header>
+
+    <div class="page-wrap">
+        <div class="sidebar-left">
+            <div class="user-card interactable" onclick="goMyProfile()">
+                <img id="side-pic" class="user-pic" style="width:100px; height:100px; border-width:3px; border-color:var(--nexus-blue);">
+                <div class="name" id="side-name">...</div>
+                <div class="handle" id="side-handle">@identifying</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span id="stat-posts">0</span>
+                        <p>Posts</p>
+                    </div>
+                    <div class="stat-item">
+                        <span id="stat-reputation">100</span>
+                        <p>Rep</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main class="feed-container">
+            <div class="compose-area">
+                <img id="my-pic" class="user-pic">
+                <div class="input-wrap">
+                    <textarea id="post-in" placeholder="Identify yourself to the network..."></textarea>
+                    <div class="compose-footer">
+                        <div class="media-actions">
+                            <button class="media-btn interactable"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></button>
+                            <button class="media-btn interactable"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>
+                        </div>
+                        <button class="btn-post interactable" onclick="post()">Transmit</button>
+                    </div>
+                </div>
+            </div>
+            <div id="feed"></div>
+        </main>
+
+        <div class="sidebar-right">
+            <div class="trend-card">
+                <h3>Global Metadata</h3>
+                <div class="trend-item">
+                    <div>
+                        <div class="trend-name">#NexusArchitecture</div>
+                        <div class="trend-count">1.4M transmissions</div>
+                    </div>
+                </div>
+                <div class="trend-item">
+                    <div>
+                        <div class="trend-name">#CoreProtocol</div>
+                        <div class="trend-count">920K links</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        const postChan = ably.channels.get('nexus-posts');
+        const me = localStorage.getItem('rbx_user');
+
+        window.onload = () => {
+            if(!me) {
+                document.getElementById('login-gate').style.display='flex';
+                gsap.from('#login-gate > *', { y: 50, opacity: 0, duration: 1, stagger: 0.2, ease: "power4.out" });
+            } else {
+                const pic = localStorage.getItem('rbx_pic') || 'https://via.placeholder.com/100';
+                document.getElementById('my-pic').src = pic;
+                document.getElementById('side-pic').src = pic;
+                document.getElementById('side-name').innerText = me;
+                document.getElementById('side-handle').innerText = '@' + me.toLowerCase().replace(' ', '');
+
+                postChan.subscribe('new', (m) => render(m.data, true));
+                postChan.history({limit: 50}, (err, page) => {
+                    if(!err) page.items.reverse().forEach(m => render(m.data, false));
+                });
+            }
+
+            const tx = document.getElementById('post-in');
+            tx.addEventListener("input", function() {
+                this.style.height = "auto";
+                this.style.height = (this.scrollHeight) + "px";
+            });
+        };
+
+        function post() {
+            const i = document.getElementById('post-in'); if(!i.value.trim()) return;
+            postChan.publish('new', { 
+                user: me, 
+                pic: localStorage.getItem('rbx_pic'), 
+                text: i.value,
+                time: Date.now()
+            });
+            i.value = ''; i.style.height = "60px";
+            const currentPosts = parseInt(document.getElementById('stat-posts').innerText);
+            document.getElementById('stat-posts').innerText = currentPosts + 1;
+        }
+
+        function render(d, isNew) {
+            const f = document.getElementById('feed');
+            const postId = `p-${d.time || Math.random()}`;
+            const isLiked = localStorage.getItem(`like_${postId}`);
+            
+            const div = document.createElement('div'); div.className = 'post'; div.id = postId;
+            div.innerHTML = `
+                <div class="post-left">
+                    <img src="${d.pic}" class="user-pic interactable" onclick="location.href='profile.html?user=${d.user}'">
+                </div>
+                <div class="post-right">
+                    <div class="post-header">
+                        <span class="username interactable" onclick="location.href='profile.html?user=${d.user}'">${d.user}</span>
+                        <span style="color:var(--text-dim); font-size:0.8rem; font-weight:800;">${formatTime(d.time)}</span>
+                    </div>
+                    <div class="post-text">${d.text}</div>
+                    <div class="post-actions">
+                        <div class="action-icon interactable ${isLiked ? 'liked' : ''}" onclick="toggleLike('${postId}')">
+                            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            <span>${Math.floor(Math.random()*20)}</span>
+                        </div>
+                        <div class="action-icon interactable"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>${Math.floor(Math.random()*5)}</span></div>
+                        <div class="action-icon interactable"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4m6 0l-4 4 4 4M2 13h15M2 5h19"/></svg></div>
+                    </div>
+                </div>`;
+            
+            if(isNew) { f.prepend(div); gsap.from(div, { y: 20, opacity: 0, duration: 0.6, ease: "power4.out" }); }
+            else f.appendChild(div);
+        }
+
+        function formatTime(ms) {
+            if(!ms) return 'Now';
+            const diff = Date.now() - ms;
+            if(diff < 60000) return 'Just now';
+            if(diff < 3600000) return Math.floor(diff/60000) + 'm';
+            if(diff < 86400000) return Math.floor(diff/3600000) + 'h';
+            return Math.floor(diff/86400000) + 'd';
+        }
+
+        function goMyProfile() { location.href=`profile.html?user=${me}`; }
+
+        function toggleLike(id) {
+            const el = document.getElementById(id).querySelector('.action-icon');
+            if(el.classList.contains('liked')) { 
+                localStorage.removeItem(`like_${id}`); 
+                el.classList.remove('liked'); 
+            } else { 
+                localStorage.setItem(`like_${id}`, 'true'); 
+                el.classList.add('liked'); 
+                gsap.from(el.querySelector('svg'), { scale: 1.5, duration: 0.4, ease: "back.out(3)" }); 
+            }
+        }
+    </script>
+</body>
+</html>

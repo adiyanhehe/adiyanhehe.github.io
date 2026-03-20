@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus // Messages</title>
+    <!-- Matched web.html font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg: #030303;
+            --surface: rgba(255, 255, 255, 0.02);
+            --panel: #0a0a0a;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #8b8c8f;
+            --accent: #5e6ad2;
+            --transition: cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @media (min-width: 1024px) { body, a, button, input, select, textarea { cursor: none !important; } }
+
+        body { 
+            background: var(--bg); color: var(--text-main); font-family: 'Outfit', sans-serif;
+            margin: 0; display: flex; height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- CUSTOM CURSOR --- */
+        #cursor-dot { position: fixed; width: 8px; height: 8px; background: #fff; border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); mix-blend-mode: difference; }
+        #cursor-bg { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); transition: width 0.3s var(--transition), height 0.3s var(--transition), background 0.3s var(--transition); }
+        body.hovering #cursor-bg { width: 80px; height: 80px; background: rgba(255,255,255,1); mix-blend-mode: difference; border-color: transparent; }
+
+        .sidebar { width: 280px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; position: relative; z-index: 10; backdrop-filter: blur(10px); }
+        .side-head { padding: 25px 30px; font-weight: 900; font-size: 1.2rem; letter-spacing: -0.2px; border-bottom: 1px solid var(--border); color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .side-head span { color: var(--accent); }
+        
+        .user-link { padding: 15px 30px; cursor: none; border-bottom: 1px solid rgba(255,255,255,0.02); display: flex; align-items: center; gap: 12px; font-size: 0.95rem; font-weight: 500; transition: 0.3s; position: relative; overflow: hidden; }
+        .user-link:hover { background: rgba(255,255,255,0.05); }
+        
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; background: var(--surface); }
+        .chat-head { padding: 20px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(10,10,10,0.8); backdrop-filter: blur(20px); z-index: 5; }
+        #chat-title { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.2px; }
+        .chat-head a { color: var(--text-muted); font-size: 0.75rem; text-decoration: none; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; transition: 0.3s; cursor: none; }
+        .chat-head a:hover { color: var(--text-main); }
+        
+        #msgs { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .bubble { max-width: 65%; padding: 15px 20px; border-radius: 16px; font-size: 0.95rem; line-height: 1.45; font-weight: 400; }
+        .me { align-self: flex-end; background: #fff; color: #000; border-bottom-right-radius: 4px; box-shadow: 0 5px 15px rgba(255,255,255,0.05); }
+        .not-me { align-self: flex-start; background: #111; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+        
+        .input-box { padding: 20px 30px; border-top: 1px solid var(--border); display: flex; gap: 15px; background: rgba(10,10,10,0.8); backdrop-filter: blur(20px); }
+        input { flex: 1; background: transparent; border: 1px solid var(--border); color: #fff; padding: 15px 25px; border-radius: 100px; outline: none; font-family: inherit; font-size: 0.95rem; transition: 0.3s; cursor: none; }
+        input:focus { border-color: #fff; background: rgba(255,255,255,0.05); }
+        button { background: #fff; color: #000; border: none; padding: 0 30px; border-radius: 100px; font-weight: 800; cursor: none; font-family: inherit; font-size: 0.9rem; text-transform: uppercase; transition: transform 0.3s; letter-spacing: 1px; }
+        button:hover { transform: scale(1.05); background: var(--accent); color: #fff; }
+        
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: 35vh; border-right: none; border-bottom: 1px solid var(--border); }
+            .main { height: 65vh; }
+            .chat-head { padding: 15px; flex-direction: column; gap: 10px; text-align: center; }
+            .input-box { padding: 15px; flex-direction: column; }
+            button { padding: 15px; }
+            #msgs { padding: 15px; gap: 10px; }
+            .bubble { max-width: 85%; font-size: 0.95rem; }
+        }
+    </style>
+    <!-- Global Control Center via Super Admin -->
+    <link rel="stylesheet" href="global.css?v=3">
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <script src="global.js?v=3" defer></script>
+</head>
+<body>
+    <!-- CUSTOM CURSOR -->
+    <div id="cursor-dot"></div>
+    <div id="login-gate" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000001; align-items:center; justify-content:center; flex-direction:column; text-align:center; backdrop-filter:blur(10px);">
+        <div style="font-size:4rem; font-weight:900; letter-spacing:-3px; margin-bottom:10px;">CHAT</div>
+        <p style="color:#888; margin-bottom:40px; font-size:1.1rem; max-width:400px;">Access the global hub and communicate with the network.</p>
+        <div style="display:flex; gap:20px;">
+            <a href="auth.html?mode=register&redirect=discuss.html" style="background:#fff; color:#000; padding:18px 45px; border-radius:100px; font-weight:900; text-decoration:none; transition:0.4s; box-shadow:0 15px 40px rgba(255,255,255,0.15);" class="interactable">Register</a>
+            <a href="auth.html?mode=login&redirect=discuss.html" style="background:transparent; border:2px solid #333; color:#fff; padding:18px 45px; border-radius:100px; font-weight:900; text-decoration:none; transition:0.4s;" class="interactable">Log In</a>
+        </div>
+    </div>
+
+    <header class="header">
+        <a href="index.html" class="logo interactable">ADIYAN</a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item">Home</a>
+            <a href="threads.html" class="nav-item">Threads</a>
+            <a href="discuss.html" class="nav-item active">Discuss</a>
+            <div id="auth-nav"></div>
+            <button class="interactable theme-toggle" onclick="toggleTheme(event)">🌙</button>
+        </nav>
+    </header>
+
+    <div class="sidebar" style="margin-top:75px;">
+        <div class="side-head">DIRECT<span>CONTACT</span></div>
+        <div class="user-link interactable" onclick="setMode('global')" style="background: rgba(255,255,255,0.1);"># Global Hub</div>
+        <div id="dm-list"></div>
+    </div>
+    
+    <div class="main" style="margin-top:75px;">
+        <div class="chat-head">
+            <span id="chat-title"># Global Hub</span>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <a href="index.html" class="interactable">Return to Base</a>
+            </div>
+        </div>
+        <div id="msgs"></div>
+        <div class="input-box">
+            <input type="text" id="mIn" placeholder="Type transmission..." class="interactable">
+            <button onclick="send()" class="interactable">Send</button>
+        </div>
+    </div>
+    
+    <script>
+        // --- CUSTOM CURSOR LOGIC ---
+        const cursorDot = document.getElementById('cursor-dot');
+        const cursorBg = document.getElementById('cursor-bg');
+        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+        let dotX = mouseX, dotY = mouseY; let bgX = mouseX, bgY = mouseY;
+        window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+
+        gsap.ticker.add(() => {
+            dotX += (mouseX - dotX) * 0.2; dotY += (mouseY - dotY) * 0.2;
+            gsap.set(cursorDot, { x: dotX, y: dotY });
+            bgX += (mouseX - bgX) * 0.1; bgY += (mouseY - bgY) * 0.1;
+            gsap.set(cursorBg, { x: bgX, y: bgY });
+        });
+
+
+
+        // --- ABLY CHAT LOGIC ---
+        const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        const globalChan = ably.channels.get('global-hub');
+        
+        let me = localStorage.getItem('rbx_user');
+        if(!me) { me = "Guest" + Math.floor(Math.random()*1000); localStorage.setItem('rbx_user', me); }
+        let mode = 'global'; let target = null;
+
+        window.onload = () => {
+            const user = localStorage.getItem('rbx_user');
+            if(!user) {
+                document.getElementById('login-gate').style.display='flex';
+                return;
+            }
+            me = user; // Update the global 'me' variable with the authenticated user
+
+            // INITIAL GSAP ANIMATIONS
+            gsap.from('.sidebar', { x: -300, opacity: 0, duration: 1, ease: 'power4.out' });
+            gsap.from('.side-head', { y: -20, opacity: 0, duration: 0.8, delay: 0.4, ease: 'power2.out' });
+            gsap.from('.chat-head', { y: -50, opacity: 0, duration: 1, delay: 0.2, ease: 'expo.out' });
+            gsap.from('.input-box', { y: 100, opacity: 0, duration: 1, delay: 0.3, ease: 'expo.out' });
+
+            globalChan.subscribe('msg', (m) => { 
+                if(mode === 'global') render(m.data);
+                if(m.data.user !== me) addList(m.data.user, m.data.pic);
+            });
+            globalChan.history({limit: 30}, (err, page) => {
+                if(!err) page.items.reverse().forEach(m => render(m.data));
+            });
+            ably.channels.get('dm-'+me).subscribe('priv', (m) => {
+                addList(m.data.user, m.data.pic);
+                if(mode === 'dm' && target === m.data.user) render(m.data);
+            });
+        };
+
+        function addList(u, p) {
+            if(document.getElementById('u-'+u)) return;
+            const d = document.createElement('div');
+            d.id = 'u-'+u; d.className = 'user-link interactable'; d.onclick = () => setMode('dm', u);
+            d.innerHTML = `<img src="${p || 'https://via.placeholder.com/30'}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;"> ${u}`;
+            document.getElementById('dm-list').appendChild(d);
+            gsap.from(d, { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
+        }
+
+        function setMode(m, u=null) {
+            mode = m; target = u;
+            document.getElementById('msgs').innerHTML = '';
+            document.getElementById('chat-title').innerText = m === 'global' ? '# Global Hub' : '@ ' + u;
+            gsap.from('#chat-title', { opacity: 0, x: -20, duration: 0.5 });
+        }
+
+        function send() {
+            const i = document.getElementById('mIn'); if(!i.value.trim()) return;
+            const d = { user: me, text: i.value, pic: localStorage.getItem('rbx_pic') };
+            if(mode === 'global') globalChan.publish('msg', d);
+            else { ably.channels.get('dm-'+target).publish('priv', d); render(d); }
+            i.value = '';
+        }
+
+        function render(d) {
+            const b = document.getElementById('msgs');
+            const isMe = d.user === me;
+            const div = document.createElement('div');
+            div.className = isMe ? 'bubble me' : 'bubble not-me';
+            div.innerHTML = `${!isMe ? `<div style="font-size:0.75rem;opacity:0.6;font-weight:700;margin-bottom:8px;">${d.user.toUpperCase()}</div>` : ''}${d.text}`;
+            b.appendChild(div);
+            window.requestAnimationFrame(() => b.scrollTop = b.scrollHeight);
+            
+            // GSAP ANIMATION FOR NEW MESSAGE
+            gsap.from(div, { y: 30, opacity: 0, scale: 0.9, transformOrigin: isMe ? "bottom right" : "bottom left", duration: 0.6, ease: "back.out(2)" });
+        }
+    </script>
+</body>
+</html>
