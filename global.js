@@ -186,6 +186,53 @@ window.reportContent = async (type, id, data) => {
 };
 
 
+// --- PROFILE SUMMARY SYSTEM ---
+window.showProfileSummary = async (username) => {
+    if (!username) return;
+    let modal = document.getElementById('psm-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'psm-modal';
+        Object.assign(modal.style, {
+            position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.9)', zIndex: '1000005',
+            display: 'none', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)',
+            transition: '0.4s', opacity: '0'
+        });
+        modal.onclick = (e) => { if (e.target === modal) closeProfileSummary(); };
+        modal.innerHTML = `
+            <div id="psm-box" style="background:#0a0a0a; width:360px; padding:35px; border-radius:32px; border:1px solid rgba(255,255,255,0.08); text-align:center; transform:translateY(20px); transition:0.5s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow:0 40px 80px rgba(0,0,0,0.6);">
+                <div id="psm-banner" style="height:90px; background:linear-gradient(45deg, #111, #222); border-radius:24px; margin-bottom:-45px;"></div>
+                <img id="psm-pfp" src="https://via.placeholder.com/100" style="width:100px; height:100px; border-radius:26px; border:6px solid #0a0a0a; position:relative; z-index:2; object-fit:cover; background:#111;">
+                <h2 id="psm-name" style="margin-top:10px; font-weight:900; letter-spacing:-1.2px; font-size:1.6rem; color:#fff;">...</h2>
+                <p id="psm-handle" style="color:#00A2FF; font-weight:800; font-size:0.8rem; margin-bottom:10px; opacity:0.8;">@...</p>
+                <p id="psm-bio" style="color:#888; font-size:0.9rem; line-height:1.5; margin-bottom:20px; min-height:40px; padding:0 10px;">Syncing record...</p>
+                <div style="display:flex; gap:10px;">
+                    <button id="psm-dm-btn" style="flex:1; padding:12px; border-radius:12px; border:none; background:#fff; color:#000; font-weight:900; cursor:pointer;">Message</button>
+                    <button id="psm-profile-btn" style="flex:1; padding:12px; border-radius:12px; border:1px solid #333; background:transparent; color:#fff; font-weight:900; cursor:pointer;">Profile</button>
+                </div>
+                <button onclick="closeProfileSummary()" style="margin-top:20px; background:none; border:none; color:#444; font-weight:900; cursor:pointer; font-size:0.7rem; letter-spacing:1px; text-transform:uppercase;">Dismiss</button>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+    setTimeout(() => { modal.style.opacity = '1'; document.getElementById('psm-box').style.transform = 'translateY(0)'; }, 10);
+    document.getElementById('psm-name').innerText = username;
+    document.getElementById('psm-handle').innerText = '@' + username.toLowerCase().replace(/\s/g, '');
+    if (window.supabaseClient) { window.supabaseClient.from('profiles').select('*').eq('username', username).maybeSingle().then(({data}) => {
+        if (data) {
+            document.getElementById('psm-pfp').src = data.avatar_url || 'https://via.placeholder.com/100';
+            document.getElementById('psm-bio').innerText = data.bio || 'New entity detected.';
+            document.getElementById('psm-banner').style.background = data.banner_color || 'linear-gradient(45deg, #111, #222)';
+        }
+    }); }
+    document.getElementById('psm-dm-btn').onclick = () => { closeProfileSummary(); location.href = `discuss.html?dm=${encodeURIComponent(username)}`; };
+    document.getElementById('psm-profile-btn').onclick = () => { location.href = `profile.html?user=${encodeURIComponent(username)}`; };
+};
+window.closeProfileSummary = () => {
+    const modal = document.getElementById('psm-modal');
+    if (modal) { modal.style.opacity = '0'; document.getElementById('psm-box').style.transform = 'translateY(20px)'; setTimeout(() => modal.style.display = 'none', 400); }
+};
+
 window.addEventListener('DOMContentLoaded', () => {
     injectUniversalHeader();
 
