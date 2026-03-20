@@ -117,10 +117,11 @@ function initNexusCursor() {
     style.innerHTML = `
         .custom-cursor {
             position: fixed; width: 40px; height: 40px; border: 1.5px solid rgba(255,255,255,0.4);
-            border-radius: 50%; pointer-events: none; z-index: 9999999;
+            border-radius: 50%; pointer-events: none; z-index: 99999999;
             display: flex; align-items: center; justify-content: center;
+            top: 0; left: 0;
             backdrop-filter: blur(4px); transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s, backdrop-filter 0.3s;
-            mix-blend-mode: normal; transform: translate(-50%, -50%);
+            mix-blend-mode: normal;
             box-shadow: 0 0 20px rgba(0, 162, 255, 0.1);
         }
         .cursor-dot { width: 5px; height: 5px; background: #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(255,255,255,0.8); }
@@ -143,10 +144,18 @@ function initNexusCursor() {
 
     window.addEventListener('mousemove', (e) => {
         if(window.gsap) {
-            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.15, ease: 'power2.out' });
+            gsap.to(cursor, { 
+                left: e.clientX, 
+                top: e.clientY, 
+                duration: 0.15, 
+                xPercent: -50, 
+                yPercent: -50,
+                ease: 'power2.out' 
+            });
         } else {
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
+            cursor.style.transform = 'translate(-50%, -50%)';
         }
     });
 
