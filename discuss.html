@@ -48,41 +48,51 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* --- CUSTOM CURSOR --- */
-        #cursor-dot {
-            position: fixed;
-            width: 8px;
-            height: 8px;
+        /* --- DISCORD LAYOUT --- */
+        .server-sidebar {
+            width: 72px;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 8px;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            margin-top: 75px;
+        }
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            background: #111;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+        .server-icon:hover, .server-icon.active {
+            border-radius: 16px;
+            background: var(--accent);
+            color: #fff;
+        }
+        .server-icon::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 25%;
+            height: 50%;
+            width: 4px;
             background: #fff;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 99999;
-            transform: translate(-50%, -50%);
-            mix-blend-mode: difference;
+            border-radius: 0 4px 4px 0;
+            transform: scaleY(0);
+            transition: 0.3s;
         }
-
-        #cursor-bg {
-            position: fixed;
-            width: 40px;
-            height: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 99998;
-            transform: translate(-50%, -50%);
-            transition: width 0.3s var(--transition), height 0.3s var(--transition), background 0.3s var(--transition);
-        }
-
-        body.hovering #cursor-bg {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 255, 255, 1);
-            mix-blend-mode: difference;
-            border-color: transparent;
-        }
+        .server-icon.active::before { transform: scaleY(1); }
 
         .sidebar {
-            width: 280px;
+            width: 240px;
             background: var(--panel);
             border-right: 1px solid var(--border);
             display: flex;
@@ -91,41 +101,41 @@
             position: relative;
             z-index: 10;
             backdrop-filter: blur(10px);
+            margin-top: 75px;
         }
 
         .side-head {
-            padding: 25px 30px;
+            padding: 15px 20px;
             font-weight: 900;
-            font-size: 1.2rem;
-            letter-spacing: -0.2px;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
             color: #fff;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .side-head span {
-            color: var(--accent);
+            text-transform: uppercase;
+            opacity: 0.6;
         }
 
         .user-link {
-            padding: 15px 30px;
+            padding: 8px 12px;
+            margin: 2px 8px;
+            border-radius: 4px;
             cursor: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
-            transition: 0.3s;
-            position: relative;
-            overflow: hidden;
+            transition: 0.2s;
+            color: var(--text-muted);
         }
-
-        .user-link:hover {
+        .user-link:hover, .user-link.active {
             background: rgba(255, 255, 255, 0.05);
+            color: #fff;
         }
+        .user-link.active { background: rgba(255,255,255,0.1); }
 
         .main {
             flex: 1;
@@ -133,10 +143,43 @@
             flex-direction: column;
             position: relative;
             background: var(--surface);
+            margin-top: 75px;
         }
 
+        .member-sidebar {
+            width: 240px;
+            background: var(--panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            margin-top: 75px;
+        }
+
+        /* --- CHAT FLOW (DISCORD STYLE) --- */
+        .bubble {
+            background: transparent !important;
+            border: none !important;
+            padding: 5px 20px !important;
+            display: flex;
+            gap: 15px;
+            max-width: 100% !important;
+            margin-bottom: 2px;
+            transition: 0.1s;
+        }
+        .bubble:hover { background: rgba(255,255,255,0.02) !important; }
+        .bubble img.msg-pfp {
+            width: 40px; height: 40px; border-radius: 50%; margin-top: 5px; cursor: pointer;
+        }
+        .msg-content { flex: 1; }
+        .msg-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .msg-user { font-weight: 700; color: #fff; cursor: pointer; }
+        .msg-user:hover { text-decoration: underline; }
+        .msg-time { font-size: 0.7rem; color: #555; }
+        .msg-text { color: #dcddde; font-size: 0.95rem; line-height: 1.3; }
+        
         .chat-head {
-            padding: 20px 30px;
+            padding: 12px 20px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -328,41 +371,57 @@
         </nav>
     </header>
 
-    <div class="sidebar" style="margin-top:75px;">
-        <div class="side-head">DIRECT<span>CONTACT</span></div>
-        <div class="user-link interactable" onclick="setMode('global')" style="background: rgba(255,255,255,0.1);">#
-            Global Hub</div>
-        <div class="user-link interactable" onclick="setMode('saved')"
-            style="border-top:1px solid var(--border); color:var(--accent); font-weight:900;">★ Bookmarks</div>
-        <div id="dm-list" style="margin-top:10px;"></div>
-        <div class="user-link interactable" onclick="promptNewDM()"
-            style="border-top:1px solid var(--border); border-bottom:1px solid var(--border); opacity:0.5; font-size:0.8rem; justify-content:center;">
-            + NEW DM</div>
-        <div class="user-link interactable" onclick="setStatus()"
-            style="border-bottom:1px solid var(--border); opacity:0.5; font-size:0.8rem; justify-content:center;">
-            📡 SET STATUS</div>
-
-        <div class="side-head" style="margin-top:20px; font-size:0.85rem; padding:15px 30px;">
-            ONLINE<span>ENTITIES</span></div>
-        <div id="online-list"></div>
-
-        <div class="side-head" style="margin-top:20px; font-size:0.85rem; padding:15px 30px;">
-            NOTIFICATIONS<span>CENTER</span></div>
-        <div id="notify-list" style="padding:15px 30px; font-size:0.8rem; color:#444;">No new transmissions.</div>
+    <!-- DISCORD STYLE LAYOUT -->
+    <div class="server-sidebar">
+        <div class="server-icon active" title="Direct Messages">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+        </div>
+        <div style="width:32px; height:2px; background:rgba(255,255,255,0.05); margin:4px 0;"></div>
+        <div class="server-icon" title="Nexus Hub">N</div>
+        <div class="server-icon" title="Code Research">C</div>
+        <div class="server-icon" title="Global Sync">G</div>
     </div>
 
-    <div class="main" style="margin-top:75px;">
+    <div class="sidebar">
+        <div class="side-head">Private Messages</div>
+        <div class="user-link interactable active" onclick="setMode('global')"># Global Hub</div>
+        <div class="user-link interactable" onclick="setMode('saved')" style="color:var(--accent);">★ Bookmarks</div>
+        
+        <div class="side-head" style="margin-top:10px;">Direct Contacts <span onclick="promptNewDM()" style="cursor:pointer; opacity:0.5;">+</span></div>
+        <div id="dm-list"></div>
+        
+        <div class="user-link interactable" onclick="setStatus()" style="margin-top:auto; border-top:1px solid var(--border); opacity:0.5; font-size:0.75rem;">📡 SET STATUS</div>
+    </div>
+
+    <div class="main">
         <div class="chat-head">
-            <span id="chat-title"># Global Hub</span>
+            <span id="chat-title" style="display:flex; align-items:center; gap:10px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                Global Hub
+            </span>
             <div style="display:flex; gap:15px; align-items:center;">
-                <a href="index.html" class="interactable">Return to Base</a>
+                <svg onclick="syncToWorkspace()" title="Sync to Workspace" class="interactable" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="cursor:pointer; opacity:0.6;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                <a href="index.html" class="interactable" style="font-size:0.7rem; text-decoration:none; color:#555; text-transform:uppercase; font-weight:800; letter-spacing:1px;">Exit Hub</a>
             </div>
         </div>
         <div id="msgs"></div>
         <div class="input-box">
-            <input type="text" id="mIn" placeholder="Type transmission..." class="interactable">
-            <button onclick="send()" class="interactable">Send</button>
+            <div style="background:rgba(255,255,255,0.03); width:100%; border-radius:8px; display:flex; padding:5px 15px; align-items:center; gap:15px;">
+                <button style="background:none; border:none; color:#555; padding:0; width:auto; font-size:1.5rem;">+</button>
+                <input type="text" id="mIn" placeholder="Message #global-hub" class="interactable" style="border:none; padding:10px 0;">
+                <div style="display:flex; gap:15px; color:#555;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <div class="member-sidebar">
+        <div class="side-head">Online — <span id="member-count">0</span></div>
+        <div id="online-list"></div>
+        
+        <div class="side-head" style="margin-top:20px;">Recent Activity</div>
+        <div id="notify-list" style="padding:10px 20px; font-size:0.75rem; color:#444;">No new transmissions.</div>
     </div>
 
     <script>
@@ -418,21 +477,23 @@
                 globalChan.presence.get((err, members) => {
                     const list = document.getElementById('online-list');
                     list.innerHTML = '';
+                    document.getElementById('member-count').innerText = members.length;
                     members.forEach(m => {
+                        const isVer = window.isVerified && window.isVerified(m.data.user);
                         const d = document.createElement('div');
                         d.className = 'user-link interactable';
-                        d.style.fontSize = '0.8rem';
-                        d.style.opacity = '0.7';
-                        d.style.flexDirection = 'column';
-                        d.style.alignItems = 'flex-start';
-                        const isVer = window.isVerified && window.isVerified(m.data.user);
                         d.innerHTML = `
-                            <div style="display:flex; align-items:center;">
-                                <div style="width:8px; height:8px; background:#00ff88; border-radius:50%; margin-right:10px; box-shadow:0 0-10px #00ff88;"></div>
-                                <span style="font-weight:900;">${m.data.user}</span>
-                                ${isVer ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="#00A2FF" style="margin-left:5px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
+                            <div style="position:relative;">
+                                <img src="${m.data.pic || 'https://via.placeholder.com/32'}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                                <div style="width:10px; height:10px; background:#43b581; border:2px solid var(--panel); border-radius:50%; position:absolute; bottom:0; right:0;"></div>
                             </div>
-                            <div style="font-size:0.65rem; color:#666; margin-left:18px;">${m.data.status || 'Active'}</div>`;
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:700; font-size:0.85rem; color:#fff; display:flex; align-items:center; gap:4px;">
+                                    ${m.data.user}
+                                    ${isVer ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="#00A2FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
+                                </span>
+                                <span style="font-size:0.65rem; color:#888;">${m.data.status || 'Active'}</span>
+                            </div>`;
                         d.onclick = () => showProfileSummary(m.data.user);
                         list.appendChild(d);
                     });
@@ -462,50 +523,42 @@
             gsap.from(d, { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
         }
 
-
         function render(d) {
             const b = document.getElementById('msgs');
             const isMe = d.user === me;
-            const msgId = 'msg-' + (d.time || Math.random());
+            const msgId = 'm-' + (d.time || Math.random());
+            
             const div = document.createElement('div');
-            div.className = isMe ? 'bubble me' : 'bubble not-me';
+            div.className = 'bubble';
             div.id = msgId;
 
             const isVerifiedUser = window.isVerified && window.isVerified(d.user);
             const isAdminUser = window.isAdmin && window.isAdmin(me);
+            const timeStr = new Date(d.time || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             div.innerHTML = `
-                ${!isMe ? `
-                    <div style="font-size:0.75rem;opacity:0.6;font-weight:700;margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                        <span class="interactable" onclick="showProfileSummary('${d.user}')" style="cursor:pointer; display:flex; align-items:center; gap:5px;">
-                            ${d.user.toUpperCase()}
-                            ${isVerifiedUser ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="#00A2FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
-                        </span>
-                        <div style="display:flex; gap:8px;">
-                            <svg onclick="setMode('dm', '${d.user}')" class="interactable" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="cursor:pointer; opacity:0.5;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                        </div>
-                    </div>` : ''}
-                <div style="display:flex; justify-content:space-between; gap:20px;">
-                    <div id="${msgId}-text">${d.text}</div>
-                    <div style="display:flex; gap:10px; align-items:center;">
+                <img src="${d.pic || 'https://via.placeholder.com/40'}" class="msg-pfp" onclick="showProfileSummary('${d.user}')">
+                <div class="msg-content">
+                    <div class="msg-meta" style="display:flex; align-items:center; gap:8px;">
+                        <span class="msg-user" onclick="showProfileSummary('${d.user}')">${d.user}</span>
+                        ${isVerifiedUser ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#00A2FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
+                        <span class="msg-time" style="font-size:0.7rem; color:#555;">${timeStr}</span>
+                    </div>
+                    <div class="msg-text" id="${msgId}-text" style="color:#dcddde; font-size:0.95rem;">${d.text}</div>
+                    <div class="msg-actions" style="position:absolute; right:20px; top:-10px; display:none; background:#111; border:1px solid #333; border-radius:4px; padding:2px 8px; gap:8px; z-index:100;">
                         ${(isMe || isAdminUser) ? `
-                            <div class="interactable" onclick="editMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" style="cursor:pointer; opacity:0.3; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.3">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </div>
-                            <div class="interactable" onclick="deleteMsg('${msgId}')" style="cursor:pointer; opacity:0.3; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.3">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                            </div>` : ''}
-                        <div class="interactable" onclick="saveMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" style="cursor:pointer; opacity:0.3; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.3">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                        </div>
-                        <div class="interactable" onclick="reportContent('discuss', '${msgId}', ${JSON.stringify(d).replace(/"/g, '&quot;')})" style="cursor:pointer; opacity:0.3; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.3">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 17c-.77 1.333.192 3 1.732 3z"/></svg>
-                        </div>
+                            <div class="interactable" onclick="editMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" style="cursor:pointer; opacity:0.6;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                            <div class="interactable" onclick="deleteMsg('${msgId}')" style="cursor:pointer; opacity:0.6;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                        ` : ''}
+                        <div class="interactable" onclick="saveMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" style="cursor:pointer; opacity:0.6;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></div>
                     </div>
                 </div>`;
+
+            div.onmouseenter = () => { if(div.querySelector('.msg-actions')) div.querySelector('.msg-actions').style.display = 'flex'; };
+            div.onmouseleave = () => { if(div.querySelector('.msg-actions')) div.querySelector('.msg-actions').style.display = 'none'; };
+
             b.appendChild(div);
             window.requestAnimationFrame(() => b.scrollTop = b.scrollHeight);
-            gsap.from(div, { y: 30, opacity: 0, scale: 0.9, transformOrigin: isMe ? "bottom right" : "bottom left", duration: 0.6, ease: "back.out(2)" });
         }
 
         function deleteMsg(id) {
@@ -631,13 +684,7 @@
         }
         initDMList();
 
-        ably.channels.get('dm-' + me).subscribe('priv', (m) => {
-            const sender = m.data.user;
-            addList(sender, m.data.pic);
-            persistDM(sender, m.data);
-            if (mode === 'dm' && target === sender) render(m.data);
-            else if (window.showTopNotification) window.showTopNotification(`NEW TRANSMISSION FROM @${sender}`);
-        });
+        initDMList();
     </script>
 </body>
 
