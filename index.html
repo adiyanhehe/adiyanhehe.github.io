@@ -189,9 +189,9 @@
         
         /* SECTOR CUBES */
         .sector-cube {
-            position: absolute;
-            width: 250px;
-            height: 250px;
+            position: relative; /* Relative inside module */
+            width: clamp(280px, 40vw, 400px);
+            aspect-ratio: 1;
             transform-style: preserve-3d;
             cursor: pointer;
             z-index: 100;
@@ -262,9 +262,20 @@
             clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
         }
 
-        /* --- SECTIONS --- */
         .portfolio-sections {
-            display: none; /* Removed static boxes */
+            position: relative;
+            padding: 0 5vw 40vh;
+            display: flex;
+            flex-direction: column;
+            gap: 100vh; /* Large vertical gaps for scrolling */
+            z-index: 2;
+        }
+        .sector-module {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
         }
 
         .section-card.reverse {
@@ -468,7 +479,52 @@
     </section>
 
     <div class="portfolio-sections">
-        <!-- Replaced with Spatial Cubes -->
+        <div class="sector-module" id="mod-web">
+            <div class="sector-cube interactable" onclick="window.location.href='web.html'">
+                <div class="cube-face" style="transform: translateZ(200px)">
+                    <span class="category">Sector 01</span>
+                    <div class="cube-label">Web Systems</div>
+                    <p style="font-size:0.9rem; margin-top:20px; color:var(--text-muted);">Developing scalable, full-stack applications with advanced UI interactions.</p>
+                </div>
+                <div class="cube-face" style="transform: rotateY(90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateY(-90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateX(90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateX(-90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateY(180deg) translateZ(200px)"></div>
+            </div>
+        </div>
+
+        <div class="sector-module" id="mod-roblox">
+            <div class="sector-cube interactable" onclick="window.location.href='roblox.html'">
+                <div class="cube-face" style="transform: translateZ(200px)">
+                    <span class="category">Sector 02</span>
+                    <div class="cube-label">Roblox Studio</div>
+                    <p style="font-size:0.9rem; margin-top:20px; color:var(--text-muted);">Creating immersive 3D worlds and complex Lua scripting systems.</p>
+                </div>
+                <!-- ... other faces ... -->
+                <div class="cube-face" style="transform: rotateY(90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateY(-90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateX(90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateX(-90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateY(180deg) translateZ(200px)"></div>
+            </div>
+        </div>
+        
+        <div class="sector-module" id="mod-discuss">
+            <div class="sector-cube interactable" onclick="window.location.href='discuss.html'">
+                <div class="cube-face" style="transform: translateZ(200px)">
+                    <span class="category">Sector 03</span>
+                    <div class="cube-label">Nexus Discuss</div>
+                    <p style="font-size:0.9rem; margin-top:20px; color:var(--text-muted);">Global hub for community transmissions and developer protocols.</p>
+                </div>
+                <!-- ... other faces ... -->
+                <div class="cube-face" style="transform: rotateY(90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateY(-90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateX(90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateX(-90deg) translateZ(200px)"></div>
+                <div class="cube-face" style="transform: rotateY(180deg) translateZ(200px)"></div>
+            </div>
+        </div>
     </div>
 
     <!-- SCRIPTS -->
@@ -523,32 +579,10 @@
             });
         }
 
-        // --- SPATIAL MENU ENGINE ---
-        const sectors = [
-            { name: "Web Systems", sub: "Sector 01", link: "web.html", x: 20, y: 30 },
-            { name: "Roblox Studio", sub: "Sector 02", link: "roblox.html", x: 70, y: 50 },
-            { name: "Nexus Discuss", sub: "Sector 03", link: "discuss.html", x: 40, y: 70 }
-        ];
-
-        sectors.forEach(s => {
-            const cube = document.createElement('div');
-            cube.className = 'sector-cube interactable';
-            cube.innerHTML = `
-                <div class="cube-face" style="transform: translateZ(125px)">
-                    <div class="cube-label">${s.name}</div>
-                    <div class="cube-sub">${s.sub}</div>
-                </div>
-                <div class="cube-face" style="transform: rotateY(90deg) translateZ(125px)"></div>
-                <div class="cube-face" style="transform: rotateY(-90deg) translateZ(125px)"></div>
-                <div class="cube-face" style="transform: rotateX(90deg) translateZ(125px)"></div>
-                <div class="cube-face" style="transform: rotateX(-90deg) translateZ(125px)"></div>
-                <div class="cube-face" style="transform: rotateY(180deg) translateZ(125px)"></div>
-            `;
-            space.appendChild(cube);
-            
-            gsap.set(cube, { left: `${s.x}%`, top: `${s.y}%`, z: -500 });
-            
-            // Floating Animation
+        // --- SPATIAL SCROLL ENGINE ---
+        const cubes = document.querySelectorAll('.sector-cube');
+        cubes.forEach((cube, i) => {
+            // Idle floating
             gsap.to(cube, {
                 y: "+=30", rotationX: "+=360", rotationY: "+=360",
                 duration: 15 + Math.random() * 10,
@@ -556,14 +590,25 @@
                 ease: "none"
             });
             
-            // Parallax
+            // Scroll trigger for entrance
+            gsap.from(cube, {
+                scrollTrigger: {
+                    trigger: cube,
+                    start: "top bottom",
+                    end: "top 20%",
+                    scrub: 1
+                },
+                z: -3000,
+                scale: 0.1,
+                opacity: 0
+            });
+            
+            // Mouse Parallax
             window.addEventListener('mousemove', (e) => {
                 const moveX = (e.clientX - window.innerWidth/2) * 0.05;
                 const moveY = (e.clientY - window.innerHeight/2) * 0.05;
-                gsap.to(cube, { x: moveX, y: moveY, duration: 1, ease: 'power2.out' });
+                gsap.to(cube, { x: moveX, y: moveY, duration: 1.5, ease: 'power2.out' });
             });
-            
-            cube.onclick = () => window.location.href = s.link;
         });
 
         window.addEventListener('mousemove', (e) => {
