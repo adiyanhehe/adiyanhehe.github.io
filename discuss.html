@@ -136,6 +136,40 @@
             text-align: center;
         }
 
+        /* Status Colors */
+        .status-online { background: #23a559 !important; }
+        .status-idle { background: #f0b232 !important; }
+        .status-dnd { background: #f23f43 !important; }
+        .status-offline { background: #80848e !important; }
+
+        /* PICKERS */
+        .picker-panel {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 300px;
+            height: 400px;
+            background: #2b2d31;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            z-index: 10001;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+        .picker-head { padding:15px; border-bottom:1px solid var(--border); font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); }
+        .picker-grid { flex:1; overflow-y:auto; padding:10px; display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; }
+        .picker-item { 
+            font-size: 1.5rem; cursor: pointer; transition: 0.2s; 
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+        }
+        .picker-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.2); }
+        .gif-item { width:100%; border-radius:4px; cursor:pointer; transition:0.2s; }
+        .gif-item:hover { filter: brightness(1.2); scale: 1.05; }
+
         #user-slot {
             margin-top:auto; 
             padding: 15px 20px;
@@ -509,15 +543,15 @@
         <div id="dm-list" style="flex:1;"></div>
 
         <div id="user-slot">
-            <div style="position:relative; width:32px; height:32px;">
+            <div style="position:relative; width:36px; height:36px; cursor:pointer;" onclick="cycleStatus()">
                 <img id="my-pfp" src="https://via.placeholder.com/32" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
-                <div style="width:10px; height:10px; background:#43b581; border:2px solid #232428; border-radius:50%; position:absolute; bottom:0; right:0;"></div>
+                <div id="my-status-dot" class="status-online" style="width:12px; height:12px; border:3px solid #000; border-radius:50%; position:absolute; bottom:0; right:0;"></div>
             </div>
             <div style="flex:1; min-width:0;">
                 <div id="my-name" style="font-weight:700; font-size:0.85rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">...</div>
-                <div id="my-status" style="font-size:0.65rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Online</div>
+                <div id="my-status-text" style="font-size:0.65rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Online</div>
             </div>
-            <div onclick="setStatus()" title="Set Status" style="opacity:0.6; cursor:pointer;" class="interactable"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
+            <div onclick="setStatus()" title="Set Custom Status" style="opacity:0.6; cursor:pointer;" class="interactable"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
         </div>
     </div>
 
@@ -533,11 +567,26 @@
             </div>
         </div>
         <div id="msgs"></div>
+        
+        <!-- PICKER PANELS -->
+        <div id="emoji-picker" class="picker-panel">
+            <div class="picker-head">Select Emoji</div>
+            <div class="picker-grid" id="emoji-grid"></div>
+        </div>
+        <div id="gif-picker" class="picker-panel">
+            <div class="picker-head">GIF Search</div>
+            <div style="padding:10px;"><input type="text" id="gif-search" placeholder="Search Giphy..." style="background:rgba(255,255,255,0.05); border-radius:8px; width:100%; padding:8px 15px; border:1px solid var(--border);" oninput="searchGif(this.value)"></div>
+            <div class="picker-grid" id="gif-grid" style="grid-template-columns: 1fr 1fr; gap:10px;"></div>
+        </div>
+
         <div class="input-box">
+            <div id="typing-area" style="font-size:0.7rem; color:var(--text-muted); height:14px; margin-bottom:4px; margin-left:14px; opacity:0; transition:0.3s; font-weight:700; text-transform:uppercase;">...</div>
             <div class="input-inner">
                 <button class="input-btn">+</button>
-                <input type="text" id="mIn" placeholder="Message #global-hub" onkeydown="if(event.key === 'Enter') send()">
+                <input type="text" id="mIn" placeholder="Message #global-hub" onkeydown="reportTyping(); if(event.key === 'Enter') send()">
                 <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="input-btn" onclick="togglePicker('emoji-picker')" title="Emoji">😊</button>
+                    <button class="input-btn" onclick="togglePicker('gif-picker')" title="GIF" style="font-size:0.8rem; font-weight:900; background:var(--text-muted); color:#000; padding:2px 5px; border-radius:4px;">GIF</button>
                     <button class="send-btn" onclick="send()">Send</button>
                 </div>
             </div>
@@ -591,7 +640,8 @@
             });
 
             // --- PRESENCE LOGIC ---
-            globalChan.presence.enter({ user: me, pic: localStorage.getItem('rbx_pic'), status: 'Online' });
+            const myStatusMode = localStorage.getItem('nexus_status_mode') || 'online';
+            globalChan.presence.enter({ user: me, pic: localStorage.getItem('rbx_pic'), status: 'Online', statusMode: myStatusMode });
             globalChan.presence.subscribe(() => {
                 globalChan.presence.get((err, members) => {
                     const list = document.getElementById('online-list');
@@ -602,30 +652,45 @@
                     document.querySelectorAll('[id^="status-"]').forEach(s => s.style.display = 'none');
                     
                     members.forEach(m => {
+                        const sMode = m.data.statusMode || 'online';
+                        const sClass = 'status-' + sMode;
+                        
                         // Toggle dot in DM list
                         const sDot = document.getElementById('status-' + m.data.user);
-                        if(sDot) sDot.style.display = 'block';
+                        if(sDot) {
+                            sDot.style.display = 'block';
+                            sDot.className = sClass;
+                        }
 
                         const isVer = window.isVerified && window.isVerified(m.data.user);
                         const d = document.createElement('div');
                         d.className = 'user-link interactable';
                         d.innerHTML = `
                             <div style="position:relative;">
-                                <img src="${m.data.pic || 'https://via.placeholder.com/32'}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
-                                <div style="width:10px; height:10px; background:#43b581; border:2px solid var(--panel); border-radius:50%; position:absolute; bottom:0; right:0;"></div>
+                                <img src="${m.data.pic || 'https://via.placeholder.com/32'}" style="width:32px; height:32px; border-radius:12px; object-fit:cover;">
+                                <div class="${sClass}" style="width:12px; height:12px; border:3px solid var(--panel); border-radius:50%; position:absolute; bottom:-2px; right:-2px;"></div>
                             </div>
                             <div style="display:flex; flex-direction:column;">
                                 <span style="font-weight:700; font-size:0.85rem; color:#fff; display:flex; align-items:center; gap:4px;">
                                     ${m.data.user}
                                     ${isVer ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="#00A2FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
                                 </span>
-                                <span style="font-size:0.65rem; color:#888;">${m.data.status || 'Active'}</span>
+                                <span style="font-size:0.65rem; color:#888;">${m.data.customStatus || m.data.status || 'Active'}</span>
                             </div>`;
                         d.onclick = () => showProfileSummary(m.data.user);
                         list.appendChild(d);
                     });
                 });
             });
+
+            // --- TYPING LOGIC ---
+            globalChan.subscribe('typing', (m) => {
+                if(m.data.user === me) return;
+                showTypingIndicator(m.data.user);
+            });
+
+            // --- PICKERS ---
+            initPickers();
 
             // --- AUTO-DM FROM URL ---
             const urlParams = new URLSearchParams(window.location.search);
@@ -647,12 +712,83 @@
             });
         };
 
+        let typingTimeout;
+        function showTypingIndicator(u) {
+            const container = document.getElementById('typing-area');
+            if(!container) return;
+            container.innerText = `${u} is typing...`;
+            container.style.opacity = '1';
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => { container.style.opacity = '0'; }, 3000);
+        }
+
+        function reportTyping() {
+            globalChan.publish('typing', { user: me });
+        }
+
+        // --- PICKERS ENHANCEMENT ---
+        const emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','👻','💀','☠️','👽','👾','🤖','💩','😺','😸','😻','😼','😽','🙀','😿','😾'];
+        
+        function initPickers() {
+            const grid = document.getElementById('emoji-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            emojis.forEach(e => {
+                const span = document.createElement('div');
+                span.className = 'picker-item';
+                span.innerText = e;
+                span.onclick = () => {
+                    document.getElementById('mIn').value += e;
+                    togglePicker('emoji-picker');
+                };
+                grid.appendChild(span);
+            });
+            searchGif(''); // Load trending
+        }
+
+        function togglePicker(id) {
+            const el = document.getElementById(id);
+            const isVisible = el.style.display === 'flex';
+            document.querySelectorAll('.picker-panel').forEach(p => p.style.display = 'none');
+            el.style.display = isVisible ? 'none' : 'flex';
+        }
+
+        async function searchGif(q) {
+            const grid = document.getElementById('gif-grid');
+            if(!grid) return;
+            grid.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); font-size:0.7rem;">Loading...</div>';
+            try {
+                const apiKey = 'dc6zaTOxFJmzC'; 
+                const url = q ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(q)}&limit=10` : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=10`;
+                const res = await fetch(url);
+                const json = await res.json();
+                grid.innerHTML = '';
+                json.data.forEach(img => {
+                    const gif = document.createElement('img');
+                    gif.className = 'gif-item';
+                    gif.src = img.images.fixed_height_small.url;
+                    gif.onclick = () => {
+                        const i = document.getElementById('mIn');
+                        i.value = img.images.downsized.url;
+                        send();
+                        togglePicker('gif-picker');
+                    };
+                    grid.appendChild(gif);
+                });
+            } catch (e) {
+                grid.innerHTML = '<div style="grid-column:1/-1; color:red; font-size:0.7rem;">Giphy Error</div>';
+            }
+        }
+
         async function syncSelf() {
             if (!window.supabaseClient) { setTimeout(syncSelf, 500); return; }
             
             document.getElementById('my-name').innerText = me;
             const fallbackPic = 'https://via.placeholder.com/32';
             document.getElementById('my-pfp').src = localStorage.getItem('rbx_pic') || fallbackPic;
+            
+            const mode = localStorage.getItem('nexus_status_mode') || 'online';
+            updateStatusUI(mode);
 
             try {
                 const { data } = await window.supabaseClient.from('profiles').select('*').eq('username', me).maybeSingle();
@@ -661,11 +797,34 @@
                         localStorage.setItem('rbx_pic', data.avatar_url);
                         document.getElementById('my-pfp').src = data.avatar_url;
                         // Also update presence so others see the new pic
-                        globalChan.presence.update({ user: me, pic: data.avatar_url, status: 'Online' });
+                        globalChan.presence.update({ user: me, pic: data.avatar_url, status: 'Online', statusMode: mode, customStatus: localStorage.getItem('nexus_custom_status') });
                     }
                     if (data.display_name) document.getElementById('my-name').innerText = data.display_name;
+                    if (data.status) {
+                        localStorage.setItem('nexus_custom_status', data.status);
+                        document.getElementById('my-status-text').innerText = data.status;
+                    }
                 }
             } catch (e) { console.error("Self sync failed", e); }
+        }
+
+        const modes = ['online', 'idle', 'dnd', 'offline'];
+        function cycleStatus() {
+            let current = localStorage.getItem('nexus_status_mode') || 'online';
+            let nextIndex = (modes.indexOf(current) + 1) % modes.length;
+            let next = modes[nextIndex];
+            
+            localStorage.setItem('nexus_status_mode', next);
+            updateStatusUI(next);
+            globalChan.presence.update({ user: me, pic: localStorage.getItem('rbx_pic'), statusMode: next, customStatus: localStorage.getItem('nexus_custom_status') });
+            if (window.showNotification) showNotification(`Mode updated to: ${next.toUpperCase()}`);
+        }
+
+        function updateStatusUI(mode) {
+            const dot = document.getElementById('my-status-dot');
+            const text = document.getElementById('my-status-text');
+            dot.className = 'status-' + mode;
+            text.innerText = mode.charAt(0).toUpperCase() + mode.slice(1);
         }
 
         function updateUnreadUI(u) {
@@ -744,6 +903,20 @@
             const isAdminUser = window.isAdmin && window.isAdmin(me);
             const timeStr = new Date(d.time || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            // Mentions
+            let textMod = d.text;
+            if(textMod.includes(`@${me}`)) {
+                textMod = textMod.replace(`@${me}`, `<span style="background:rgba(255, 162, 0, 0.15); color:#FFD700; padding:1px 4px; border-radius:3px; font-weight:700;">@${me}</span>`);
+            }
+
+            // Auto-embed image links
+            const imgRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))/gi;
+            textMod = textMod.replace(imgRegex, (match) => {
+                return `<div style="margin-top:10px; max-width:400px; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
+                            <img src="${match}" style="width:100%; display:block;" onerror="this.style.display='none'">
+                        </div>`;
+            });
+
             const pfpId = 'msg-pfp-' + Math.random().toString(36).substr(2, 9);
             div.innerHTML = `
                 <img id="${pfpId}" src="${d.pic || 'https://via.placeholder.com/40'}" class="msg-pfp" onclick="showProfileSummary('${d.user}')">
@@ -753,7 +926,7 @@
                         ${isVerifiedUser ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#00A2FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
                         <span class="msg-time">${timeStr}</span>
                     </div>
-                    <div class="msg-text" id="${msgId}-text">${d.text}</div>
+                    <div class="msg-text" id="${msgId}-text">${textMod}</div>
                     <div class="msg-actions">
                         ${(isMe || isAdminUser) ? `
                             <div class="msg-action-btn" onclick="editMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
