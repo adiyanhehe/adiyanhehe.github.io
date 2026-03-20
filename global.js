@@ -27,10 +27,18 @@ applyTheme(currentTheme);
 
 // --- GLOBAL INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Inject Universal Header Structure if missing
+    // Safety: Inject header as early as possible
     injectUniversalHeader();
+    
+    // Safety Interval: If something removes the header, put it back
+    const headerCheck = setInterval(() => {
+        if (!document.querySelector('.header')) {
+            injectUniversalHeader();
+        }
+    }, 2000);
+    setTimeout(() => clearInterval(headerCheck), 10000);
 
-    // 2. Initialize Supabase
+    // Initialize Supabase
     if(typeof window.supabase === 'undefined') {
         const s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
@@ -43,6 +51,9 @@ window.addEventListener('DOMContentLoaded', () => {
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         checkGlobalAuth();
     }
+
+    // --- CURSOR RESTORATION ---
+    initNexusCursor();
 });
 
 function injectUniversalHeader() {
@@ -53,24 +64,69 @@ function injectUniversalHeader() {
         document.body.prepend(header);
     }
 
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const path = window.location.pathname.split('/').pop() || 'index.html';
 
     header.innerHTML = `
         <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
         <nav class="nav-links">
-            <a href="index.html" class="nav-item ${currentPage === 'index.html' ? 'active' : ''}">Nexus</a>
-            <a href="threads.html" class="nav-item ${currentPage === 'threads.html' ? 'active' : ''}">Threads</a>
-            <a href="discuss.html" class="nav-item ${currentPage === 'discuss.html' ? 'active' : ''}">Discuss</a>
-            <a href="roblox.html" class="nav-item ${currentPage === 'roblox.html' ? 'active' : ''}">Roblox</a>
+            <a href="index.html" class="nav-item ${path === 'index.html' ? 'active' : ''}">Nexus</a>
+            <a href="threads.html" class="nav-item ${path === 'threads.html' ? 'active' : ''}">Threads</a>
+            <a href="discuss.html" class="nav-item ${path === 'discuss.html' ? 'active' : ''}">Discuss</a>
+            <a href="roblox.html" class="nav-item ${path === 'roblox.html' ? 'active' : ''}">Roblox</a>
+            <a href="super-admin.html" class="nav-item ${path === 'super-admin.html' ? 'active' : ''}" style="font-size:0.7rem; opacity:0.3;">Admin</a>
             <div id="auth-nav"></div>
             <button class="nav-item interactable theme-toggle" onclick="toggleTheme(event)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); border-radius:50px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer; color:#fff;">${currentTheme === 'light' ? '🌙' : '☀️'}</button>
         </nav>
     `;
     
-    // Header Animation
     if(window.gsap) {
-        gsap.from(header, { y: -100, opacity: 0, duration: 1, ease: 'power4.out' });
+        gsap.to(header, { y: 0, opacity: 1, duration: 1, ease: 'power4.out', startAt: {y: -100, opacity: 0} });
     }
+}
+
+function initNexusCursor() {
+    // If a cursor already exists, don't double up
+    if(document.querySelector('.custom-cursor')) return;
+
+    const cursor = document.createElement('div');
+    cursor.className = 'custom-cursor';
+    const dot = document.createElement('div');
+    dot.className = 'cursor-dot';
+    cursor.appendChild(dot);
+    document.body.appendChild(cursor);
+
+    // CSS for Cursor (Direct injection for safety)
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .custom-cursor {
+            position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 50%; pointer-events: none; z-index: 9999999;
+            display: flex; align-items: center; justify-content: center;
+            transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s;
+            mix-blend-mode: difference;
+        }
+        .cursor-dot { width: 4px; height: 4px; background: #fff; border-radius: 50%; }
+        body.light-mode .custom-cursor { border-color: rgba(0,0,0,0.5); }
+        body.light-mode .cursor-dot { background: #000; }
+        .custom-cursor.active { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-color: transparent; }
+        * { cursor: none !important; }
+        @media (max-width: 768px) { .custom-cursor { display: none; } * { cursor: auto !important; } }
+    `;
+    document.head.appendChild(style);
+
+    window.addEventListener('mousemove', (e) => {
+        if(window.gsap) {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
+        } else {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        }
+    });
+
+    document.querySelectorAll('.interactable, a, button, input, textarea').forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('active'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+    });
 }
 
 async function checkGlobalAuth() {
