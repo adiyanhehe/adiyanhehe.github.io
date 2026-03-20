@@ -556,11 +556,32 @@
             history.forEach(render);
         }
 
-        function promptNewDM() {
+        async function promptNewDM() {
             const u = prompt("Enter username of the recipient:");
             if (u && u.trim() !== me) {
-                addList(u);
-                setMode('dm', u);
+                const exists = await window.checkIfUserExists(u.trim());
+                if(!exists) {
+                    if (window.showTopNotification) window.showTopNotification(`USER NOT FOUND: ${u}`, 'error');
+                    return;
+                }
+                addList(u.trim());
+                setMode('dm', u.trim());
+            }
+        }
+
+        window.sendFriendRequest = async function(u) {
+            if (window.supabaseClient) {
+                try {
+                    await window.supabaseClient.from('friend_requests').insert([{
+                        from_user: me,
+                        to_user: u,
+                        status: 'pending'
+                    }]);
+                    if (window.showTopNotification) window.showTopNotification(`FRIEND REQUEST SENT TO @${u}`);
+                } catch (e) {
+                    console.error("Cloud Error:", e);
+                    if (window.showTopNotification) window.showTopNotification(`REQUEST FAILED. Check network stability.`, 'error');
+                }
             }
         }
 
@@ -615,7 +636,7 @@
             addList(sender, m.data.pic);
             persistDM(sender, m.data);
             if (mode === 'dm' && target === sender) render(m.data);
-            else if (window.showNotification) showNotification(`New Transmission from @${sender}`);
+            else if (window.showTopNotification) window.showTopNotification(`NEW TRANSMISSION FROM @${sender}`);
         });
     </script>
 </body>
