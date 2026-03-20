@@ -177,10 +177,15 @@
                 </div>
                 <div class="trend-item">
                     <div>
-                        <div class="trend-name">#CoreProtocol</div>
-                        <div class="trend-count">920K links</div>
+                         <div class="trend-name">#CoreProtocol</div>
+                         <div class="trend-count">920K links</div>
                     </div>
                 </div>
+            </div>
+
+            <div class="trend-card" style="margin-top:20px;">
+                <h3 style="color:#f91880;">Notifications</h3>
+                <div id="notify-list" style="font-size:0.8rem; color:#444; font-weight:700;">No recent alerts.</div>
             </div>
         </div>
     </div>
@@ -266,11 +271,13 @@
             const currentPosts = parseInt(document.getElementById('stat-posts').innerText);
             document.getElementById('stat-posts').innerText = currentPosts + 1;
         }
-
         function render(d, isNew) {
             const f = document.getElementById('feed');
             const postId = `p-${d.time || Math.random()}`;
             const isLiked = localStorage.getItem(`like_${postId}`);
+            const isVerifiedUser = window.isVerified && window.isVerified(d.user);
+            const isAdminUser = window.isAdmin && window.isAdmin(me);
+            const isMe = d.user === me;
             
             const div = document.createElement('div'); div.className = 'post'; div.id = postId;
             div.innerHTML = `
@@ -278,11 +285,21 @@
                     <img src="${d.pic}" class="user-pic interactable" onclick="showProfileSummary('${d.user}')">
                 </div>
                 <div class="post-right">
-                    <div class="post-header">
-                        <span class="username interactable" onclick="showProfileSummary('${d.user}')">${d.user}</span>
-                        <span style="color:var(--text-dim); font-size:0.8rem; font-weight:800;">${formatTime(d.time)}</span>
+                    <div class="post-header" style="display:flex; justify-content:space-between; width:100%;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="username interactable" onclick="showProfileSummary('${d.user}')" style="display:flex; align-items:center; gap:5px;">
+                                ${d.user}
+                                ${isVerifiedUser ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#00A2FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
+                            </span>
+                            <span style="color:var(--text-dim); font-size:0.8rem; font-weight:800;">${formatTime(d.time)}</span>
+                        </div>
+                        ${(isMe || isAdminUser) ? `
+                            <div style="display:flex; gap:10px;">
+                                <div class="interactable" onclick="editPost('${postId}', '${encodeURIComponent(JSON.stringify(d))}')" style="cursor:pointer; opacity:0.4;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                                <div class="interactable" onclick="deletePost('${postId}')" style="cursor:pointer; opacity:0.4;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                            </div>` : ''}
                     </div>
-                    <div class="post-text">${d.text}</div>
+                    <div class="post-text" id="${postId}-text">${d.text}</div>
                     <div class="post-actions">
                         <div class="action-icon interactable ${isLiked ? 'liked' : ''}" onclick="toggleLike('${postId}')" title="Like">
                             <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
@@ -295,8 +312,8 @@
                         <div class="action-icon interactable" onclick="repost('${postId}', '${encodeURIComponent(JSON.stringify(d))}')" title="Repost">
                             <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4m6 0l-4 4 4 4M2 13h15M2 5h19"/></svg>
                         </div>
-                        <div class="action-icon interactable ${localStorage.getItem('save_'+postId) ? 'saved' : ''}" onclick="toggleSavePost('${postId}', '${encodeURIComponent(JSON.stringify(d))}')" title="Save Post">
-                            <svg viewBox="0 0 24 24" fill="${localStorage.getItem('save_'+postId) ? 'var(--nexus-blue)' : 'none'}"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/></svg>
+                        <div class="action-icon interactable ${localStorage.getItem('save_' + postId) ? 'saved' : ''}" onclick="toggleSavePost('${postId}', '${encodeURIComponent(JSON.stringify(d))}')" title="Save Post">
+                            <svg viewBox="0 0 24 24" fill="${localStorage.getItem('save_' + postId) ? 'var(--nexus-blue)' : 'none'}"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/></svg>
                         </div>
                         <div class="action-icon interactable" onclick="reportContent('thread', '${postId}', ${JSON.stringify(d).replace(/"/g, '&quot;')})" title="Report Post">
                             <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 17c-.77 1.333.192 3 1.732 3z" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>
@@ -306,6 +323,19 @@
             
             if(isNew) { f.prepend(div); gsap.from(div, { y: 20, opacity: 0, duration: 0.6, ease: "power4.out" }); }
             else f.appendChild(div);
+        }
+
+        function deletePost(id) {
+            if(confirm("Erase this transmission from the global feed?")) {
+                gsap.to(`#${id}`, { x: 100, opacity: 0, duration: 0.5, onComplete: () => document.getElementById(id).remove() });
+            }
+        }
+        function editPost(id, dataRaw) {
+            const d = JSON.parse(decodeURIComponent(dataRaw));
+            const txt = prompt("Revise transmission data:", d.text);
+            if(txt && txt !== d.text) {
+                document.getElementById(id + '-text').innerText = txt + " (revised)";
+            }
         }
 
         function toggleLike(id) {
