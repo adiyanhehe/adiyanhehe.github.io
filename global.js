@@ -29,7 +29,9 @@ applyTheme(currentTheme);
 // --- APP INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
     injectUniversalHeader();
-    initNexusCursor(); // Run this early!
+    
+    // Safety reveal for mouse if cursor failed
+    document.body.style.cursor = 'auto';
 
     // Load Supabase SDK if missing
     if (typeof window.supabase === 'undefined') {
@@ -43,83 +45,90 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeSupabase() {
-    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    checkGlobalAuth();
-    initDatabaseSync();
+    try {
+        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        checkGlobalAuth();
+        initDatabaseSync();
+    } catch(e) { console.error("Supabase Init Failed", e); }
 }
 
-// --- CURSOR ENGINE (FIXED) ---
-function initNexusCursor() {
-    if (document.querySelector('.custom-cursor')) return;
+// --- DATABASE ARCHIVE LOGIC ---
+async function initDatabaseSync() {
+    if (!window.supabaseClient) return;
 
-    const cursor = document.createElement('div');
-    cursor.className = 'custom-cursor';
-    const dot = document.createElement('div');
-    dot.className = 'cursor-dot';
-    cursor.appendChild(dot);
-    document.body.appendChild(cursor);
+    // GLOBAL CLOUD SAVE FUNCTION
+    window.saveThreadToCloud = async (postData) => {
+        try {
+            const { error } = await window.supabaseClient
+                .from('threads')
+                .insert([{ 
+                    content: postData.text, 
+                    author: postData.user, 
+                    avatar: postData.pic,
+                    timestamp: new Date().toISOString()
+                }]);
+            if(error) console.error("Archive Error:", error);
+        } catch(e) { console.error("Cloud Push Failed", e); }
+    };
 
-    const style = document.createElement('style');
-    style.innerHTML = `
-        /* Hide real cursor on body, but only if custom cursor is active */
-        body, html, a, button, .interactable { 
-            cursor: none !important; 
+    // GLOBAL CLOUD LOAD FUNCTION
+    window.loadCloudThreads = async () => {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('threads')
+                .select('*')
+                .order('timestamp', { ascending: false })
+                .limit(50);
+            if(error) throw error;
+            return data || [];
+        } catch(e) { 
+            console.error("Cloud Fetch Failed", e); 
+            return []; 
         }
-        
-        .custom-cursor {
-            position: fixed; width: 40px; height: 40px; border: 1.5px solid rgba(255,255,255,0.4);
-            border-radius: 50%; pointer-events: none; z-index: 99999999;
-            display: flex; align-items: center; justify-content: center;
-            top: 0; left: 0; pointer-events: none;
-            backdrop-filter: blur(4px); transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s;
-            mix-blend-mode: normal;
-            box-shadow: 0 0 20px rgba(0, 162, 255, 0.1);
-            transform: translate(-50%, -50%);
-        }
-        .cursor-dot { width: 5px; height: 5px; background: #fff; border-radius: 50%; }
-        body.light-mode .custom-cursor { border-color: rgba(0,0,0,0.4); }
-        body.light-mode .cursor-dot { background: #000; }
-        
-        .custom-cursor.active { 
-            width: 80px; height: 80px; 
-            background: rgba(255,255,255,0.1); 
-            border-color: rgba(255,255,255,0.9); 
-            backdrop-filter: blur(10px);
-        }
+    };
+}
+
+// --- HEADER ENGINE ---
+function injectUniversalHeader() {
+    let header = document.querySelector('.header');
+    if (!header) { 
+        header = document.createElement('header'); 
+        header.className = 'header'; 
+        document.body.prepend(header); 
+    }
+    const path = window.location.pathname.split('/').pop() || 'index.html';
+    
+    header.innerHTML = `
+        <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item ${path === 'index.html' ? 'active' : ''}">Nexus</a>
+            <a href="threads.html" class="nav-item ${path === 'threads.html' ? 'active' : ''}">Threads</a>
+            <a href="discuss.html" class="nav-item ${path === 'discuss.html' ? 'active' : ''}">Discuss</a>
+            <a href="roblox.html" class="nav-item ${path === 'roblox.html' ? 'active' : ''}">Roblox</a>
+            <div id="auth-nav"></div>
+            <button class="nav-item interactable theme-toggle" onclick="toggleTheme(event)">${currentTheme === 'light' ? '🌙' : '☀️'}</button>
+        </nav>
     `;
-    document.head.appendChild(style);
-
-    window.addEventListener('mousemove', (e) => {
-        if (window.gsap) {
-            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1, ease: 'power2.out' });
-        } else {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-        }
-    });
-
-    document.addEventListener('mouseover', (e) => {
-        if (e.target.closest('a, button, .interactable, input')) {
-            cursor.classList.add('active');
-        }
-    });
-
-    document.addEventListener('mouseout', (e) => {
-        if (e.target.closest('a, button, .interactable, input')) {
-            cursor.classList.remove('active');
-        }
-    });
+    if(window.gsap) {
+        gsap.to(header, { y: 0, opacity: 1, duration: 1, ease: 'power4.out', startAt: {y: -100, opacity: 0} });
+    }
 }
 
-// --- AUTH & SYNC ---
+// --- AUTH ENGINE ---
 async function checkGlobalAuth() {
-    const authNav = document.getElementById('auth-nav'); 
+    const authNav = document.getElementById('auth-nav');
     if (!authNav) return;
     try {
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         if (session) {
             const user = session.user;
             const name = user.user_metadata.full_name || user.email.split('@')[0];
+            const pic = user.user_metadata.avatar_url || 'https://via.placeholder.com/100';
+            
+            // Sync to legacy storage for older components
+            localStorage.setItem('rbx_user', name);
+            localStorage.setItem('rbx_pic', pic);
+
             authNav.innerHTML = `<a href="profile.html?user=${name}" class="nav-item interactable" style="color:#00A2FF; font-weight:900;">@${name}</a>
                                  <a href="#" onclick="logoutNexus()" class="nav-item interactable" style="opacity:0.4; font-size:0.7rem;">LOGOUT</a>`;
         } else {
@@ -128,28 +137,26 @@ async function checkGlobalAuth() {
     } catch (e) { console.log("Auth Error:", e); }
 }
 
-window.logoutNexus = async () => { 
-    if (window.supabaseClient) await window.supabaseClient.auth.signOut(); 
-    location.reload(); 
+window.logoutNexus = async () => {
+    if (window.supabaseClient) await window.supabaseClient.auth.signOut();
+    localStorage.removeItem('rbx_user');
+    localStorage.removeItem('rbx_pic');
+    location.reload();
 };
 
-function injectUniversalHeader() {
-    let header = document.querySelector('.header');
-    if (!header) { header = document.createElement('header'); header.className = 'header'; document.body.prepend(header); }
-    const path = window.location.pathname.split('/').pop() || 'index.html';
-    header.innerHTML = `
-        <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
-        <nav class="nav-links">
-            <a href="index.html" class="nav-item ${path === 'index.html' ? 'active' : ''}">Nexus</a>
-            <a href="threads.html" class="nav-item ${path === 'threads.html' ? 'active' : ''}">Threads</a>
-            <a href="discuss.html" class="nav-item ${path === 'discuss.html' ? 'active' : ''}">Discuss</a>
-            <button class="nav-item interactable theme-toggle" onclick="toggleTheme(event)">${currentTheme === 'light' ? '🌙' : '☀️'}</button>
-            <div id="auth-nav"></div>
-        </nav>
-    `;
-}
-
-async function initDatabaseSync() {
-    if (!window.supabaseClient) return;
-    // Database logic here
+// --- GLOBAL NOTIFICATIONS ---
+function showNotification(text, type = 'info') {
+    const toast = document.createElement('div');
+    toast.innerText = text;
+    Object.assign(toast.style, {
+        position: 'fixed', bottom: '40px', right: '40px', background: type === 'info' ? '#00A2FF' : '#ff3366',
+        color: '#fff', padding: '18px 40px', borderRadius: '100px', fontWeight: '900', zIndex: '999999'
+    });
+    document.body.appendChild(toast);
+    if (window.gsap) {
+        gsap.from(toast, { x: 100, opacity: 0, duration: 1 });
+        setTimeout(() => gsap.to(toast, { opacity: 0, y: 50, duration: 1, onComplete: () => toast.remove() }), 4000);
+    } else {
+        setTimeout(() => toast.remove(), 4000);
+    }
 }
