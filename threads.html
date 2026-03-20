@@ -189,22 +189,37 @@
                 document.getElementById('side-name').innerText = me;
                 document.getElementById('side-handle').innerText = '@' + me.toLowerCase().replace(' ', '');
 
-                // 1. LISTEN FOR REAL-TIME
-                postChan.subscribe('new', (m) => render(m.data, true));
+                // 1. LISTEN FOR REAL-TIME (New transmissions)
+                postChan.subscribe('new', (m) => {
+                    // Avoid duplicating real-time messages that we just posted
+                    if(document.getElementById(`p-${m.data.time}`)) return;
+                    render(m.data, true);
+                });
 
-                // 2. LOAD PERMANENT HISTORY FROM CLOUD (If available)
+                // 2. LOAD PERMANENT HISTORY FROM CLOUD
+                const f = document.getElementById('feed');
+                f.innerHTML = '<div style="text-align:center; padding:40px; color:#444; font-weight:900; letter-spacing:2px; font-size:0.75rem; text-transform:uppercase;">Refining Global Feed...</div>';
+
                 if(window.loadCloudThreads) {
                     const cloudPosts = await window.loadCloudThreads();
+                    f.innerHTML = ''; // Clear loader
                     if(cloudPosts.length > 0) {
-                        cloudPosts.forEach(p => render({
-                            user: p.author,
-                            pic: p.avatar,
-                            text: p.content,
-                            time: new Date(p.timestamp).getTime()
-                        }, false));
+                        cloudPosts.forEach(p => {
+                            const postObj = {
+                                user: p.author,
+                                pic: p.avatar || 'https://via.placeholder.com/100',
+                                text: p.content,
+                                time: new Date(p.timestamp).getTime()
+                            };
+                            if(!document.getElementById(`p-${postObj.time}`)) {
+                                render(postObj, false);
+                            }
+                        });
+                    } else {
+                        f.innerHTML = '<div style="text-align:center; padding:100px; color:#222; font-weight:900;">NO TRANSMISSIONS DETECTED IN CLOUD</div>';
                     }
                 } else {
-                    // Fallback to Ably history if Supabase not ready
+                    f.innerHTML = '';
                     postChan.history({limit: 50}, (err, page) => {
                         if(!err) page.items.reverse().forEach(m => render(m.data, false));
                     });
@@ -272,10 +287,24 @@
             else f.appendChild(div);
         }
 
+        function toggleLike(id) {
+            const el = document.getElementById(id).querySelector('.action-icon');
+            if(el.classList.contains('liked')) { 
+                localStorage.removeItem(`like_${id}`); 
+                el.classList.remove('liked'); 
+            } else { 
+                localStorage.setItem(`like_${id}`, 'true'); 
+                el.classList.add('liked'); 
+                gsap.from(el.querySelector('svg'), { scale: 1.5, duration: 0.4, ease: "back.out(3)" }); 
+            }
+        }
+
         function formatTime(ms) {
             if(!ms) return 'Now';
-            const diff = Date.now() - ms;
-            if(diff < 60000) return 'Just now';
+            const now = Date.now();
+            const diff = now - ms;
+            if(diff < 5000) return 'Just now';
+            if(diff < 60000) return Math.floor(diff/1000) + 's';
             if(diff < 3600000) return Math.floor(diff/60000) + 'm';
             if(diff < 86400000) return Math.floor(diff/3600000) + 'h';
             return Math.floor(diff/86400000) + 'd';
