@@ -160,6 +160,31 @@ function showNotification(text, type = 'info') {
     }
 }
 
+// --- REPORTING SYSTEM ---
+window.reportContent = async (type, id, data) => {
+    console.log(`Reporting ${type} (${id}):`, data);
+    // Store reports in localStorage as a fallback/demo
+    let reports = JSON.parse(localStorage.getItem('nexus_reports') || '[]');
+    reports.push({ type, id, data, timestamp: new Date().toISOString(), reporter: localStorage.getItem('rbx_user') });
+    localStorage.setItem('nexus_reports', JSON.stringify(reports));
+    
+    // If Supabase is available, we could try to push to a 'reports' table
+    if (window.supabaseClient) {
+        try {
+            await window.supabaseClient.from('reports').insert([{
+                content_type: type,
+                content_id: id,
+                content_data: JSON.stringify(data),
+                reporter: localStorage.getItem('rbx_user')
+            }]);
+        } catch (e) { console.error("Cloud Report Failed", e); }
+    }
+
+    if (window.showNotification) {
+        showNotification(`Transmission reported to network security.`, 'info');
+    }
+};
+
 
 window.addEventListener('DOMContentLoaded', () => {
     injectUniversalHeader();
