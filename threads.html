@@ -101,7 +101,7 @@
 </head>
 <body>
     <div id="login-gate">
-        <div style="font-size:5rem; font-weight:900; letter-spacing:-4px; margin-bottom:10px; background: linear-gradient(to bottom, #fff, #444); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">THREADS</div>
+        <div style="font-size:5rem; font-weight:900; letter-spacing:-4px; margin-bottom:10px; background: linear-gradient(to bottom, #fff, #444); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">THREADS</div>
         <p style="color:#666; margin-bottom:40px; font-size:1.2rem; max-width:400px; font-weight:500;">Access the encrypted global feed.</p>
         <div style="display:flex; gap:15px;">
             <a href="auth.html?mode=register&redirect=threads.html" style="background:var(--nexus-blue); color:#fff; padding:20px 50px; border-radius:100px; font-weight:900; text-decoration:none; box-shadow:0 15px 40px rgba(0, 162, 255, 0.3);" class="interactable">Initialize Link</a>
@@ -297,6 +297,9 @@
                         </div>
                         <div class="action-icon interactable ${localStorage.getItem('save_'+postId) ? 'saved' : ''}" onclick="toggleSavePost('${postId}', '${encodeURIComponent(JSON.stringify(d))}')" title="Save Post">
                             <svg viewBox="0 0 24 24" fill="${localStorage.getItem('save_'+postId) ? 'var(--nexus-blue)' : 'none'}"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/></svg>
+                        </div>
+                        <div class="action-icon interactable" onclick="reportContent('thread', '${postId}', ${JSON.stringify(d).replace(/"/g, '&quot;')})" title="Report Post">
+                            <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 17c-.77 1.333.192 3 1.732 3z" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>
                         </div>
                     </div>
                 </div>`;
