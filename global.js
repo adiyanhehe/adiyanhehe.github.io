@@ -198,9 +198,9 @@ window.showTopNotification = (text, type = 'info') => {
 
 // --- USER VALIDATION ---
 window.checkIfUserExists = async (username) => {
-    if (!window.supabaseClient) return true; // Fail safe
-    const { data } = await window.supabaseClient.from('profiles').select('username').eq('username', username).maybeSingle();
-    return !!data;
+    if (!window.supabaseClient) return username; // Fail safe
+    const { data } = await window.supabaseClient.from('profiles').select('username').ilike('username', username.trim()).maybeSingle();
+    return data ? data.username : null;
 };
 
 // --- REPORTING SYSTEM ---
