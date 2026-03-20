@@ -97,7 +97,9 @@
     <div class="sidebar" style="margin-top:75px;">
         <div class="side-head">DIRECT<span>CONTACT</span></div>
         <div class="user-link interactable" onclick="setMode('global')" style="background: rgba(255,255,255,0.1);"># Global Hub</div>
-        <div id="dm-list"></div>
+        <div class="user-link interactable" onclick="setMode('saved')" style="border-top:1px solid var(--border); color:var(--accent); font-weight:900;">★ Bookmarks</div>
+        <div id="dm-list" style="margin-top:10px;"></div>
+        <div class="user-link interactable" onclick="promptNewDM()" style="border-top:1px solid var(--border); border-bottom:1px solid var(--border); opacity:0.5; font-size:0.8rem; justify-content:center;">+ NEW DM</div>
     </div>
     
     <div class="main" style="margin-top:75px;">
@@ -175,33 +177,123 @@
             gsap.from(d, { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
         }
 
+
+        function render(d) {
+            const b = document.getElementById('msgs');
+            const isMe = d.user === me;
+            const msgId = 'msg-' + (d.time || Math.random());
+            const div = document.createElement('div');
+            div.className = isMe ? 'bubble me' : 'bubble not-me';
+            div.id = msgId;
+            
+            div.innerHTML = `
+                ${!isMe ? `
+                    <div style="font-size:0.75rem;opacity:0.6;font-weight:700;margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>${d.user.toUpperCase()}</span>
+                        <div style="display:flex; gap:8px;">
+                            <svg onclick="setMode('dm', '${d.user}')" class="interactable" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="cursor:pointer; opacity:0.5;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        </div>
+                    </div>` : ''}
+                <div style="display:flex; justify-content:space-between; gap:20px;">
+                    <div>${d.text}</div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <div class="interactable" onclick="saveMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" style="cursor:pointer; opacity:0.3; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.3">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <div class="interactable" onclick="reportContent('discuss', '${msgId}', ${JSON.stringify(d).replace(/"/g, '&quot;')})" style="cursor:pointer; opacity:0.3; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.3">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 17c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                    </div>
+                </div>`;
+            b.appendChild(div);
+            window.requestAnimationFrame(() => b.scrollTop = b.scrollHeight);
+            gsap.from(div, { y: 30, opacity: 0, scale: 0.9, transformOrigin: isMe ? "bottom right" : "bottom left", duration: 0.6, ease: "back.out(2)" });
+        }
+
+        function saveMsg(id, dataRaw) {
+            const data = JSON.parse(decodeURIComponent(dataRaw));
+            let saved = JSON.parse(localStorage.getItem('nexus_saved_msgs') || '[]');
+            saved.push(data);
+            localStorage.setItem('nexus_saved_msgs', JSON.stringify(saved));
+            
+            const icon = document.getElementById(id).querySelector('svg');
+            icon.setAttribute('fill', 'var(--accent)');
+            gsap.to(icon, { scale: 1.5, duration: 0.3, yoyo: true, repeat: 1 });
+        }
+
+        // --- DM PERSISTENCE ---
+        function persistDM(u, d) {
+            const key = `dm_history_${u}`;
+            let history = JSON.parse(localStorage.getItem(key) || '[]');
+            history.push(d);
+            localStorage.setItem(key, JSON.stringify(history));
+            
+            // Track active DMs
+            let dmUsers = JSON.parse(localStorage.getItem('nexus_dm_users') || '[]');
+            if(!dmUsers.includes(u)) {
+                dmUsers.push(u);
+                localStorage.setItem('nexus_dm_users', JSON.stringify(dmUsers));
+            }
+        }
+
+        function loadDMHistory(u) {
+            const history = JSON.parse(localStorage.getItem(`dm_history_${u}`) || '[]');
+            history.forEach(render);
+        }
+
+        function promptNewDM() {
+            const u = prompt("Enter username of the recipient:");
+            if(u && u.trim() !== me) {
+                addList(u);
+                setMode('dm', u);
+            }
+        }
+
         function setMode(m, u=null) {
             mode = m; target = u;
             document.getElementById('msgs').innerHTML = '';
-            document.getElementById('chat-title').innerText = m === 'global' ? '# Global Hub' : '@ ' + u;
+            document.getElementById('chat-title').innerText = m === 'global' ? '# Global Hub' : (m === 'saved' ? '★ Bookmarks' : '@ ' + u);
+            
+            if(m === 'saved') {
+                const saved = JSON.parse(localStorage.getItem('nexus_saved_msgs') || '[]');
+                saved.forEach(render);
+            } else if (m === 'global') {
+                globalChan.history({limit: 30}, (err, page) => {
+                    if(!err) page.items.reverse().forEach(m_item => render(m_item.data));
+                });
+            } else if (m === 'dm') {
+                loadDMHistory(u);
+            }
             gsap.from('#chat-title', { opacity: 0, x: -20, duration: 0.5 });
         }
 
         function send() {
             const i = document.getElementById('mIn'); if(!i.value.trim()) return;
-            const d = { user: me, text: i.value, pic: localStorage.getItem('rbx_pic') };
-            if(mode === 'global') globalChan.publish('msg', d);
-            else { ably.channels.get('dm-'+target).publish('priv', d); render(d); }
+            const d = { user: me, text: i.value, pic: localStorage.getItem('rbx_pic'), time: Date.now() };
+            if(mode === 'global') {
+                globalChan.publish('msg', d);
+            } else {
+                ably.channels.get('dm-'+target).publish('priv', d);
+                persistDM(target, d);
+                render(d);
+            }
             i.value = '';
         }
 
-        function render(d) {
-            const b = document.getElementById('msgs');
-            const isMe = d.user === me;
-            const div = document.createElement('div');
-            div.className = isMe ? 'bubble me' : 'bubble not-me';
-            div.innerHTML = `${!isMe ? `<div style="font-size:0.75rem;opacity:0.6;font-weight:700;margin-bottom:8px;">${d.user.toUpperCase()}</div>` : ''}${d.text}`;
-            b.appendChild(div);
-            window.requestAnimationFrame(() => b.scrollTop = b.scrollHeight);
-            
-            // GSAP ANIMATION FOR NEW MESSAGE
-            gsap.from(div, { y: 30, opacity: 0, scale: 0.9, transformOrigin: isMe ? "bottom right" : "bottom left", duration: 0.6, ease: "back.out(2)" });
+        // Add subscribers for saved DM users
+        function initDMList() {
+            const dmUsers = JSON.parse(localStorage.getItem('nexus_dm_users') || '[]');
+            dmUsers.forEach(u => addList(u));
         }
+        initDMList();
+
+        ably.channels.get('dm-'+me).subscribe('priv', (m) => {
+            const sender = m.data.user;
+            addList(sender, m.data.pic);
+            persistDM(sender, m.data);
+            if(mode === 'dm' && target === sender) render(m.data);
+            else if (window.showNotification) showNotification(`New Transmission from @${sender}`);
+        });
     </script>
 </body>
 </html>
