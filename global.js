@@ -1,17 +1,18 @@
-const SUPABASE_URL = 'https://qpbjxurwrzsatwfiqcdd.supabase.co'; 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA'; 
+// --- CONFIGURATION ---
+const SUPABASE_URL = 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
 
 let supabaseClient = null;
 
-// --- THEME INITIALIZATION ---
+// --- THEME ENGINE ---
 let currentTheme = localStorage.getItem('site-theme') || 'dark';
 
-window.applyTheme = function(theme) {
-    if (theme === 'light') { document.body.classList.add('light-mode'); } 
+window.applyTheme = function (theme) {
+    if (theme === 'light') { document.body.classList.add('light-mode'); }
     else { document.body.classList.remove('light-mode'); }
 };
 
-window.toggleTheme = function(e) {
+window.toggleTheme = function (e) {
     if (e) e.preventDefault();
     const newTheme = document.body.classList.contains('light-mode') ? 'dark' : 'light';
     localStorage.setItem('site-theme', newTheme);
@@ -25,84 +26,95 @@ window.toggleTheme = function(e) {
 
 applyTheme(currentTheme);
 
-// --- GLOBAL INITIALIZATION ---
+// --- APP INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
     injectUniversalHeader();
-    
-    // Safety: Ensure Standard Mouse is revealed everywhere
-    document.body.style.cursor = 'auto';
+    initNexusCursor(); // Run this early!
 
-    const headerCheck = setInterval(() => {
-        if (!document.querySelector('.header')) injectUniversalHeader();
-    }, 2000);
-    setTimeout(() => clearInterval(headerCheck), 10000);
-
-    if(typeof window.supabase === 'undefined') {
+    // Load Supabase SDK if missing
+    if (typeof window.supabase === 'undefined') {
         const s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
         document.head.appendChild(s);
-        s.onload = () => {
-            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            checkGlobalAuth();
-            initDatabaseSync();
-        };
+        s.onload = () => initializeSupabase();
     } else {
-        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        checkGlobalAuth();
-        initDatabaseSync();
+        initializeSupabase();
     }
 });
 
-// --- PERSISTENCE ENGINE (SUPABASE SYNC) ---
-async function initDatabaseSync() {
-    if(!window.supabaseClient) return;
-    
-    window.saveThreadToCloud = async (postData) => {
-        try {
-            const { error } = await window.supabaseClient
-                .from('threads')
-                .insert([{ 
-                    content: postData.text, 
-                    author: postData.user, 
-                    avatar: postData.pic,
-                    timestamp: new Date().toISOString()
-                }]);
-            if(error) console.error("Cloud Error:", error);
-        } catch(e) {}
-    };
-
-    window.loadCloudThreads = async () => {
-        try {
-            const { data, error } = await window.supabaseClient
-                .from('threads')
-                .select('*')
-                .order('timestamp', { ascending: false })
-                .limit(50);
-            return data || [];
-        } catch(e) { return []; }
-    };
+function initializeSupabase() {
+    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    checkGlobalAuth();
+    initDatabaseSync();
 }
 
-function injectUniversalHeader() {
-    let header = document.querySelector('.header');
-    if(!header) { header = document.createElement('header'); header.className = 'header'; document.body.prepend(header); }
-    const path = window.location.pathname.split('/').pop() || 'index.html';
-    header.innerHTML = `
-        <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
-        <nav class="nav-links">
-            <a href="index.html" class="nav-item ${path === 'index.html' ? 'active' : ''}">Nexus</a>
-            <a href="threads.html" class="nav-item ${path === 'threads.html' ? 'active' : ''}">Threads</a>
-            <a href="discuss.html" class="nav-item ${path === 'discuss.html' ? 'active' : ''}">Discuss</a>
-            <a href="roblox.html" class="nav-item ${path === 'roblox.html' ? 'active' : ''}">Roblox</a>
-            <div id="auth-nav"></div>
-            <button class="nav-item interactable theme-toggle" onclick="toggleTheme(event)">${currentTheme === 'light' ? '🌙' : '☀️'}</button>
-        </nav>
+// --- CURSOR ENGINE (FIXED) ---
+function initNexusCursor() {
+    if (document.querySelector('.custom-cursor')) return;
+
+    const cursor = document.createElement('div');
+    cursor.className = 'custom-cursor';
+    const dot = document.createElement('div');
+    dot.className = 'cursor-dot';
+    cursor.appendChild(dot);
+    document.body.appendChild(cursor);
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        /* Hide real cursor on body, but only if custom cursor is active */
+        body, html, a, button, .interactable { 
+            cursor: none !important; 
+        }
+        
+        .custom-cursor {
+            position: fixed; width: 40px; height: 40px; border: 1.5px solid rgba(255,255,255,0.4);
+            border-radius: 50%; pointer-events: none; z-index: 99999999;
+            display: flex; align-items: center; justify-content: center;
+            top: 0; left: 0; pointer-events: none;
+            backdrop-filter: blur(4px); transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s;
+            mix-blend-mode: normal;
+            box-shadow: 0 0 20px rgba(0, 162, 255, 0.1);
+            transform: translate(-50%, -50%);
+        }
+        .cursor-dot { width: 5px; height: 5px; background: #fff; border-radius: 50%; }
+        body.light-mode .custom-cursor { border-color: rgba(0,0,0,0.4); }
+        body.light-mode .cursor-dot { background: #000; }
+        
+        .custom-cursor.active { 
+            width: 80px; height: 80px; 
+            background: rgba(255,255,255,0.1); 
+            border-color: rgba(255,255,255,0.9); 
+            backdrop-filter: blur(10px);
+        }
     `;
-    if(window.gsap) gsap.to(header, { y: 0, opacity: 1, duration: 1, ease: 'power4.out', startAt: {y: -100, opacity: 0} });
+    document.head.appendChild(style);
+
+    window.addEventListener('mousemove', (e) => {
+        if (window.gsap) {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1, ease: 'power2.out' });
+        } else {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        }
+    });
+
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('a, button, .interactable, input')) {
+            cursor.classList.add('active');
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('a, button, .interactable, input')) {
+            cursor.classList.remove('active');
+        }
+    });
 }
 
+// --- AUTH & SYNC ---
 async function checkGlobalAuth() {
-    const authNav = document.getElementById('auth-nav'); if(!authNav) return;
+    const authNav = document.getElementById('auth-nav'); 
+    if (!authNav) return;
     try {
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         if (session) {
@@ -113,22 +125,31 @@ async function checkGlobalAuth() {
         } else {
             authNav.innerHTML = `<a href="auth.html" class="nav-item interactable" style="background:#fff; color:#000; padding:8px 20px; border-radius:100px;">Login</a>`;
         }
-    } catch(e) {}
+    } catch (e) { console.log("Auth Error:", e); }
 }
 
-window.logoutNexus = async () => { if(window.supabaseClient) await window.supabaseClient.auth.signOut(); localStorage.removeItem('rbx_user'); location.reload(); };
+window.logoutNexus = async () => { 
+    if (window.supabaseClient) await window.supabaseClient.auth.signOut(); 
+    location.reload(); 
+};
 
-function showNotification(text, type='info') {
-    const toast = document.createElement('div'); toast.innerText = text;
-    Object.assign(toast.style, { position: 'fixed', bottom: '40px', right: '40px', background: type==='info'?'#00A2FF':'#ff3366', color: '#fff', padding: '18px 40px', borderRadius: '100px', fontWeight: '900', zIndex: '999999' });
-    document.body.appendChild(toast);
-    if(window.gsap) { gsap.from(toast, { x: 100, opacity: 0, duration: 1 }); setTimeout(() => gsap.to(toast, { opacity: 0, y: 50, duration: 1, onComplete: () => toast.remove() }), 4000); } else setTimeout(() => toast.remove(), 4000);
+function injectUniversalHeader() {
+    let header = document.querySelector('.header');
+    if (!header) { header = document.createElement('header'); header.className = 'header'; document.body.prepend(header); }
+    const path = window.location.pathname.split('/').pop() || 'index.html';
+    header.innerHTML = `
+        <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item ${path === 'index.html' ? 'active' : ''}">Nexus</a>
+            <a href="threads.html" class="nav-item ${path === 'threads.html' ? 'active' : ''}">Threads</a>
+            <a href="discuss.html" class="nav-item ${path === 'discuss.html' ? 'active' : ''}">Discuss</a>
+            <button class="nav-item interactable theme-toggle" onclick="toggleTheme(event)">${currentTheme === 'light' ? '🌙' : '☀️'}</button>
+            <div id="auth-nav"></div>
+        </nav>
+    `;
 }
 
-try {
-    if (typeof Ably !== 'undefined') {
-        const ablyClient = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
-        const globalSync = ablyClient.channels.get('site-global-config');
-        globalSync.subscribe('config_update', (msg) => { if (msg.data.action === 'announcement') showNotification(msg.data.value); });
-    }
-} catch (e) {}
+async function initDatabaseSync() {
+    if (!window.supabaseClient) return;
+    // Database logic here
+}
