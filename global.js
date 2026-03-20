@@ -36,7 +36,6 @@ window.addEventListener('DOMContentLoaded', () => {
     // Safety reveal for mouse if cursor failed
     document.body.style.cursor = 'auto';
 
-    // Load Supabase SDK if missing
     if (typeof window.supabase === 'undefined') {
         const s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
@@ -44,6 +43,18 @@ window.addEventListener('DOMContentLoaded', () => {
         s.onload = () => initializeSupabase();
     } else {
         initializeSupabase();
+    }
+
+    // Global DM Listener
+    const userMe = localStorage.getItem('rbx_user');
+    if (userMe && typeof Ably !== 'undefined') {
+        const ablyLink = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        ablyLink.channels.get('dm-' + userMe).subscribe('priv', (m) => {
+            // Only show if NOT on discuss.html (to avoid double notifications)
+            if (!window.location.pathname.includes('discuss.html')) {
+                if (window.showTopNotification) window.showTopNotification(`NEW DIRECT TRANSMISSION FROM @${m.data.user}`);
+            }
+        });
     }
 });
 
@@ -164,6 +175,34 @@ function showNotification(text, type = 'info') {
     }
 }
 
+// --- TOP NOTIFICATIONS ---
+window.showTopNotification = (text, type = 'info') => {
+    let topBar = document.getElementById('top-notification-bar');
+    if (!topBar) {
+        topBar = document.createElement('div');
+        topBar.id = 'top-notification-bar';
+        Object.assign(topBar.style, {
+            position: 'fixed', top: '0', left: '0', width: '100%', padding: '15px',
+            background: type === 'info' ? '#0070FF' : (type === 'error' ? '#FF2D55' : '#00D1FF'),
+            color: '#fff', textAlign: 'center', zIndex: '1000010', fontWeight: '900',
+            fontSize: '0.85rem', letterSpacing: '1px', textTransform: 'uppercase',
+            boxShadow: '0 5px 20px rgba(0,0,0,0.3)', transform: 'translateY(-100%)',
+            transition: '0.6s cubic-bezier(0.8, 0, 0.2, 1)', backdropFilter: 'blur(10px)'
+        });
+        document.body.appendChild(topBar);
+    }
+    topBar.innerText = text;
+    topBar.style.transform = 'translateY(0)';
+    setTimeout(() => topBar.style.transform = 'translateY(-100%)', 4000);
+};
+
+// --- USER VALIDATION ---
+window.checkIfUserExists = async (username) => {
+    if (!window.supabaseClient) return true; // Fail safe
+    const { data } = await window.supabaseClient.from('profiles').select('username').eq('username', username).maybeSingle();
+    return !!data;
+};
+
 // --- REPORTING SYSTEM ---
 window.reportContent = async (type, id, data) => {
     console.log(`Reporting ${type} (${id}):`, data);
@@ -212,6 +251,7 @@ window.showProfileSummary = async (username) => {
                 <p id="psm-bio" style="color:#888; font-size:0.9rem; line-height:1.5; margin-bottom:20px; min-height:40px; padding:0 10px;">Syncing record...</p>
                 <div style="display:flex; gap:10px;">
                     <button id="psm-dm-btn" style="flex:1; padding:12px; border-radius:12px; border:none; background:#fff; color:#000; font-weight:900; cursor:pointer;">Message</button>
+                    <button id="psm-fr-btn" style="flex:1; padding:12px; border-radius:12px; border:1px solid #333; background:transparent; color:#fff; font-weight:900; cursor:pointer;">Friend</button>
                     <button id="psm-profile-btn" style="flex:1; padding:12px; border-radius:12px; border:1px solid #333; background:transparent; color:#fff; font-weight:900; cursor:pointer;">Profile</button>
                 </div>
                 <button onclick="closeProfileSummary()" style="margin-top:20px; background:none; border:none; color:#444; font-weight:900; cursor:pointer; font-size:0.7rem; letter-spacing:1px; text-transform:uppercase;">Dismiss</button>
@@ -230,6 +270,7 @@ window.showProfileSummary = async (username) => {
         }
     }); }
     document.getElementById('psm-dm-btn').onclick = () => { closeProfileSummary(); location.href = `discuss.html?dm=${encodeURIComponent(username)}`; };
+    document.getElementById('psm-fr-btn').onclick = () => { if(window.sendFriendRequest) window.sendFriendRequest(username); else alert("Friend System Offline"); };
     document.getElementById('psm-profile-btn').onclick = () => { location.href = `profile.html?user=${encodeURIComponent(username)}`; };
 };
 window.closeProfileSummary = () => {
