@@ -48,6 +48,8 @@ window.addEventListener('DOMContentLoaded', () => {
         checkGlobalAuth();
         initDatabaseSync();
     }
+    
+    // Safety: Initialize cursor as early as possible
     initNexusCursor();
 });
 
@@ -55,7 +57,6 @@ window.addEventListener('DOMContentLoaded', () => {
 async function initDatabaseSync() {
     if(!window.supabaseClient) return;
     
-    // Auto-save any local threads to Supabase if they are new
     window.saveThreadToCloud = async (postData) => {
         try {
             const { error } = await window.supabaseClient
@@ -70,7 +71,6 @@ async function initDatabaseSync() {
         } catch(e) {}
     };
 
-    // Load recent threads from Supabase to prevent loss
     window.loadCloudThreads = async () => {
         try {
             const { data, error } = await window.supabaseClient
@@ -102,21 +102,70 @@ function injectUniversalHeader() {
 }
 
 function initNexusCursor() {
+    // If a cursor already exists, don't double up
     if(document.querySelector('.custom-cursor')) return;
-    const cursor = document.createElement('div'); cursor.className = 'custom-cursor';
-    const dot = document.createElement('div'); dot.className = 'cursor-dot'; cursor.appendChild(dot); document.body.appendChild(cursor);
+
+    const cursor = document.createElement('div');
+    cursor.className = 'custom-cursor';
+    const dot = document.createElement('div');
+    dot.className = 'cursor-dot';
+    cursor.appendChild(dot);
+    document.body.appendChild(cursor);
+
+    // GLASS ZOOM EFFECT CSS
     const style = document.createElement('style');
     style.innerHTML = `
-        .custom-cursor { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; z-index: 9999999; display: flex; align-items: center; justify-content: center; transition: width 0.3s, height 0.3s, background 0.3s; mix-blend-mode: difference; }
-        .cursor-dot { width: 4px; height: 4px; background: #fff; border-radius: 50%; }
-        .custom-cursor.active { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-color: transparent; }
+        .custom-cursor {
+            position: fixed; width: 40px; height: 40px; border: 1.5px solid rgba(255,255,255,0.4);
+            border-radius: 50%; pointer-events: none; z-index: 9999999;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px); transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s, backdrop-filter 0.3s;
+            mix-blend-mode: normal; transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(0, 162, 255, 0.1);
+        }
+        .cursor-dot { width: 5px; height: 5px; background: #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        body.light-mode .custom-cursor { border-color: rgba(0,0,0,0.4); backdrop-filter: blur(8px) contrast(0.8); }
+        body.light-mode .cursor-dot { background: #000; }
+        
+        /* HOVER / GLASS ZOOM STATE */
+        .custom-cursor.active { 
+            width: 90px; height: 90px; 
+            background: rgba(255,255,255,0.05); 
+            border-color: rgba(255,255,255,0.8); 
+            backdrop-filter: blur(15px) brightness(1.2); 
+            box-shadow: 0 0 40px rgba(0, 162, 255, 0.3);
+        }
+        
         * { cursor: none !important; }
-        @media (max-width: 768px) { .custom-cursor { display: none; } * { cursor: auto !important; } }
+        @media (max-width: 1024px) { .custom-cursor { display: none; } * { cursor: auto !important; } }
     `;
     document.head.appendChild(style);
-    window.addEventListener('mousemove', (e) => { if(window.gsap) gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 }); });
-    document.body.addEventListener('mouseenter', (e) => { if(e.target.classList.contains('interactable') || e.target.tagName==='A' || e.target.tagName==='BUTTON') cursor.classList.add('active'); }, true);
-    document.body.addEventListener('mouseleave', (e) => { if(e.target.classList.contains('interactable') || e.target.tagName==='A' || e.target.tagName==='BUTTON') cursor.classList.remove('active'); }, true);
+
+    window.addEventListener('mousemove', (e) => {
+        if(window.gsap) {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.15, ease: 'power2.out' });
+        } else {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        }
+    });
+
+    // Delegated Hover Listener for better performance
+    document.addEventListener('mouseenter', (e) => {
+        const target = e.target;
+        if(target.classList.contains('interactable') || target.tagName === 'A' || target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.closest('.user-card')) {
+            cursor.classList.add('active');
+            gsap.to(dot, { scale: 1.5, duration: 0.3 });
+        }
+    }, true);
+    
+    document.addEventListener('mouseleave', (e) => {
+        const target = e.target;
+        if(target.classList.contains('interactable') || target.tagName === 'A' || target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.closest('.user-card')) {
+            cursor.classList.remove('active');
+            gsap.to(dot, { scale: 1, duration: 0.3 });
+        }
+    }, true);
 }
 
 async function checkGlobalAuth() {
