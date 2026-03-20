@@ -417,6 +417,44 @@
     </div>
 
     <script>
+        async function loadIdentity() {
+            if(!window.supabaseClient) { setTimeout(loadIdentity, 500); return; }
+
+            // 1. TRY CLOUD FETCH (Permanent Profile)
+            const { data, error } = await window.supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('username', user)
+                .single();
+
+            if(!error && data) {
+                if(data.bio) document.getElementById('bio-ui').innerText = data.bio;
+                if(data.avatar_url) document.getElementById('pfp-ui').src = data.avatar_url;
+                if(data.banner_color) document.getElementById('banner-ui').style.background = data.banner_color;
+            } else {
+                // 2. FALLBACK TO LOCAL CACHE OR ROBLOX
+                const b = localStorage.getItem(`bio_${user}`);
+                const c = localStorage.getItem(`color_${user}`);
+                const p = localStorage.getItem(`pfp_${user}`);
+
+                if(b) document.getElementById('bio-ui').innerText = b;
+                if(c) document.getElementById('banner-ui').style.background = c;
+                if(p) document.getElementById('pfp-ui').src = p;
+                else await fetchRoblox();
+            }
+        }
+
+        async function fetchRoblox() {
+            try {
+                const s = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${user}&limit=1`);
+                const sd = await s.json();
+                if(sd.data && sd.data.length > 0) {
+                    const t = await fetch(`https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${sd.data[0].id}&size=150x150&format=Png&isCircular=false`);
+                    const td = await t.json();
+                    document.getElementById('pfp-ui').src = td.data[0].imageUrl;
+                }
+            } catch(e) {}
+        }
         const params = new URLSearchParams(window.location.search);
         const user = params.get('user');
         const me = localStorage.getItem('rbx_user');
@@ -528,7 +566,7 @@
         }
         function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
 
-        function saveProfile() {
+        async function saveProfile() {
             const b = document.getElementById('m-bio').value;
             const p = document.getElementById('m-pfp').value;
             const c = document.getElementById('m-color').value;
@@ -536,10 +574,18 @@
             localStorage.setItem(`bio_${me}`, b);
             localStorage.setItem(`pfp_${me}`, p);
             localStorage.setItem(`color_${me}`, c);
-
-            // Critical: Sync to auth session
-            if (p) localStorage.setItem('rbx_pic', p);
-
+            
+            // Critical: Sync to cloud persistence
+            if(window.supabaseClient) {
+                await window.supabaseClient.from('profiles').upsert([{
+                    username: me,
+                    bio: b,
+                    avatar_url: p,
+                    banner_color: c,
+                    last_updated: new Date().toISOString()
+                }]);
+            }
+            
             location.reload();
         }
     </script>
