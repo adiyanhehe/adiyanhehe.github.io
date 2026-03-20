@@ -136,6 +136,17 @@
             color: #fff;
         }
         .user-link.active { background: rgba(255,255,255,0.1); }
+        
+        .unread-badge {
+            background: #ff4757;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: center;
+        }
 
         .main {
             flex: 1;
@@ -293,6 +304,88 @@
             color: #fff;
         }
 
+        /* --- FRIENDS DASHBOARD --- */
+        .friends-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        .friends-nav {
+            padding: 0 20px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(10, 10, 10, 0.4);
+        }
+
+        .f-tab {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+
+        .f-tab:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .f-tab.active { background: rgba(255,255,255,0.1); color: #fff; }
+        .f-tab.add { background: #248046; color: #fff; }
+        .f-tab.add:hover { background: #1a6334; }
+
+        .friends-list {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            transition: 0.2s;
+            cursor: pointer;
+        }
+
+        .friend-item:hover {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            border-top-color: transparent;
+        }
+
+        .friend-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .friend-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .f-action-btn {
+            width: 36px;
+            height: 36px;
+            background: #1e1f22;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: 0.2s;
+        }
+
+        .f-action-btn:hover { background: #313338; color: #fff; }
+        .f-action-btn.accept:hover { background: #248046; color: #fff; }
+        .f-action-btn.decline:hover { background: #da373c; color: #fff; }
+
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
@@ -384,8 +477,14 @@
 
     <div class="sidebar">
         <div class="side-head">Private Messages</div>
-        <div class="user-link interactable active" onclick="setMode('global')"># Global Hub</div>
-        <div class="user-link interactable" onclick="setMode('saved')" style="color:var(--accent);">★ Bookmarks</div>
+        <div class="user-link interactable active" id="btn-friends" onclick="setMode('friends')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Friends
+        </div>
+        <div class="user-link interactable" id="btn-global" onclick="setMode('global')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            Global Hub
+        </div>
         
         <div class="side-head" style="margin-top:10px;">Direct Contacts <span onclick="promptNewDM()" style="cursor:pointer; opacity:0.5;">+</span></div>
         <div id="dm-list"></div>
@@ -447,7 +546,8 @@
 
         let me = localStorage.getItem('rbx_user');
         if (!me) { me = "Guest" + Math.floor(Math.random() * 1000); localStorage.setItem('rbx_user', me); }
-        let mode = 'global'; let target = null;
+        let mode = 'friends'; let target = null;
+        let unreadCounts = JSON.parse(localStorage.getItem('unread_counts') || '{}');
 
         window.onload = () => {
             const user = localStorage.getItem('rbx_user');
@@ -456,6 +556,9 @@
                 return;
             }
             me = user;
+            
+            // Set initial mode
+            setMode('friends');
 
             // INITIAL GSAP ANIMATIONS
             gsap.from('.sidebar', { x: -300, opacity: 0, duration: 1, ease: 'power4.out' });
@@ -478,7 +581,15 @@
                     const list = document.getElementById('online-list');
                     list.innerHTML = '';
                     document.getElementById('member-count').innerText = members.length;
+                    
+                    // Hide all status dots first
+                    document.querySelectorAll('[id^="status-"]').forEach(s => s.style.display = 'none');
+                    
                     members.forEach(m => {
+                        // Toggle dot in DM list
+                        const sDot = document.getElementById('status-' + m.data.user);
+                        if(sDot) sDot.style.display = 'block';
+
                         const isVer = window.isVerified && window.isVerified(m.data.user);
                         const d = document.createElement('div');
                         d.className = 'user-link interactable';
@@ -509,18 +620,78 @@
                 const sender = m.data.user;
                 addList(sender, m.data.pic);
                 persistDM(sender, m.data);
-                if (mode === 'dm' && target === sender) render(m.data);
-                else if (window.showNotification) showNotification(`New Transmission from @${sender}`);
+                if (mode === 'dm' && target === sender) {
+                    render(m.data);
+                } else {
+                    unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
+                    localStorage.setItem('unread_counts', JSON.stringify(unreadCounts));
+                    updateUnreadUI(sender);
+                    if (window.showNotification) showNotification(`New Transmission from @${sender}`);
+                }
             });
         };
+
+        function updateUnreadUI(u) {
+            const count = unreadCounts[u] || 0;
+            const badge = document.getElementById('unread-' + u);
+            if (badge) {
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'block' : 'none';
+            }
+        }
 
         function addList(u, p) {
             if (document.getElementById('u-' + u)) return;
             const d = document.createElement('div');
-            d.id = 'u-' + u; d.className = 'user-link interactable'; d.onclick = () => setMode('dm', u);
-            d.innerHTML = `<img src="${p || 'https://via.placeholder.com/30'}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;"> ${u}`;
+            d.id = 'u-' + u;
+            d.className = 'user-link interactable';
+            d.style.padding = '8px 15px';
+            d.style.margin = '2px 8px';
+            d.style.borderRadius = '4px';
+            d.style.display = 'flex';
+            d.style.alignItems = 'center';
+            d.style.gap = '12px';
+            d.style.cursor = 'pointer';
+            
+            d.innerHTML = `
+                <div style="position:relative; width:32px; height:32px; flex-shrink:0;">
+                    <img id="pfp-${u}" src="${p || 'https://via.placeholder.com/32'}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                    <div id="status-${u}" style="width:10px; height:10px; background:#43b581; border:2px solid var(--panel); border-radius:50%; position:absolute; bottom:0; right:0; display:none;"></div>
+                </div>
+                <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; font-size:0.9rem; color:#888;">${u}</div>
+                <div id="unread-${u}" class="unread-badge" style="display:none;">0</div>
+                <div onclick="event.stopPropagation(); removeDM('${u}')" style="opacity:0; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="cursor:pointer;"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </div>`;
+            
+            d.onclick = () => {
+                unreadCounts[u] = 0;
+                localStorage.setItem('unread_counts', JSON.stringify(unreadCounts));
+                updateUnreadUI(u);
+                setMode('dm', u);
+            };
+
+            // Fetch real PFP if possible
+            if (!p && window.supabaseClient) {
+                window.supabaseClient.from('profiles').select('avatar_url').eq('username', u).maybeSingle().then(({data}) => {
+                    if (data && data.avatar_url) document.getElementById('pfp-' + u).src = data.avatar_url;
+                });
+            }
+
+            d.onmouseenter = () => { d.querySelector('div:last-child').style.opacity = 0.5; };
+            d.onmouseleave = () => { d.querySelector('div:last-child').style.opacity = 0; };
+
             document.getElementById('dm-list').appendChild(d);
-            gsap.from(d, { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
+            updateUnreadUI(u);
+            gsap.from(d, { x: -20, opacity: 0, duration: 0.5, ease: "power2.out" });
+        }
+
+        function removeDM(u) {
+            let dmUsers = JSON.parse(localStorage.getItem('nexus_dm_users') || '[]');
+            dmUsers = dmUsers.filter(user => user !== u);
+            localStorage.setItem('nexus_dm_users', JSON.stringify(dmUsers));
+            document.getElementById('u-' + u).remove();
+            if(mode === 'dm' && target === u) setMode('global');
         }
 
         function render(d) {
@@ -623,19 +794,53 @@
         }
 
         window.sendFriendRequest = async function(u) {
-            if (window.supabaseClient) {
-                try {
-                    await window.supabaseClient.from('friend_requests').insert([{
-                        from_user: me,
-                        to_user: u,
-                        status: 'pending'
-                    }]);
-                    if (window.showTopNotification) window.showTopNotification(`FRIEND REQUEST SENT TO @${u}`);
-                } catch (e) {
-                    console.error("Cloud Error:", e);
-                    if (window.showTopNotification) window.showTopNotification(`REQUEST FAILED. Check network stability.`, 'error');
+            if (!u || u.trim() === me) return;
+            if (!window.supabaseClient) { alert("Cloud System Offline"); return; }
+            
+            try {
+                // Check if user exists
+                const exists = await window.checkIfUserExists(u.trim());
+                if(!exists) {
+                    if (window.showTopNotification) window.showTopNotification(`USER NOT FOUND: ${u}`, 'error');
+                    return;
                 }
+
+                // Check if already friends or request pending
+                const { data: existing } = await window.supabaseClient
+                    .from('friend_requests')
+                    .select('*')
+                    .or(`and(from_user.eq.${me},to_user.eq.${u}),and(from_user.eq.${u},to_user.eq.${me})`)
+                    .maybeSingle();
+
+                if (existing) {
+                    if (window.showTopNotification) window.showTopNotification(`ALREADY CONNECTED OR PENDING WITH @${u}`, 'error');
+                    return;
+                }
+
+                await window.supabaseClient.from('friend_requests').insert([{
+                    from_user: me,
+                    to_user: u.trim(),
+                    status: 'pending'
+                }]);
+                if (window.showTopNotification) window.showTopNotification(`FRIEND REQUEST SENT TO @${u}`);
+                if (mode === 'friends') showFriendsDashboard('pending');
+            } catch (e) {
+                console.error("Cloud Error:", e);
+                if (window.showTopNotification) window.showTopNotification(`REQUEST FAILED.`, 'error');
             }
+        }
+
+        async function acceptFriend(id, u) {
+            if (!window.supabaseClient) return;
+            await window.supabaseClient.from('friend_requests').update({ status: 'accepted' }).eq('id', id);
+            if (window.showTopNotification) window.showTopNotification(`YOU ARE NOW FRIENDS WITH @${u}`);
+            showFriendsDashboard('all');
+        }
+
+        async function declineFriend(id) {
+            if (!window.supabaseClient) return;
+            await window.supabaseClient.from('friend_requests').delete().eq('id', id);
+            showFriendsDashboard('pending');
         }
 
         function setStatus() {
@@ -649,19 +854,149 @@
         function setMode(m, u = null) {
             mode = m; target = u;
             document.getElementById('msgs').innerHTML = '';
-            document.getElementById('chat-title').innerText = m === 'global' ? '# Global Hub' : (m === 'saved' ? '★ Bookmarks' : '@ ' + u);
+            document.querySelectorAll('.user-link').forEach(l => l.classList.remove('active'));
 
-            if (m === 'saved') {
-                const saved = JSON.parse(localStorage.getItem('nexus_saved_msgs') || '[]');
-                saved.forEach(render);
+            if (m === 'friends') {
+                document.getElementById('btn-friends').classList.add('active');
+                document.getElementById('chat-title').innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.4; margin-right:8px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span>Friends</span>
+                `;
+                showFriendsDashboard();
             } else if (m === 'global') {
+                document.getElementById('btn-global').classList.add('active');
+                document.getElementById('chat-title').innerText = '# Global Hub';
+                document.querySelector('.input-box').style.display = 'flex';
                 globalChan.history({ limit: 30 }, (err, page) => {
                     if (!err) page.items.reverse().forEach(m_item => render(m_item.data));
                 });
             } else if (m === 'dm') {
+                const el = document.getElementById('u-' + u);
+                if (el) el.classList.add('active');
+                document.getElementById('chat-title').innerText = '@ ' + u;
+                document.querySelector('.input-box').style.display = 'flex';
                 loadDMHistory(u);
+            } else if (m === 'saved') {
+                document.getElementById('chat-title').innerText = '★ Bookmarks';
+                document.querySelector('.input-box').style.display = 'none';
+                const savedArr = JSON.parse(localStorage.getItem('nexus_saved_msgs') || '[]');
+                savedArr.forEach(render);
             }
+            
             gsap.from('#chat-title', { opacity: 0, x: -20, duration: 0.5 });
+        }
+
+        async function showFriendsDashboard(tab = 'all') {
+            const main = document.getElementById('msgs');
+            const inputArea = document.querySelector('.input-box');
+            inputArea.style.display = 'none';
+            main.innerHTML = `
+                <div class="friends-container">
+                    <div class="friends-nav">
+                        <div class="f-tab ${tab === 'all' ? 'active' : ''}" onclick="showFriendsDashboard('all')">All</div>
+                        <div class="f-tab ${tab === 'pending' ? 'active' : ''}" onclick="showFriendsDashboard('pending')">Pending</div>
+                        <div class="f-tab add" onclick="showFriendsDashboard('add')">Add Friend</div>
+                    </div>
+                    <div id="friends-view" class="friends-list">
+                        <div style="text-align:center; padding:50px; opacity:0.5;">Synchronizing with Network...</div>
+                    </div>
+                </div>
+            `;
+
+            const view = document.getElementById('friends-view');
+            if (!window.supabaseClient) {
+                view.innerHTML = '<div style="text-align:center; padding:50px; color:#ff4757;">Cloud Sync Offline. Please login.</div>';
+                return;
+            }
+
+            if (tab === 'add') {
+                view.innerHTML = `
+                    <div style="padding:20px;">
+                        <h3 style="margin-bottom:10px; font-size:1.1rem;">ADD FRIEND</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">You can add friends with their Nexus username.</p>
+                        <div style="background:#1e1f22; padding:15px; border-radius:8px; display:flex; gap:10px;">
+                            <input type="text" id="friend-search" placeholder="Enter a Username" style="border:none; background:transparent; padding:0;">
+                            <button onclick="window.sendFriendRequest(document.getElementById('friend-search').value)" style="padding:10px 20px; font-size:0.8rem;">Send Request</button>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'all') {
+                const { data } = await window.supabaseClient
+                    .from('friend_requests')
+                    .select('*')
+                    .eq('status', 'accepted')
+                    .or(`from_user.eq.${me},to_user.eq.${me}`);
+                
+                if (!data || data.length === 0) {
+                    view.innerHTML = '<div style="text-align:center; padding:50px; opacity:0.5;">Wumpus is waiting for friends.</div>';
+                    return;
+                }
+
+                view.innerHTML = `<h4 style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); padding-bottom:15px;">All Friends — ${data.length}</h4>`;
+                for (let f of data) {
+                    const other = f.from_user === me ? f.to_user : f.from_user;
+                    const item = document.createElement('div');
+                    item.className = 'friend-item';
+                    item.innerHTML = `
+                        <div class="friend-info">
+                            <img id="f-pfp-${other}" src="https://via.placeholder.com/32" style="width:32px; height:32px; border-radius:50%;">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:700; font-size:0.9rem;">${other}</span>
+                                <span style="font-size:0.7rem; color:var(--text-muted);">Nexus Member</span>
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <div class="f-action-btn" onclick="event.stopPropagation(); setMode('dm', '${other}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>
+                            <div class="f-action-btn decline" onclick="event.stopPropagation(); declineFriend('${f.id}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+                        </div>
+                    `;
+                    item.onclick = () => window.showProfileSummary(other);
+                    view.appendChild(item);
+                    
+                    // Fetch PFP
+                    window.supabaseClient.from('profiles').select('avatar_url').eq('username', other).maybeSingle().then(({data}) => {
+                        if (data && data.avatar_url) document.getElementById('f-pfp-' + other).src = data.avatar_url;
+                    });
+                }
+            } else if (tab === 'pending') {
+                const { data } = await window.supabaseClient
+                    .from('friend_requests')
+                    .select('*')
+                    .eq('status', 'pending')
+                    .or(`from_user.eq.${me},to_user.eq.${me}`);
+
+                if (!data || data.length === 0) {
+                    view.innerHTML = '<div style="text-align:center; padding:50px; opacity:0.5;">No pending requests.</div>';
+                    return;
+                }
+
+                view.innerHTML = `<h4 style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); padding-bottom:15px;">Pending — ${data.length}</h4>`;
+                data.forEach(f => {
+                    const isIncoming = f.to_user === me;
+                    const name = isIncoming ? f.from_user : f.to_user;
+                    const item = document.createElement('div');
+                    item.className = 'friend-item';
+                    item.innerHTML = `
+                        <div class="friend-info">
+                            <img id="f-pfp-${name}" src="https://via.placeholder.com/32" style="width:32px; height:32px; border-radius:50%;">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:700; font-size:0.9rem;">${name}</span>
+                                <span style="font-size:0.7rem; color:var(--text-muted);">${isIncoming ? 'Incoming Friend Request' : 'Outgoing Friend Request'}</span>
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            ${isIncoming ? `<div class="f-action-btn accept" onclick="acceptFriend('${f.id}', '${name}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>` : ''}
+                            <div class="f-action-btn decline" onclick="declineFriend('${f.id}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+                        </div>
+                    `;
+                    view.appendChild(item);
+
+                    // Fetch PFP
+                    window.supabaseClient.from('profiles').select('avatar_url').eq('username', name).maybeSingle().then(({data}) => {
+                        if (data && data.avatar_url) document.getElementById('f-pfp-' + name).src = data.avatar_url;
+                    });
+                });
+            }
         }
 
         function send() {
