@@ -243,18 +243,34 @@ window.showProfileSummary = async (username) => {
         });
         modal.onclick = (e) => { if (e.target === modal) closeProfileSummary(); };
         modal.innerHTML = `
-            <div id="psm-box" style="background:#0a0a0a; width:360px; padding:35px; border-radius:32px; border:1px solid rgba(255,255,255,0.08); text-align:center; transform:translateY(20px); transition:0.5s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow:0 40px 80px rgba(0,0,0,0.6);">
-                <div id="psm-banner" style="height:90px; background:linear-gradient(45deg, #111, #222); border-radius:24px; margin-bottom:-45px;"></div>
-                <img id="psm-pfp" src="https://via.placeholder.com/100" style="width:100px; height:100px; border-radius:26px; border:6px solid #0a0a0a; position:relative; z-index:2; object-fit:cover; background:#111;">
-                <h2 id="psm-name" style="margin-top:10px; font-weight:900; letter-spacing:-1.2px; font-size:1.6rem; color:#fff;">...</h2>
-                <p id="psm-handle" style="color:#00A2FF; font-weight:800; font-size:0.8rem; margin-bottom:10px; opacity:0.8;">@...</p>
-                <p id="psm-bio" style="color:#888; font-size:0.9rem; line-height:1.5; margin-bottom:20px; min-height:40px; padding:0 10px;">Syncing record...</p>
-                <div style="display:flex; gap:10px;">
-                    <button id="psm-dm-btn" style="flex:1; padding:12px; border-radius:12px; border:none; background:#fff; color:#000; font-weight:900; cursor:pointer;">Message</button>
-                    <button id="psm-fr-btn" style="flex:1; padding:12px; border-radius:12px; border:1px solid #333; background:transparent; color:#fff; font-weight:900; cursor:pointer;">Friend</button>
-                    <button id="psm-profile-btn" style="flex:1; padding:12px; border-radius:12px; border:1px solid #333; background:transparent; color:#fff; font-weight:900; cursor:pointer;">Profile</button>
+            <div id="psm-box" style="background:#0a0a0a; width:400px; padding:0; border-radius:18px; border:1px solid #333; overflow:hidden; transform:translateY(20px); transition:0.5s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow:0 40px 80px rgba(0,0,0,0.8);">
+                <div id="psm-banner" style="height:120px; background:linear-gradient(45deg, #111, #222); position:relative;">
+                    <button onclick="closeProfileSummary()" style="position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.5); border:none; color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer;">×</button>
                 </div>
-                <button onclick="closeProfileSummary()" style="margin-top:20px; background:none; border:none; color:#444; font-weight:900; cursor:pointer; font-size:0.7rem; letter-spacing:1px; text-transform:uppercase;">Dismiss</button>
+                <div style="padding:0 20px 20px; position:relative;">
+                    <div style="position:relative; margin-top:-45px; display:inline-block;">
+                        <img id="psm-pfp" src="https://via.placeholder.com/100" style="width:100px; height:100px; border-radius:50%; border:8px solid #0a0a0a; background:#111; object-fit:cover;">
+                        <div id="psm-status-dot" style="width:24px; height:24px; background:#43b581; border:5px solid #0a0a0a; border-radius:50%; position:absolute; bottom:5px; right:5px; display:none;"></div>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <h2 id="psm-name" style="margin:0; font-weight:900; font-size:1.4rem; color:#fff; display:flex; align-items:center; gap:8px;">...</h2>
+                        <p id="psm-handle" style="color:#b9bbbe; font-size:0.85rem; margin:2px 0 15px;">@...</p>
+                        
+                        <div style="background:#18191c; border-radius:8px; padding:15px; margin-bottom:15px;">
+                            <div style="text-transform:uppercase; font-size:0.7rem; font-weight:800; color:#b9bbbe; margin-bottom:8px;">About Me</div>
+                            <p id="psm-bio" style="color:#dcddde; font-size:0.85rem; line-height:1.4; margin:0;">New entity detected.</p>
+                            
+                            <div style="text-transform:uppercase; font-size:0.7rem; font-weight:800; color:#b9bbbe; margin:15px 0 8px;">Nexus Member Since</div>
+                            <p id="psm-joined" style="color:#dcddde; font-size:0.85rem; margin:0;">Calculating...</p>
+                        </div>
+
+                        <div style="display:flex; gap:10px; margin-bottom:10px;">
+                            <button id="psm-dm-btn" style="flex:1; padding:10px; border-radius:4px; border:none; background:#5865f2; color:#fff; font-weight:700; cursor:pointer; font-size:0.85rem;">Send Message</button>
+                            <button id="psm-fr-btn" style="flex:1; padding:10px; border-radius:4px; border:1px solid #4f545c; background:transparent; color:#fff; font-weight:700; cursor:pointer; font-size:0.85rem;">Add Friend</button>
+                        </div>
+                        <a id="psm-link" href="#" style="display:block; text-align:center; color:#00A2FF; font-size:0.75rem; text-decoration:none; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-top:5px;">Full Profile Tracking</a>
+                    </div>
+                </div>
             </div>`;
         document.body.appendChild(modal);
     }
@@ -262,16 +278,35 @@ window.showProfileSummary = async (username) => {
     setTimeout(() => { modal.style.opacity = '1'; document.getElementById('psm-box').style.transform = 'translateY(0)'; }, 10);
     document.getElementById('psm-name').innerText = username;
     document.getElementById('psm-handle').innerText = '@' + username.toLowerCase().replace(/\s/g, '');
-    if (window.supabaseClient) { window.supabaseClient.from('profiles').select('*').eq('username', username).maybeSingle().then(({data}) => {
-        if (data) {
-            document.getElementById('psm-pfp').src = data.avatar_url || 'https://via.placeholder.com/100';
-            document.getElementById('psm-bio').innerText = data.bio || 'New entity detected.';
-            document.getElementById('psm-banner').style.background = data.banner_color || 'linear-gradient(45deg, #111, #222)';
-        }
-    }); }
-    document.getElementById('psm-dm-btn').onclick = () => { closeProfileSummary(); location.href = `discuss.html?dm=${encodeURIComponent(username)}`; };
+    if (window.supabaseClient) { 
+        window.supabaseClient.from('profiles').select('*').eq('username', username).maybeSingle().then(({data}) => {
+            if (data) {
+                document.getElementById('psm-name').innerText = data.display_name || data.username;
+                document.getElementById('psm-pfp').src = data.avatar_url || 'https://via.placeholder.com/100';
+                document.getElementById('psm-bio').innerText = data.bio || 'New entity detected.';
+                if(data.banner_url) document.getElementById('psm-banner').style.background = `url(${data.banner_url}) center/cover`;
+                
+                if (data.created_at) {
+                    const date = new Date(data.created_at);
+                    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                    document.getElementById('psm-joined').innerText = date.toLocaleDateString('en-US', options);
+                }
+
+                // Check Official Online Status via Ably (if on global hub)
+                if (typeof Ably !== 'undefined') {
+                    const hub = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+                    hub.channels.get('global-hub').presence.get((err, members) => {
+                        if (!err && members.some(m => m.data.user === username)) {
+                            document.getElementById('psm-status-dot').style.display = 'block';
+                        }
+                    });
+                }
+            }
+        }); 
+    }
+    document.getElementById('psm-link').href = `profile.html?user=${encodeURIComponent(username)}`;
+    document.getElementById('psm-dm-btn').onclick = () => { closeProfileSummary(); if(window.location.pathname.includes('discuss.html')) setMode('dm', username); else location.href = `discuss.html?dm=${encodeURIComponent(username)}`; };
     document.getElementById('psm-fr-btn').onclick = () => { if(window.sendFriendRequest) window.sendFriendRequest(username); else alert("Friend System Offline"); };
-    document.getElementById('psm-profile-btn').onclick = () => { location.href = `profile.html?user=${encodeURIComponent(username)}`; };
 };
 window.closeProfileSummary = () => {
     const modal = document.getElementById('psm-modal');
