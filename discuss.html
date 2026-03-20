@@ -828,13 +828,13 @@
         async function promptNewDM() {
             const u = prompt("Enter username of the recipient:");
             if (u && u.trim() !== me) {
-                const exists = await window.checkIfUserExists(u.trim());
-                if(!exists) {
+                const realUser = await window.checkIfUserExists(u.trim());
+                if(!realUser) {
                     if (window.showTopNotification) window.showTopNotification(`USER NOT FOUND: ${u}`, 'error');
                     return;
                 }
-                addList(u.trim());
-                setMode('dm', u.trim());
+                addList(realUser);
+                setMode('dm', realUser);
             }
         }
 
@@ -843,31 +843,32 @@
             if (!window.supabaseClient) { alert("Cloud System Offline"); return; }
             
             try {
-                // Check if user exists
-                const exists = await window.checkIfUserExists(u.trim());
-                if(!exists) {
+                // Check if user exists (returns correctly capitalized username or null)
+                const realUser = await window.checkIfUserExists(u.trim());
+                if(!realUser) {
                     if (window.showTopNotification) window.showTopNotification(`USER NOT FOUND: ${u}`, 'error');
                     return;
                 }
+                const targetUser = realUser;
 
                 // Check if already friends or request pending
                 const { data: existing } = await window.supabaseClient
                     .from('friend_requests')
                     .select('*')
-                    .or(`and(from_user.eq.${me},to_user.eq.${u}),and(from_user.eq.${u},to_user.eq.${me})`)
+                    .or(`and(from_user.eq.${me},to_user.eq.${targetUser}),and(from_user.eq.${targetUser},to_user.eq.${me})`)
                     .maybeSingle();
 
                 if (existing) {
-                    if (window.showTopNotification) window.showTopNotification(`ALREADY CONNECTED OR PENDING WITH @${u}`, 'error');
+                    if (window.showTopNotification) window.showTopNotification(`ALREADY CONNECTED OR PENDING WITH @${targetUser}`, 'error');
                     return;
                 }
 
                 await window.supabaseClient.from('friend_requests').insert([{
                     from_user: me,
-                    to_user: u.trim(),
+                    to_user: targetUser,
                     status: 'pending'
                 }]);
-                if (window.showTopNotification) window.showTopNotification(`FRIEND REQUEST SENT TO @${u}`);
+                if (window.showTopNotification) window.showTopNotification(`FRIEND REQUEST SENT TO @${targetUser}`);
                 if (mode === 'friends') showFriendsDashboard('pending');
             } catch (e) {
                 console.error("Cloud Error:", e);
