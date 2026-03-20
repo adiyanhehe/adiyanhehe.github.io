@@ -173,17 +173,24 @@
             }
         }
 
-        /* --- VIDEO BG --- */
+        /* --- INTERACTIVE GRID BG --- */
+        #grid-bg {
+            position: fixed; inset: 0; z-index: -3;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-template-rows: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 1px; background: rgba(255,255,255,0.02);
+            pointer-events: none;
+        }
+        .grid-box {
+            background: #030303; width: 100%; height: 100%;
+            border: 0.5px solid rgba(255,255,255,0.02);
+            transition: background 0.5s, box-shadow 0.5s;
+        }
+
         #fixed-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -2;
-            object-fit: cover;
-            opacity: 0.15;
-            filter: grayscale(1);
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -2; object-fit: cover; opacity: 0.1; filter: grayscale(1);
         }
 
         /* --- HERO --- */
@@ -424,6 +431,7 @@
     <div id="cursor-dot"></div>
     <div id="cursor-bg"></div>
 
+    <div id="grid-bg"></div>
     <video id="fixed-bg" autoplay loop muted playsinline>
         <source src="videos/vfx-system.mp4" type="video/mp4" onerror="this.src='videos/web2.mp4'">
     </video>
@@ -492,18 +500,51 @@
         gsap.ticker.add((time) => { lenis.raf(time * 1000) });
         gsap.ticker.lagSmoothing(0);
 
-        // --- CUSTOM CURSOR ---
-        const cursorDot = document.getElementById('cursor-dot');
-        const cursorBg = document.getElementById('cursor-bg');
-        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
-        let dotX = mouseX, dotY = mouseY; let bgX = mouseX, bgY = mouseY;
-        window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+        // --- INTERACTIVE GRID ENGINE ---
+        const grid = document.getElementById('grid-bg');
+        const boxSize = 80;
+        const columns = Math.ceil(window.innerWidth / boxSize);
+        const rows = Math.ceil(window.innerHeight / boxSize);
+        const totalBoxes = columns * rows;
 
-        gsap.ticker.add(() => {
-            dotX += (mouseX - dotX) * 0.2; dotY += (mouseY - dotY) * 0.2;
-            gsap.set(cursorDot, { x: dotX, y: dotY });
-            bgX += (mouseX - bgX) * 0.1; bgY += (mouseY - bgY) * 0.1;
-            gsap.set(cursorBg, { x: bgX, y: bgY });
+        for (let i = 0; i < totalBoxes; i++) {
+            const box = document.createElement('div');
+            box.className = 'grid-box';
+            grid.appendChild(box);
+        }
+
+        const boxes = document.querySelectorAll('.grid-box');
+        window.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            boxes.forEach((box) => {
+                const rect = box.getBoundingClientRect();
+                const boxX = rect.left + rect.width / 2;
+                const boxY = rect.top + rect.height / 2;
+                
+                const dist = Math.hypot(mouseX - boxX, mouseY - boxY);
+                if (dist < 200) {
+                    const power = (200 - dist) / 200;
+                    gsap.to(box, {
+                        backgroundColor: `rgba(168, 85, 247, ${power * 0.2})`,
+                        borderColor: `rgba(168, 85, 247, ${power * 0.4})`,
+                        scale: 1 + (power * 0.1),
+                        z: 20 * power,
+                        duration: 0.4,
+                        overwrite: 'auto'
+                    });
+                } else {
+                    gsap.to(box, {
+                        backgroundColor: '#030303',
+                        borderColor: 'rgba(255,255,255,0.02)',
+                        scale: 1,
+                        z: 0,
+                        duration: 1,
+                        overwrite: 'auto'
+                    });
+                }
+            });
         });
 
 
