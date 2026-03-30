@@ -16,7 +16,8 @@ window.applyTheme = function (theme) {
 window.isAdmin = (u, email = null) => {
     const adminEmails = ['adiyachowdhury8@gmail.com', 'adiyanhehe@gmail.com'];
     const activeEmail = email || localStorage.getItem('rbx_email');
-    return adminEmails.includes(activeEmail);
+    const dbAdmin = localStorage.getItem('rbx_is_admin') === 'true';
+    return adminEmails.includes(activeEmail) || dbAdmin;
 };
 window.isVerified = (u) => {
     const defaultVerified = ['adigusi', 'Adiyan', 'adiyanhehe'];
@@ -76,6 +77,10 @@ window.addEventListener('DOMContentLoaded', () => {
             if (action === 'force_reload') location.reload();
             if (action === 'redirect' && value) location.href = value;
             if (action === 'announcement' && window.showTopNotification) window.showTopNotification(value, 'info');
+            if (action === 'clear_chat' && window.location.pathname.includes('discuss.html')) {
+                const logs = document.getElementById('chat-logs');
+                if(logs) logs.innerHTML = '<div style="text-align:center; padding:20px; color:var(--accent); font-weight:900;">ADMIN: CHANNEL PURGED</div>';
+            }
         });
     }
 });
@@ -172,6 +177,7 @@ async function checkGlobalAuth() {
             localStorage.setItem('rbx_pic', pic);
             localStorage.setItem('rbx_email', user.email);
             localStorage.setItem('rbx_verified', profile?.is_verified || false);
+            localStorage.setItem('rbx_is_admin', profile?.is_admin || false);
 
             authNav.innerHTML = `<a href="profile.html?user=${name}" class="nav-item interactable" style="color:#00A2FF; font-weight:900;">@${name}</a>
                                  <a href="#" onclick="logoutNexus()" class="nav-item interactable" style="opacity:0.4; font-size:0.7rem;">LOGOUT</a>`;
