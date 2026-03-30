@@ -105,6 +105,7 @@
         <button class="nav-btn" onclick="showSection('staff')">Staff Management</button>
         <button class="nav-btn" onclick="showSection('config')">Site Config</button>
         <button class="nav-btn" onclick="showSection('messages')">Live Hub</button>
+        <button class="nav-btn" style="color:var(--accent); margin-top:20px;" onclick="manualSync()">SYNC_CORE</button>
         <button class="nav-btn" style="margin-top:auto;" onclick="location.href='index.html'">EXIT_CORE</button>
     </div>
 
@@ -275,30 +276,43 @@
         async function checkAdminStatus() {
             try {
                 if (!window.supabaseClient) { 
-                    console.log("Waiting for Supabase...");
                     setTimeout(checkAdminStatus, 500); 
                     return; 
+                }
+
+                // Listen for future auth changes (like after login via gate)
+                if (!window.authBound) {
+                    window.supabaseClient.auth.onAuthStateChange((event, session) => {
+                        console.log("Auth Event:", event);
+                        if (event === 'SIGNED_IN') checkAdminStatus();
+                    });
+                    window.authBound = true;
                 }
 
                 const { data: { session } } = await window.supabaseClient.auth.getSession();
                 const userMe = localStorage.getItem('rbx_user');
                 const emailMe = session?.user?.email || null;
 
-                // Hide preloader
-                const p = document.getElementById('preloader');
-                if (p) p.style.opacity = '0';
-                setTimeout(() => { if(p) p.remove(); }, 800);
-
                 if (window.isAdmin && window.isAdmin(userMe, emailMe)) {
                     document.getElementById('auth-gate').style.display = 'none';
-                    initDashboard();
+                    // Hide preloader immediately if admin
+                    const p = document.getElementById('preloader');
+                    if (p) { p.style.opacity = '0'; setTimeout(() => p.remove(), 800); }
+                    
+                    if (!window.dashboardInitialized) {
+                        initDashboard();
+                        window.dashboardInitialized = true;
+                    }
                 } else {
                     document.getElementById('auth-gate').style.display = 'flex';
+                    // Hide preloader even if not admin so gate is visible
+                    const p = document.getElementById('preloader');
+                    if (p) { p.style.opacity = '0'; setTimeout(() => p.remove(), 800); }
                 }
             } catch (e) {
                 console.error("Auth Check Error", e);
-                // Even on error, show the gate so the user can login
-                document.getElementById('preloader').remove();
+                const p = document.getElementById('preloader');
+                if (p) p.remove();
                 document.getElementById('auth-gate').style.display = 'flex';
             }
         }
@@ -321,9 +335,16 @@
 
             // Sync new threads live
             ably.channels.get('nexus-posts').subscribe('new', (m) => {
-                showToast(`New thread from @${m.data.author}`);
-                fetchThreads(); // Refresh list to include new one
+                showToast(`Live Update: @${m.data.author} posted.`);
+                fetchThreads();
             });
+
+            // Auto-refresh poll (every 30s)
+            setInterval(() => {
+                fetchThreads();
+                fetchUsers();
+                if(document.getElementById('view-reports').classList.contains('active')) fetchReports();
+            }, 30000);
         }
 
         function showSection(id) {
@@ -360,12 +381,25 @@
             }
         }
 
+        function manualSync() {
+            showToast("Force Synchronizing Core Components...");
+            fetchThreads();
+            fetchUsers();
+            fetchReports();
+            fetchStaff();
+        }
+
         async function fetchThreads() {
-            if(!window.loadCloudThreads) return;
+            if(!window.loadCloudThreads) { console.warn("loadCloudThreads not ready"); return; }
+            console.log("Fetching Threads...");
             const threads = await window.loadCloudThreads();
+            console.log("Threads Response:", threads);
             const list = document.getElementById('thread-list');
             list.innerHTML = '';
-            threads.slice(0, 50).forEach(t => {
+            if(!threads || threads.length === 0) {
+                list.innerHTML = '<tr><td colspan="4" style="text-align:center; opacity:0.5;">No transmissions found in archive.</td></tr>';
+                return;
+            }
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight:900;">@${t.author}</td>
@@ -388,8 +422,11 @@
         }
 
         async function fetchUsers() {
+            console.log("Fetching Users...");
             const { data, error } = await window.supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
+            console.log("Users Response:", data, error);
             if (data) renderUserList(data);
+            if (error) console.error("Fetch Users Error:", error);
         }
 
         function renderUserList(users) {
