@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus | CONTROL CORE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <style>
+        :root {
+            --bg: #030303;
+            --surface: rgba(255, 255, 255, 0.02);
+            --panel: #0a0a0a;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #8b8c8f;
+            --accent: #ff3366;
+            --accent-glow: rgba(255, 51, 102, 0.3);
+            --transition: cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @media (min-width: 1024px) { body, a, button, input, select, textarea { cursor: auto !important; } }
+
+        body { 
+            background: var(--bg); color: var(--text-main); font-family: 'Outfit', sans-serif;
+            overflow: hidden; line-height: 1.6; -webkit-font-smoothing: antialiased;
+            display: flex; height: 100vh;
+        }
+
+        /* --- PRELOADER --- */
+        .preloader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 1s var(--transition); }
+        .loader-text { font-size: 3vw; font-weight: 700; letter-spacing: -1px; overflow: hidden; display: flex; gap: 8px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); }
+        .loader-bar-wrap { width: 300px; height: 1px; background: rgba(255,255,255,0.1); margin-top: 20px; position: relative; overflow: hidden; }
+        .loader-bar { width: 0%; height: 100%; background: #fff; position: absolute; top: 0; left: 0; }
+
+        /* --- GATE --- */
+        #auth-gate { position: fixed; inset: 0; background: #000; z-index: 1000000; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+        .gate-title { font-size: 4rem; font-weight: 900; letter-spacing: -3px; margin-bottom: 20px; color: var(--accent); }
+
+        /* --- UI --- */
+        #cursor-dot { position: fixed; width: 8px; height: 8px; background: #fff; border-radius: 50%; pointer-events: none; z-index: 10000001; transform: translate(-50%, -50%); mix-blend-mode: difference; }
+        #cursor-bg { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none; z-index: 10000000; transform: translate(-50%, -50%); transition: 0.3s; }
+
+        .sidebar { width: 280px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 40px 30px; z-index: 10; }
+        .sidebar h1 { font-weight: 900; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; color: var(--accent); }
+        
+        .nav-btn { background: transparent; color: var(--text-muted); border: none; padding: 15px 0; border-bottom: 1px solid var(--border); cursor: none; text-align: left; font-size: 0.9rem; font-weight: 700; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-btn:hover, .nav-btn.active { color: #fff; border-bottom-color: #fff; }
+
+        .main { flex: 1; padding: 60px 8%; overflow-y: auto; position: relative; }
+        .section-view { display: none; }
+        .section-view.active { display: block; }
+        
+        .header-title { font-size: 3.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: -2px; margin-bottom: 40px; line-height: 0.9; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }
+        .card { background: var(--surface); border: 1px solid var(--border); padding: 30px; border-radius: 20px; transition: 0.4s; }
+        .card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2); }
+        .card h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 15px; }
+
+        input, textarea, select { width: 100%; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; color: #fff; font-family: inherit; margin-bottom: 20px; outline: none; }
+        .btn { background: #fff; color: #000; border: none; padding: 15px 30px; border-radius: 100px; font-weight: 900; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; cursor: none; transition: 0.3s; }
+        .btn:hover { transform: scale(1.05); background: var(--accent); color: #fff; }
+        .btn-danger { background: #ff3366; color: #fff; }
+
+        /* Tables for thread/user review */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; padding: 15px; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        
+        #toast { position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: 15px 40px; border-radius: 100px; font-weight: 900; transition: 0.5s; z-index: 10000003; }
+    </style>
+    <script src="global.js"></script>
+</head>
+<body>
+
+    <div class="preloader">
+        <div class="loader-text">NEXUS_COMMAND</div>
+        <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+    </div>
+
+    <div id="auth-gate">
+        <div class="gate-title">CORE_RESTRICTED</div>
+        <p style="color:#666; margin-bottom:30px; max-width:400px;">Direct access detected on unauthorized node. Only designated CORE_ADMINS can access this terminal.</p>
+        
+        <div style="display:flex; flex-direction:column; gap:15px; width:100%; max-width:300px;">
+            <button class="btn" style="background:#fff; color:#000;" onclick="window.loginNexus('google')">LOGIN_WITH_GOOGLE</button>
+            <button class="btn" style="background:#5865F2; color:#fff;" onclick="window.loginNexus('discord')">LOGIN_WITH_DISCORD</button>
+            <hr style="border:none; border-top:1px solid #222; margin:10px 0;">
+            <button class="btn" style="background:transparent; border:1px solid #333; color:#444;" onclick="checkAdminStatus()">RETRY_TRANSCEIVER</button>
+            <button class="btn" style="background:transparent; color:#ff3366;" onclick="location.href='index.html'">ABORT_EXIT</button>
+        </div>
+    </div>
+
+    <div id="cursor-dot"></div>
+    <div id="cursor-bg"></div>
+
+    <div class="sidebar">
+        <h1>COMMAND_CENTER</h1>
+        <button class="nav-btn active" onclick="showSection('global')">Global Controls</button>
+        <button class="nav-btn" onclick="showSection('threads')">Manage Threads</button>
+        <button class="nav-btn" onclick="showSection('users')">User Control</button>
+        <button class="nav-btn" onclick="showSection('reports')">Reports</button>
+        <button class="nav-btn" onclick="showSection('messages')">Message Logs</button>
+        <button class="nav-btn" style="margin-top:auto;" onclick="location.href='index.html'">EXIT_CORE</button>
+    </div>
+
+    <div class="main">
+        
+        <!-- SECTION: GLOBAL -->
+        <div id="view-global" class="section-view active">
+            <h2 class="header-title">Global<br>Broadcast.</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Operational Status</h3>
+                    <p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:15px;">Broadcast sitewide alerts and emergency protocols.</p>
+                    <input type="text" id="alert-text" placeholder="Type transmission content...">
+                    <button class="btn" onclick="sendAlert()">Execute Broadcast</button>
+                    <button class="btn" style="margin-top:10px; background:var(--accent); color:#fff;" onclick="triggerLockdown()">SITE_LOCKDOWN</button>
+                </div>
+                <div class="card">
+                    <h3>Environment Sync</h3>
+                    <p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:15px;">Force theme or page jump for all active nodes.</p>
+                    <div style="display:flex; gap:10px; margin-bottom:15px;">
+                        <button class="btn" onclick="forceSync('set_theme', 'dark')">DARK</button>
+                        <button class="btn" onclick="forceSync('set_theme', 'light')">LIGHT</button>
+                    </div>
+                    <input type="text" id="redirect-url" placeholder="Redirect Jump URL (https://...)">
+                    <button class="btn" onclick="forceSync('redirect', document.getElementById('redirect-url').value)">Force Jump</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: THREADS -->
+        <div id="view-threads" class="section-view">
+            <h2 class="header-title">Thread<br>MODERATION.</h2>
+            <div class="card">
+                <h3>Global Metadata Archive</h3>
+                <div style="overflow-x:auto;">
+                    <table id="thread-table">
+                        <thead>
+                            <tr>
+                                <th>Author</th>
+                                <th>Content</th>
+                                <th>Timestamp</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="thread-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: USERS -->
+        <div id="view-users" class="section-view">
+            <h2 class="header-title">User<br>CORE.</h2>
+            <div class="card">
+                <h3>Entity Management</h3>
+                <input type="text" id="user-search" placeholder="Search by username..." oninput="handleUserSearch()">
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Entity</th>
+                                <th>Role</th>
+                                <th>Verification</th>
+                                <th>Operational Status</th>
+                                <th>Command</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: REPORTS -->
+        <div id="view-reports" class="section-view">
+            <h2 class="header-title">Nexus<br>COMPLAINTS.</h2>
+            <div class="card">
+                <h3>Global Incident Reports</h3>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Target</th>
+                                <th>Reporter</th>
+                                <th>Metadata</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: MESSAGES -->
+        <div id="view-messages" class="section-view">
+            <h2 class="header-title">Nexus<br>Live Stream.</h2>
+            <div class="card">
+                <h3>Incoming Transmissions (Real-time)</h3>
+                <div id="live-chat" style="max-height:500px; overflow-y:auto; background:rgba(0,0,0,0.5); padding:20px; border-radius:10px; font-family:monospace; font-size:0.8rem;">
+                    <div style="color:var(--accent);">-- AWAITING CONNECTION --</div>
+                </div>
+                <button class="btn btn-danger" style="margin-top:20px;" onclick="clearLiveChat()">Purge Stream</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="toast">Directive Processed.</div>
+
+    <script>
+        // --- AUTH GATE SYSTEM ---
+        async function checkAdminStatus() {
+            if (!window.supabaseClient) { setTimeout(checkAdminStatus, 500); return; }
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            
+            const userMe = localStorage.getItem('rbx_user');
+            const emailMe = session?.user?.email || null;
+
+            if (window.isAdmin && window.isAdmin(userMe, emailMe)) {
+                document.getElementById('auth-gate').style.display = 'none';
+                initDashboard();
+            } else {
+                document.getElementById('auth-gate').style.display = 'flex';
+                gsap.from('#auth-gate > *', { y: 30, opacity: 0, stagger: 0.1 });
+            }
+        }
+        window.addEventListener('load', checkAdminStatus);
+
+        // --- DASHBOARD INIT ---
+        const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        const sync = ably.channels.get('site-global-config');
+        const live = ably.channels.get('global-hub');
+
+        function initDashboard() {
+            gsap.to('.preloader', { opacity: 0, duration: 1, onComplete: () => document.querySelector('.preloader').remove() });
+            fetchThreads();
+            fetchUsers();
+            fetchReports();
+            
+            // Live Stream
+            live.subscribe('msg', (m) => {
+                const stream = document.getElementById('live-chat');
+                const row = document.createElement('div');
+                row.style.marginBottom = '5px';
+                row.innerHTML = `<span style="color:#444;">[${new Date().toLocaleTimeString()}]</span> <span style="color:var(--accent); font-weight:900;">@${m.data.user}</span>: ${m.data.text}`;
+                stream.prepend(row);
+            });
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + id).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if(event) event.target.classList.add('active');
+            gsap.from('#view-' + id, { opacity: 0, y: 10, duration: 0.5 });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.bottom = '40px';
+            setTimeout(() => { t.style.bottom = '-80px'; }, 3000);
+        }
+
+        // --- COMMANDS ---
+        function sendAlert() {
+            const val = document.getElementById('alert-text').value;
+            if(!val) return;
+            sync.publish('config_update', { action: 'announcement', value: val });
+            showToast("Global Broadcast Dispatched.");
+        }
+
+        function triggerLockdown() {
+            if(confirm("INITIATE SITEWIDE LOCKDOWN? This will redirect every active user to maintenance.")) {
+                sync.publish('config_update', { action: 'maintenance', value: true });
+                showToast("LOCKDOWN_ACTIVE");
+            }
+        }
+
+        function forceSync(action, value) {
+            sync.publish('config_update', { action: action, value: value });
+            showToast(`Remote Execution: ${action.toUpperCase()} processed.`);
+        }
+
+        // --- DATA MGMT ---
+        async function fetchThreads() {
+            if(!window.loadCloudThreads) return;
+            const threads = await window.loadCloudThreads();
+            const list = document.getElementById('thread-list');
+            list.innerHTML = '';
+            threads.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:900;">@${t.author}</td>
+                    <td>${t.content}</td>
+                    <td style="color:#444;">${new Date(t.timestamp).toLocaleString()}</td>
+                    <td><button class="btn btn-danger" style="padding:5px 15px; font-size:0.6rem;" onclick="deleteThread('${t.id}')">ERASE</button></td>
+                `;
+                list.appendChild(tr);
+            });
+        }
+
+        async function deleteThread(id) {
+            if(!confirm("Permanently erase this data fragment?")) return;
+            const { error } = await window.supabaseClient.from('threads').delete().eq('id', id);
+            if(!error) {
+                showToast("Transmission Erased.");
+                fetchThreads();
+                // Real-time hide
+                ably.channels.get('nexus-posts').publish('delete', { id: id });
+            }
+        }
+
+        async function fetchUsers() {
+            // Fetch all users from profiles table
+            const { data, error } = await window.supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
+            if (error) {
+                console.error("Error fetching users:", error);
+                return;
+            }
+            renderUserList(data);
+        }
+
+        function renderUserList(users) {
+            const list = document.getElementById('user-list');
+            list.innerHTML = '';
+            users.forEach(u => {
+                const isV = u.is_verified || (window.isVerified && window.isVerified(u.username));
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:900;">${u.username}</span>
+                                <span style="font-size:0.6rem; opacity:0.4;">ID: ${u.id.substring(0,8)}...</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${window.isAdmin(u.username) ? '<span style="color:var(--accent); font-weight:900;">CORE_ADMIN</span>' : '<span style="opacity:0.6;">ENTITY</span>'}</td>
+                    <td>
+                        <button class="btn" style="padding:5px 12px; font-size:0.6rem; background:${isV ? 'var(--accent)' : 'transparent'}; border:1px solid ${isV ? 'transparent' : 'var(--border)'}; color:${isV ? '#fff' : 'var(--text-muted)'};" onclick="toggleVerify('${u.id}', ${isV})">
+                            ${isV ? 'VERIFIED' : 'UNVERIFIED'}
+                        </button>
+                    </td>
+                    <td><span id="status-${u.id}" style="font-size:0.7rem; color:${u.status === 'BANNED' ? '#ff3366' : '#00ff00'}; font-weight:900;">${u.status || 'ONLINE_READY'}</span></td>
+                    <td>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn" style="padding:5px 10px; font-size:0.6rem; background:rgba(255,255,255,0.05); color:#fff;" onclick="wipeProfile('${u.id}')">WIPE</button>
+                            <button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;" onclick="kickUser('${u.username}')">KICK</button>
+                            ${u.status === 'BANNED' ? `<button class="btn" style="padding:5px 10px; font-size:0.6rem; background:#00ff00; color:#000;" onclick="unbanUser('${u.username}')">UNBAN</button>` : `<button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem; background:#440000;" onclick="banUser('${u.username}')">BAN</button>`}
+                            <button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem; background:#000;" onclick="deleteUser('${u.id}', '${u.username}')">DELETE</button>
+                        </div>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+        }
+
+        async function handleUserSearch() {
+            const q = document.getElementById('user-search').value;
+            const { data } = await window.supabaseClient.from('profiles').select('*').ilike('username', `%${q}%`);
+            renderUserList(data);
+        }
+
+        function kickUser(u) {
+            if(!confirm(`FORCE DISCONNECT @${u}?`)) return;
+            sync.publish('config_update', { action: 'kick', target: u });
+            showToast(`User @${u} disconnected.`);
+        }
+
+        async function unbanUser(u) {
+            if(!confirm(`Restore access for @${u}?`)) return;
+            const { error } = await window.supabaseClient.from('profiles').update({ status: 'ACTIVE' }).eq('username', u);
+            if(!error) showToast(`User @${u} access restored.`);
+            fetchUsers();
+        }
+
+        async function banUser(u) {
+            if(!confirm(`PERMANENTLY BAN @${u}? This will flag the account as restricted.`)) return;
+            kickUser(u);
+            const { error } = await window.supabaseClient.from('profiles').update({ status: 'BANNED' }).eq('username', u);
+            if(!error) showToast(`User @${u} ban protocol engaged.`);
+            fetchUsers();
+        }
+
+        async function fetchReports() {
+            // Check localStorage first for demo reports, then Supabase
+            let reports = JSON.parse(localStorage.getItem('nexus_reports') || '[]');
+            const { data: cloudReports } = await window.supabaseClient.from('reports').select('*').limit(20);
+            if(cloudReports) reports = [...reports, ...cloudReports];
+            
+            const list = document.getElementById('report-list');
+            list.innerHTML = '';
+            reports.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="color:var(--accent); font-weight:800;">${(r.type || 'N/A').toUpperCase()}</td>
+                    <td style="font-weight:900;">@${r.data?.offender || r.data?.author || 'Unknown'}</td>
+                    <td style="opacity:0.6;">@${r.reporter || 'Anonymous'}</td>
+                    <td style="font-size:0.7rem;">${(r.data?.content || '').substring(0,40)}...</td>
+                    <td>
+                        <button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;" onclick="purgeEntityContent('${r.data?.offender || r.data?.author}')">PURGE_ENTITY</button>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+        }
+
+        async function purgeEntityContent(u) {
+            if(!u || u === 'undefined') return;
+            if(!confirm(`CRITICAL: Purge ALL content across the network for user @${u}? This will delete all their threads and messages.`)) return;
+            // Purge threads
+            await window.supabaseClient.from('threads').delete().eq('author', u);
+            showToast(`Content purge completed for @${u}.`);
+            fetchThreads();
+            fetchReports();
+        }
+
+        async function wipeProfile(id) {
+            if(!confirm("Wipe all profile data (bio/avatar) for this entity?")) return;
+            const { error } = await window.supabaseClient.from('profiles').update({ bio: '', avatar_url: null }).eq('id', id);
+            if(!error) {
+                showToast("Profile wiped successfully.");
+                fetchUsers();
+            }
+        }
+
+        async function deleteUser(id, username) {
+            if(!confirm(`PERMANENTLY DELETE entity @${username}? This cannot be undone.`)) return;
+            kickUser(username);
+            const { error } = await window.supabaseClient.from('profiles').delete().eq('id', id);
+            if(!error) {
+                showToast("Entity purged from database.");
+                fetchUsers();
+            } else {
+                alert("Purge failed: " + error.message);
+            }
+        }
+
+        async function toggleVerify(dbId, currentStatus) {
+            const nextStatus = !currentStatus;
+            const { error } = await window.supabaseClient.from('profiles').update({ is_verified: nextStatus }).eq('id', dbId);
+            if (!error) {
+                showToast(`Entity verification ${nextStatus ? 'confirmed' : 'revoked'}.`);
+                fetchUsers();
+                // We could also publish a sync event if needed
+            } else {
+                console.error("Verification failed", error);
+                alert("Verification failed: " + error.message);
+            }
+        }
+
+        function clearLiveChat() {
+            document.getElementById('live-chat').innerHTML = '<div style="color:var(--accent);">-- STREAM PURGED --</div>';
+        }
+
+        // --- CURSOR ---
+        const dot = document.getElementById('cursor-dot');
+        const bg = document.getElementById('cursor-bg');
+        let lx = 0, ly = 0, ldx = 0, ldy = 0, lbx = 0, lby = 0;
+        window.onmousemove = (e) => { lx = e.clientX; ly = e.clientY; };
+        function updateCursor() {
+            ldx += (lx - ldx) * 0.2; ldy += (ly - ldy) * 0.2;
+            dot.style.left = ldx + 'px'; dot.style.top = ldy + 'px';
+            lbx += (lx - lbx) * 0.1; lby += (ly - lby) * 0.1;
+            bg.style.left = lbx + 'px'; bg.style.top = lby + 'px';
+            requestAnimationFrame(updateCursor);
+        }
+        updateCursor();
+
+    </script>
+</body>
+</html>

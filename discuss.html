@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus // Messages</title>
+    <!-- Matched web.html font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #050505;
+            --panel: rgba(10, 10, 10, 0.85);
+            --border: rgba(255, 255, 255, 0.06);
+            --text-main: #ffffff;
+            --text-muted: #8b8c8f;
+            --accent: #00A2FF;
+            --transition: cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- DISCORD LAYOUT --- */
+        .server-sidebar {
+            width: 72px;
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 8px;
+            border-right: 1px solid var(--border);
+            padding-top: 80px;
+        }
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            background: #111;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+        .server-icon:hover, .server-icon.active {
+            border-radius: 16px;
+            background: var(--accent);
+            color: #fff;
+        }
+        .server-icon::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 25%;
+            height: 50%;
+            width: 4px;
+            background: #fff;
+            border-radius: 0 4px 4px 0;
+            transform: scaleY(0);
+            transition: 0.3s;
+        }
+        .server-icon.active::before { transform: scaleY(1); }
+
+        .sidebar {
+            width: 240px;
+            background: var(--panel);
+            border-right: 1px solid rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            position: relative;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            padding-top: 80px;
+        }
+
+        .side-head {
+            padding: 15px 20px;
+            font-weight: 900;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-transform: uppercase;
+            opacity: 0.6;
+        }
+
+        .user-link {
+            padding: 10px 15px;
+            margin: 2px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: 0.2s;
+            color: var(--text-muted);
+        }
+        .user-link:hover, .user-link.active {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+        .user-link.active { background: rgba(255,255,255,0.1); }
+        
+        .unread-badge {
+            background: #ff4757;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Status Colors */
+        .status-online { background: #23a559 !important; }
+        .status-idle { background: #f0b232 !important; }
+        .status-dnd { background: #f23f43 !important; }
+        .status-offline { background: #80848e !important; }
+
+        /* PICKERS */
+        .picker-panel {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 300px;
+            height: 400px;
+            background: #2b2d31;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            z-index: 10001;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+        .picker-head { padding:15px; border-bottom:1px solid var(--border); font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); }
+        .picker-grid { flex:1; overflow-y:auto; padding:10px; display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; }
+        .picker-item { 
+            font-size: 1.5rem; cursor: pointer; transition: 0.2s; 
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+        }
+        .picker-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.2); }
+        .gif-item { width:100%; border-radius:4px; cursor:pointer; transition:0.2s; }
+        .gif-item:hover { filter: brightness(1.2); scale: 1.05; }
+
+        #user-slot {
+            margin-top:auto; 
+            padding: 15px 20px;
+            display:flex; 
+            align-items:center; 
+            gap:15px; 
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid var(--border);
+            transition: 0.3s;
+        }
+        #user-slot:hover { background: rgba(255,255,255,0.04); }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: var(--surface);
+            padding-top: 80px;
+            overflow: hidden; /* Ensure messages don't bleed into header */
+        }
+
+        .member-sidebar {
+            width: 240px;
+            background: var(--panel);
+            border-left: 1px solid rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding-top: 80px;
+        }
+
+        /* --- CHAT FLOW (DISCORD STYLE) --- */
+        .bubble {
+            background: transparent !important;
+            border: none !important;
+            padding: 2px 20px !important;
+            display: flex;
+            gap: 15px;
+            max-width: 100% !important;
+            transition: 0.1s;
+            position: relative;
+        }
+        .bubble:hover { 
+            background: rgba(255,255,255,0.03) !important; 
+            box-shadow: inset 4px 0 0 var(--accent);
+        }
+        
+        .bubble img.msg-pfp {
+            width: 42px; height: 42px; border-radius: 12px; margin-top: 5px; cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .bubble img.msg-pfp:hover { filter: brightness(1.2); }
+        
+        .msg-content { flex: 1; min-width: 0; }
+        .msg-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+        .msg-user { font-weight: 800; color: #fff; cursor: pointer; font-size: 1.05rem; }
+        .msg-user:hover { text-decoration: underline; }
+        .msg-time { font-size: 0.75rem; color: var(--text-muted); opacity: 0.6; }
+        .msg-text { color: #dcddde; font-size: 1.05rem; line-height: 1.5; word-wrap: break-word; }
+        
+        .msg-actions {
+            position: absolute;
+            right: 10px;
+            top: 2px;
+            display: none;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2px;
+            z-index: 10000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        
+        .msg-action-btn {
+            padding: 8px 10px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .msg-action-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        .msg-action-btn.delete:hover {
+            background: #da373c;
+            color: #fff;
+        }
+
+        .chat-head {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            z-index: 5;
+            height: 48px;
+        }
+
+        #chat-title {
+            font-weight: 900;
+            font-size: 1.1rem;
+            letter-spacing: -0.2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #msgs {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            scroll-behavior: smooth;
+        }
+
+        .input-box {
+            padding: 0 20px 24px;
+            background: transparent;
+        }
+
+        .input-inner {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            padding: 0 18px;
+            align-items: center;
+            gap: 15px;
+            min-height: 52px;
+            transition: 0.3s;
+        }
+        .input-inner:focus-within {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 30px rgba(0, 162, 255, 0.1);
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 14px 0;
+            outline: none;
+            font-family: inherit;
+            font-size: 1.1rem;
+        }
+
+        .input-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0;
+            width: auto;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .input-btn:hover { color: #fff; transform: none; }
+
+        button.send-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        /* --- FRIENDS DASHBOARD --- */
+        .friends-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        .friends-nav {
+            padding: 0 20px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(10, 10, 10, 0.4);
+        }
+
+        .f-tab {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .f-tab:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .f-tab.active { background: var(--accent); color: #fff; box-shadow: 0 5px 15px rgba(0, 162, 255, 0.3); }
+        .f-tab.add { background: #248046; color: #fff; margin-left: auto; }
+        .f-tab.add:hover { background: #1a6334; transform: scale(1.05); }
+
+        .friends-list {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid transparent;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .friend-item:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: var(--border);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .friend-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .friend-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .f-action-btn {
+            width: 38px;
+            height: 38px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: 0.3s;
+            border: 1px solid var(--border);
+        }
+
+        .f-action-btn:hover { background: var(--accent); color: #fff; border-color: transparent; transform: rotate(5deg) scale(1.1); }
+        .f-action-btn.accept:hover { background: #248046; color: #fff; }
+        .f-action-btn.decline:hover { background: #da373c; color: #fff; }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 35vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .main {
+                height: 65vh;
+            }
+
+            .chat-head {
+                padding: 15px;
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .input-box {
+                padding: 15px;
+                flex-direction: column;
+            }
+
+            button {
+                padding: 15px;
+            }
+
+            #msgs {
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .bubble {
+                max-width: 85%;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+    <!-- Global Control Center via Super Admin -->
+    <link rel="stylesheet" href="global.css?v=3">
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <script src="global.js?v=3" defer></script>
+</head>
+
+<body>
+    <!-- Login Gate -->
+    <div id="login-gate"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000001; align-items:center; justify-content:center; flex-direction:column; text-align:center; backdrop-filter:blur(10px);">
+        <div style="font-size:4rem; font-weight:900; letter-spacing:-3px; margin-bottom:10px;">CHAT</div>
+        <p style="color:#888; margin-bottom:40px; font-size:1.1rem; max-width:400px;">Access the global hub and
+            communicate with the network.</p>
+        <div style="display:flex; gap:20px;">
+            <a href="auth.html?mode=register&redirect=discuss.html"
+                style="background:#fff; color:#000; padding:18px 45px; border-radius:100px; font-weight:900; text-decoration:none; transition:0.4s; box-shadow:0 15px 40px rgba(255,255,255,0.15);"
+                class="interactable">Register</a>
+            <a href="auth.html?mode=login&redirect=discuss.html"
+                style="background:transparent; border:2px solid #333; color:#fff; padding:18px 45px; border-radius:100px; font-weight:900; text-decoration:none; transition:0.4s;"
+                class="interactable">Log In</a>
+        </div>
+    </div>
+
+    <header class="header">
+        <a href="index.html" class="logo interactable">ADIYAN</a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item">Home</a>
+            <a href="threads.html" class="nav-item">Threads</a>
+            <a href="discuss.html" class="nav-item active">Discuss</a>
+            <div id="auth-nav"></div>
+            <button class="interactable theme-toggle" onclick="toggleTheme(event)">🌙</button>
+        </nav>
+    </header>
+
+    <!-- DISCORD STYLE LAYOUT -->
+    <div class="server-sidebar">
+        <div class="server-icon active" title="Direct Messages">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+        </div>
+        <div style="width:32px; height:2px; background:rgba(255,255,255,0.05); margin:4px 0;"></div>
+        <div class="server-icon" title="Nexus Hub">N</div>
+        <div class="server-icon" title="Code Research">C</div>
+        <div class="server-icon" title="Global Sync">G</div>
+    </div>
+
+    <div class="sidebar">
+        <div class="side-head">Private Messages</div>
+        <div class="user-link interactable active" id="btn-friends" onclick="setMode('friends')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Friends
+        </div>
+        <div class="user-link interactable" id="btn-global" onclick="setMode('global')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            Global Hub
+        </div>
+        
+        <div class="side-head" style="margin-top:10px;">Direct Contacts <span onclick="promptNewDM()" style="cursor:pointer; opacity:0.5;">+</span></div>
+        <div id="dm-list" style="flex:1;"></div>
+
+        <div id="user-slot">
+            <div style="position:relative; width:36px; height:36px; cursor:pointer;" onclick="cycleStatus()">
+                <img id="my-pfp" src="https://via.placeholder.com/32" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                <div id="my-status-dot" class="status-online" style="width:12px; height:12px; border:3px solid #000; border-radius:50%; position:absolute; bottom:0; right:0;"></div>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <div id="my-name" style="font-weight:700; font-size:0.85rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">...</div>
+                <div id="my-status-text" style="font-size:0.65rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Online</div>
+            </div>
+            <div onclick="setStatus()" title="Set Custom Status" style="opacity:0.6; cursor:pointer;" class="interactable"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="chat-head">
+            <span id="chat-title" style="display:flex; align-items:center; gap:10px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                Global Hub
+            </span>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <svg onclick="syncToWorkspace()" title="Sync to Workspace" class="interactable" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="cursor:pointer; opacity:0.6;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                <a href="index.html" class="interactable" style="font-size:0.7rem; text-decoration:none; color:#555; text-transform:uppercase; font-weight:800; letter-spacing:1px;">Exit Hub</a>
+            </div>
+        </div>
+        <div id="msgs"></div>
+        
+        <!-- PICKER PANELS -->
+        <div id="emoji-picker" class="picker-panel">
+            <div class="picker-head">Select Emoji</div>
+            <div class="picker-grid" id="emoji-grid"></div>
+        </div>
+        <div id="gif-picker" class="picker-panel">
+            <div class="picker-head">GIF Search</div>
+            <div style="padding:10px;"><input type="text" id="gif-search" placeholder="Search Giphy..." style="background:rgba(255,255,255,0.05); border-radius:8px; width:100%; padding:8px 15px; border:1px solid var(--border);" oninput="searchGif(this.value)"></div>
+            <div class="picker-grid" id="gif-grid" style="grid-template-columns: 1fr 1fr; gap:10px;"></div>
+        </div>
+
+        <div class="input-box">
+            <div id="typing-area" style="font-size:0.7rem; color:var(--text-muted); height:14px; margin-bottom:4px; margin-left:14px; opacity:0; transition:0.3s; font-weight:700; text-transform:uppercase;">...</div>
+            <div class="input-inner">
+                <button class="input-btn">+</button>
+                <input type="text" id="mIn" placeholder="Message #global-hub" onkeydown="reportTyping(); if(event.key === 'Enter') send()">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="input-btn" onclick="togglePicker('emoji-picker')" title="Emoji">😊</button>
+                    <button class="input-btn" onclick="togglePicker('gif-picker')" title="GIF" style="font-size:0.8rem; font-weight:900; background:var(--text-muted); color:#000; padding:2px 5px; border-radius:4px;">GIF</button>
+                    <button class="send-btn" onclick="send()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="member-sidebar">
+        <div class="side-head">Online — <span id="member-count">0</span></div>
+        <div id="online-list"></div>
+        
+        <div class="side-head" style="margin-top:20px;">Recent Activity</div>
+        <div id="notify-list" style="padding:10px 20px; font-size:0.75rem; color:#444;">No new transmissions.</div>
+    </div>
+
+    <script>
+        // --- ABLY CHAT LOGIC ---
+        const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        const globalChan = ably.channels.get('global-hub');
+
+        let me = localStorage.getItem('rbx_user');
+        if (!me) { me = "Guest" + Math.floor(Math.random() * 1000); localStorage.setItem('rbx_user', me); }
+        let mode = 'friends'; let target = null;
+        let unreadCounts = JSON.parse(localStorage.getItem('unread_counts') || '{}');
+        let currentDMChannel = null; // Track current DM subscription
+
+        window.onload = () => {
+            const user = localStorage.getItem('rbx_user');
+            if (!user) {
+                document.getElementById('login-gate').style.display = 'flex';
+                return;
+            }
+            me = user;
+            
+            // Sync self-profile from cloud
+            syncSelf();
+            
+            // Set initial mode
+            setMode('friends');
+
+            // INITIAL GSAP ANIMATIONS
+            gsap.from('.sidebar', { x: -300, opacity: 0, duration: 1, ease: 'power4.out' });
+            gsap.from('.side-head', { y: -20, opacity: 0, duration: 0.8, delay: 0.4, ease: 'power2.out' });
+            gsap.from('.chat-head', { y: -50, opacity: 0, duration: 1, delay: 0.2, ease: 'expo.out' });
+            gsap.from('.input-box', { y: 100, opacity: 0, duration: 1, delay: 0.3, ease: 'expo.out' });
+
+            globalChan.subscribe('msg', (m) => {
+                if (mode === 'global') render(m.data);
+                if (m.data.user !== me) addList(m.data.user, m.data.pic);
+            });
+            globalChan.history({ limit: 30 }, (err, page) => {
+                if (!err) page.items.reverse().forEach(m_item => render(m_item.data));
+            });
+
+            // --- PRESENCE LOGIC ---
+            const myStatusMode = localStorage.getItem('nexus_status_mode') || 'online';
+            globalChan.presence.enter({ user: me, pic: localStorage.getItem('rbx_pic'), status: 'Online', statusMode: myStatusMode });
+            globalChan.presence.subscribe(() => {
+                globalChan.presence.get((err, members) => {
+                    const list = document.getElementById('online-list');
+                    list.innerHTML = '';
+                    document.getElementById('member-count').innerText = members.length;
+                    
+                    // Hide all status dots first
+                    document.querySelectorAll('[id^="status-"]').forEach(s => s.style.display = 'none');
+                    
+                    members.forEach(m => {
+                        const sMode = m.data.statusMode || 'online';
+                        const sClass = 'status-' + sMode;
+                        
+                        // Toggle dot in DM list
+                        const sDot = document.getElementById('status-' + m.data.user);
+                        if(sDot) {
+                            sDot.style.display = 'block';
+                            sDot.className = sClass;
+                        }
+
+                        const isVer = window.isVerified && window.isVerified(m.data.user);
+                        const d = document.createElement('div');
+                        d.className = 'user-link interactable';
+                        d.innerHTML = `
+                            <div style="position:relative;">
+                                <img src="${m.data.pic || 'https://via.placeholder.com/32'}" style="width:32px; height:32px; border-radius:12px; object-fit:cover;">
+                                <div class="${sClass}" style="width:12px; height:12px; border:3px solid var(--panel); border-radius:50%; position:absolute; bottom:-2px; right:-2px;"></div>
+                            </div>
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:700; font-size:0.85rem; color:#fff; display:flex; align-items:center; gap:4px;">
+                                    ${m.data.user}
+                                    ${isVer ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="#00A2FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
+                                </span>
+                                <span style="font-size:0.65rem; color:#888;">${m.data.customStatus || m.data.status || 'Active'}</span>
+                            </div>`;
+                        d.onclick = () => showProfileSummary(m.data.user);
+                        list.appendChild(d);
+                    });
+                });
+            });
+
+            // --- TYPING LOGIC ---
+            globalChan.subscribe('typing', (m) => {
+                if(m.data.user === me) return;
+                showTypingIndicator(m.data.user);
+            });
+
+            // --- PICKERS ---
+            initPickers();
+
+            // --- AUTO-DM FROM URL ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const dmUser = urlParams.get('dm');
+            if (dmUser) setMode('dm', dmUser);
+
+            ably.channels.get('dm-' + me).subscribe('ping', (m) => {
+                const sender = m.data.user;
+                addList(sender, m.data.pic);
+                
+                if (mode === 'dm' && target === sender) {
+                    // Already in room, ignore ping (listener on room channel will handle)
+                } else {
+                    unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
+                    localStorage.setItem('unread_counts', JSON.stringify(unreadCounts));
+                    updateUnreadUI(sender);
+                    if (window.showNotification) showNotification(`New Transmission from @${sender}`);
+                }
+            });
+        };
+
+        let typingTimeout;
+        function showTypingIndicator(u) {
+            const container = document.getElementById('typing-area');
+            if(!container) return;
+            container.innerText = `${u} is typing...`;
+            container.style.opacity = '1';
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => { container.style.opacity = '0'; }, 3000);
+        }
+
+        function reportTyping() {
+            if (mode === 'global') {
+                globalChan.publish('typing', { user: me });
+            } else if (mode === 'dm' && currentDMChannel) {
+                currentDMChannel.publish('typing', { user: me });
+            }
+        }
+
+        // --- PICKERS ENHANCEMENT ---
+        const emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','👻','💀','☠️','👽','👾','🤖','💩','😺','😸','😻','😼','😽','🙀','😿','😾'];
+        
+        function initPickers() {
+            const grid = document.getElementById('emoji-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            emojis.forEach(e => {
+                const span = document.createElement('div');
+                span.className = 'picker-item';
+                span.innerText = e;
+                span.onclick = () => {
+                    document.getElementById('mIn').value += e;
+                    togglePicker('emoji-picker');
+                };
+                grid.appendChild(span);
+            });
+            searchGif(''); // Load trending
+        }
+
+        function togglePicker(id) {
+            const el = document.getElementById(id);
+            const isVisible = el.style.display === 'flex';
+            document.querySelectorAll('.picker-panel').forEach(p => p.style.display = 'none');
+            el.style.display = isVisible ? 'none' : 'flex';
+        }
+
+        async function searchGif(q) {
+            const grid = document.getElementById('gif-grid');
+            if(!grid) return;
+            grid.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); font-size:0.7rem;">Loading...</div>';
+            try {
+                const apiKey = 'dc6zaTOxFJmzC'; 
+                const url = q ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(q)}&limit=10` : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=10`;
+                const res = await fetch(url);
+                const json = await res.json();
+                grid.innerHTML = '';
+                json.data.forEach(img => {
+                    const gif = document.createElement('img');
+                    gif.className = 'gif-item';
+                    gif.src = img.images.fixed_height_small.url;
+                    gif.onclick = () => {
+                        const i = document.getElementById('mIn');
+                        i.value = img.images.downsized.url;
+                        send();
+                        togglePicker('gif-picker');
+                    };
+                    grid.appendChild(gif);
+                });
+            } catch (e) {
+                grid.innerHTML = '<div style="grid-column:1/-1; color:red; font-size:0.7rem;">Giphy Error</div>';
+            }
+        }
+
+        async function syncSelf() {
+            if (!window.supabaseClient) { setTimeout(syncSelf, 500); return; }
+            
+            document.getElementById('my-name').innerText = me;
+            const fallbackPic = 'https://via.placeholder.com/32';
+            document.getElementById('my-pfp').src = localStorage.getItem('rbx_pic') || fallbackPic;
+            
+            const mode = localStorage.getItem('nexus_status_mode') || 'online';
+            updateStatusUI(mode);
+
+            try {
+                const { data } = await window.supabaseClient.from('profiles').select('*').eq('username', me).maybeSingle();
+                if (data) {
+                    if (data.avatar_url) {
+                        localStorage.setItem('rbx_pic', data.avatar_url);
+                        document.getElementById('my-pfp').src = data.avatar_url;
+                        // Also update presence so others see the new pic
+                        globalChan.presence.update({ user: me, pic: data.avatar_url, status: 'Online', statusMode: mode, customStatus: localStorage.getItem('nexus_custom_status') });
+                    }
+                    if (data.display_name) document.getElementById('my-name').innerText = data.display_name;
+                    if (data.status) {
+                        localStorage.setItem('nexus_custom_status', data.status);
+                        document.getElementById('my-status-text').innerText = data.status;
+                    }
+                }
+            } catch (e) { console.error("Self sync failed", e); }
+        }
+
+        const modes = ['online', 'idle', 'dnd', 'offline'];
+        function cycleStatus() {
+            let current = localStorage.getItem('nexus_status_mode') || 'online';
+            let nextIndex = (modes.indexOf(current) + 1) % modes.length;
+            let next = modes[nextIndex];
+            
+            localStorage.setItem('nexus_status_mode', next);
+            updateStatusUI(next);
+            globalChan.presence.update({ user: me, pic: localStorage.getItem('rbx_pic'), statusMode: next, customStatus: localStorage.getItem('nexus_custom_status') });
+            if (window.showNotification) showNotification(`Mode updated to: ${next.toUpperCase()}`);
+        }
+
+        function updateStatusUI(mode) {
+            const dot = document.getElementById('my-status-dot');
+            const text = document.getElementById('my-status-text');
+            dot.className = 'status-' + mode;
+            text.innerText = mode.charAt(0).toUpperCase() + mode.slice(1);
+        }
+
+        function updateUnreadUI(u) {
+            const count = unreadCounts[u] || 0;
+            const badge = document.getElementById('unread-' + u);
+            if (badge) {
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'block' : 'none';
+            }
+        }
+
+        function addList(u, p) {
+            if (document.getElementById('u-' + u)) return;
+            const d = document.createElement('div');
+            d.id = 'u-' + u;
+            d.className = 'user-link interactable';
+            d.style.padding = '8px 15px';
+            d.style.margin = '2px 8px';
+            d.style.borderRadius = '4px';
+            d.style.display = 'flex';
+            d.style.alignItems = 'center';
+            d.style.gap = '12px';
+            d.style.cursor = 'pointer';
+            
+            d.innerHTML = `
+                <div style="position:relative; width:32px; height:32px; flex-shrink:0;">
+                    <img id="pfp-${u}" src="${p || 'https://via.placeholder.com/32'}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                    <div id="status-${u}" style="width:10px; height:10px; background:#43b581; border:2px solid var(--panel); border-radius:50%; position:absolute; bottom:0; right:0; display:none;"></div>
+                </div>
+                <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; font-size:0.9rem; color:#888;">${u}</div>
+                <div id="unread-${u}" class="unread-badge" style="display:none;">0</div>
+                <div onclick="event.stopPropagation(); removeDM('${u}')" style="opacity:0; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="cursor:pointer;"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </div>`;
+            
+            d.onclick = () => {
+                unreadCounts[u] = 0;
+                localStorage.setItem('unread_counts', JSON.stringify(unreadCounts));
+                updateUnreadUI(u);
+                setMode('dm', u);
+            };
+
+            // Fetch real PFP if possible
+            if (!p && window.supabaseClient) {
+                window.supabaseClient.from('profiles').select('avatar_url').eq('username', u).maybeSingle().then(({data}) => {
+                    if (data && data.avatar_url) document.getElementById('pfp-' + u).src = data.avatar_url;
+                });
+            }
+
+            d.onmouseenter = () => { d.querySelector('div:last-child').style.opacity = 0.5; };
+            d.onmouseleave = () => { d.querySelector('div:last-child').style.opacity = 0; };
+
+            document.getElementById('dm-list').appendChild(d);
+            updateUnreadUI(u);
+            gsap.from(d, { x: -20, opacity: 0, duration: 0.5, ease: "power2.out" });
+        }
+
+        function removeDM(u) {
+            let dmUsers = JSON.parse(localStorage.getItem('nexus_dm_users') || '[]');
+            dmUsers = dmUsers.filter(user => user !== u);
+            localStorage.setItem('nexus_dm_users', JSON.stringify(dmUsers));
+            document.getElementById('u-' + u).remove();
+            if(mode === 'dm' && target === u) setMode('global');
+        }
+
+        function render(d) {
+            const b = document.getElementById('msgs');
+            const isMe = d.user === me;
+            const msgId = 'm-' + (d.time || Math.random());
+            
+            const div = document.createElement('div');
+            div.className = 'bubble';
+            div.id = msgId;
+
+            const isVerifiedUser = window.isVerified && window.isVerified(d.user);
+            const isAdminUser = window.isAdmin && window.isAdmin(me);
+            const timeStr = new Date(d.time || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Mentions
+            let textMod = d.text;
+            if(textMod.includes(`@${me}`)) {
+                textMod = textMod.replace(`@${me}`, `<span style="background:rgba(255, 162, 0, 0.15); color:#FFD700; padding:1px 4px; border-radius:3px; font-weight:700;">@${me}</span>`);
+            }
+
+            // Auto-embed image links
+            const imgRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))/gi;
+            textMod = textMod.replace(imgRegex, (match) => {
+                return `<div style="margin-top:10px; max-width:400px; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
+                            <img src="${match}" style="width:100%; display:block;" onerror="this.style.display='none'">
+                        </div>`;
+            });
+
+            const pfpId = 'msg-pfp-' + Math.random().toString(36).substr(2, 9);
+            div.innerHTML = `
+                <img id="${pfpId}" src="${d.pic || 'https://via.placeholder.com/40'}" class="msg-pfp" onclick="showProfileSummary('${d.user}')">
+                <div class="msg-content">
+                    <div class="msg-meta">
+                        <span class="msg-user" onclick="showProfileSummary('${d.user}')">${d.user}</span>
+                        ${isVerifiedUser ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#00A2FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
+                        <span class="msg-time">${timeStr}</span>
+                    </div>
+                    <div class="msg-text" id="${msgId}-text">${textMod}</div>
+                    <div class="msg-actions">
+                        ${(isMe || isAdminUser) ? `
+                            <div class="msg-action-btn" onclick="editMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                            <div class="msg-action-btn delete" onclick="deleteMsg('${msgId}')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                        ` : ''}
+                        <div class="msg-action-btn" onclick="saveMsg('${msgId}', '${encodeURIComponent(JSON.stringify(d))}')" title="Save"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></div>
+                    </div>
+                </div>`;
+
+            // Back-fill PFP if missing
+            if (!d.pic && window.supabaseClient) {
+                window.supabaseClient.from('profiles').select('avatar_url').eq('username', d.user).maybeSingle().then(({data}) => {
+                    if (data && data.avatar_url) document.getElementById(pfpId).src = data.avatar_url;
+                });
+            }
+
+            div.onmouseenter = () => { div.querySelector('.msg-actions').style.display = 'flex'; };
+            div.onmouseleave = () => { div.querySelector('.msg-actions').style.display = 'none'; };
+
+            b.appendChild(div);
+            b.scrollTop = b.scrollHeight;
+        }
+
+        function deleteMsg(id) {
+            if (confirm("Permanently delete this transmission?")) {
+                document.getElementById(id).style.background = '#320000';
+                gsap.to(`#${id}`, { scale: 0.8, opacity: 0, duration: 0.6, onComplete: () => document.getElementById(id).remove() });
+                // Push deletion event (could push to an 'admin-actions' channel)
+            }
+        }
+
+        function editMsg(id, dataRaw) {
+            const data = JSON.parse(decodeURIComponent(dataRaw));
+            const newText = prompt("Revise transmission data:", data.text);
+            if (newText && newText !== data.text) {
+                document.getElementById(id + '-text').innerText = newText + " (revised)";
+                // Push edit event
+            }
+        }
+
+        function saveMsg(id, dataRaw) {
+            const data = JSON.parse(decodeURIComponent(dataRaw));
+            let saved = JSON.parse(localStorage.getItem('nexus_saved_msgs') || '[]');
+            saved.push(data);
+            localStorage.setItem('nexus_saved_msgs', JSON.stringify(saved));
+
+            const icon = document.getElementById(id).querySelector('svg');
+            icon.setAttribute('fill', 'var(--accent)');
+            gsap.to(icon, { scale: 1.5, duration: 0.3, yoyo: true, repeat: 1 });
+        }
+
+        // --- DM PERSISTENCE ---
+        function persistDM(u, d) {
+            const key = `dm_history_${u}`;
+            let history = JSON.parse(localStorage.getItem(key) || '[]');
+            history.push(d);
+            localStorage.setItem(key, JSON.stringify(history));
+
+            // Track active DMs
+            let dmUsers = JSON.parse(localStorage.getItem('nexus_dm_users') || '[]');
+            if (!dmUsers.includes(u)) {
+                dmUsers.push(u);
+                localStorage.setItem('nexus_dm_users', JSON.stringify(dmUsers));
+            }
+        }
+
+        function loadDMHistory(u) {
+            const history = JSON.parse(localStorage.getItem(`dm_history_${u}`) || '[]');
+            history.forEach(render);
+        }
+
+        async function promptNewDM() {
+            const u = prompt("Enter username of the recipient:");
+            if (u && u.trim() !== me) {
+                const realUser = await window.checkIfUserExists(u.trim());
+                if(!realUser) {
+                    if (window.showTopNotification) window.showTopNotification(`USER NOT FOUND: ${u}`, 'error');
+                    return;
+                }
+                addList(realUser);
+                setMode('dm', realUser);
+            }
+        }
+
+        window.sendFriendRequest = async function(u) {
+            if (!u || u.trim() === me) return;
+            if (!window.supabaseClient) { alert("Cloud System Offline"); return; }
+            
+            try {
+                // Check if user exists (returns correctly capitalized username or null)
+                const realUser = await window.checkIfUserExists(u.trim());
+                if(!realUser) {
+                    if (window.showTopNotification) window.showTopNotification(`USER NOT FOUND: ${u}`, 'error');
+                    return;
+                }
+                const targetUser = realUser;
+
+                // Check if already friends or request pending
+                const { data: existing } = await window.supabaseClient
+                    .from('friend_requests')
+                    .select('*')
+                    .or(`and(from_user.eq.${me},to_user.eq.${targetUser}),and(from_user.eq.${targetUser},to_user.eq.${me})`)
+                    .maybeSingle();
+
+                if (existing) {
+                    if (window.showTopNotification) window.showTopNotification(`ALREADY CONNECTED OR PENDING WITH @${targetUser}`, 'error');
+                    return;
+                }
+
+                await window.supabaseClient.from('friend_requests').insert([{
+                    from_user: me,
+                    to_user: targetUser,
+                    status: 'pending'
+                }]);
+                if (window.showTopNotification) window.showTopNotification(`FRIEND REQUEST SENT TO @${targetUser}`);
+                if (mode === 'friends') showFriendsDashboard('pending');
+            } catch (e) {
+                console.error("Cloud Error:", e);
+                if (window.showTopNotification) window.showTopNotification(`REQUEST FAILED.`, 'error');
+            }
+        }
+
+        async function acceptFriend(id, u) {
+            if (!window.supabaseClient) return;
+            await window.supabaseClient.from('friend_requests').update({ status: 'accepted' }).eq('id', id);
+            if (window.showTopNotification) window.showTopNotification(`YOU ARE NOW FRIENDS WITH @${u}`);
+            showFriendsDashboard('all');
+        }
+
+        async function declineFriend(id) {
+            if (!window.supabaseClient) return;
+            await window.supabaseClient.from('friend_requests').delete().eq('id', id);
+            showFriendsDashboard('pending');
+        }
+
+        function setStatus() {
+            const s = prompt("Broadcast your current status to the network:");
+            if (s) {
+                globalChan.presence.update({ user: me, pic: localStorage.getItem('rbx_pic'), status: s });
+                if (window.showNotification) showNotification(`Status updated to: ${s}`);
+            }
+        }
+
+        function setMode(m, u = null) {
+            mode = m; target = u;
+            document.getElementById('msgs').innerHTML = '';
+            document.querySelectorAll('.user-link').forEach(l => l.classList.remove('active'));
+
+            if (m === 'friends') {
+                if (currentDMChannel) { currentDMChannel.unsubscribe(); currentDMChannel = null; }
+                document.getElementById('btn-friends').classList.add('active');
+                document.getElementById('chat-title').innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.4; margin-right:8px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span>Friends</span>
+                `;
+                showFriendsDashboard();
+            } else if (m === 'global') {
+                if (currentDMChannel) { currentDMChannel.unsubscribe(); currentDMChannel = null; }
+                document.getElementById('btn-global').classList.add('active');
+                document.getElementById('chat-title').innerText = '# Global Hub';
+                document.querySelector('.input-box').style.display = 'flex';
+                document.getElementById('mIn').placeholder = 'Message #global-hub';
+                globalChan.history({ limit: 30 }, (err, page) => {
+                    if (!err) page.items.reverse().forEach(m_item => render(m_item.data));
+                });
+            } else if (m === 'dm') {
+                const el = document.getElementById('u-' + u);
+                if (el) el.classList.add('active');
+                document.getElementById('chat-title').innerText = '@ ' + u;
+                document.querySelector('.input-box').style.display = 'flex';
+                document.getElementById('mIn').placeholder = 'Message @' + u;
+                
+                // --- JOIN PRIVATE ROOM ---
+                if (currentDMChannel) currentDMChannel.unsubscribe();
+                const roomName = ['dm_room', me, u].sort().join('_');
+                currentDMChannel = ably.channels.get(roomName);
+                
+                currentDMChannel.subscribe('msg', (m) => {
+                    persistDM(u, m.data);
+                    if (mode === 'dm' && target === u) render(m.data);
+                });
+                
+                currentDMChannel.subscribe('typing', (m) => {
+                    if (m.data.user !== me) showTypingIndicator(m.data.user);
+                });
+
+                loadDMHistory(u);
+            } else if (m === 'saved') {
+                document.getElementById('chat-title').innerText = '★ Bookmarks';
+                document.querySelector('.input-box').style.display = 'none';
+                const savedArr = JSON.parse(localStorage.getItem('nexus_saved_msgs') || '[]');
+                savedArr.forEach(render);
+            }
+            
+            gsap.from('#chat-title', { opacity: 0, x: -20, duration: 0.5 });
+        }
+
+        async function showFriendsDashboard(tab = 'all') {
+            const main = document.getElementById('msgs');
+            const inputArea = document.querySelector('.input-box');
+            inputArea.style.display = 'none';
+            main.innerHTML = `
+                <div class="friends-container">
+                    <div class="friends-nav">
+                        <div class="f-tab ${tab === 'all' ? 'active' : ''}" onclick="showFriendsDashboard('all')">All</div>
+                        <div class="f-tab ${tab === 'pending' ? 'active' : ''}" onclick="showFriendsDashboard('pending')">Pending</div>
+                        <div class="f-tab add" onclick="showFriendsDashboard('add')">Add Friend</div>
+                    </div>
+                    <div id="friends-view" class="friends-list">
+                        <div style="text-align:center; padding:50px; opacity:0.5;">Synchronizing with Network...</div>
+                    </div>
+                </div>
+            `;
+
+            const view = document.getElementById('friends-view');
+            if (!window.supabaseClient) {
+                view.innerHTML = '<div style="text-align:center; padding:50px; color:#ff4757;">Cloud Sync Offline. Please login.</div>';
+                return;
+            }
+
+            if (tab === 'add') {
+                view.innerHTML = `
+                    <div style="padding:20px;">
+                        <h3 style="margin-bottom:10px; font-size:1.1rem;">ADD FRIEND</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">You can add friends with their Nexus username.</p>
+                        <div style="background:#1e1f22; padding:15px; border-radius:8px; display:flex; gap:10px;">
+                            <input type="text" id="friend-search" placeholder="Enter a Username" style="border:none; background:transparent; padding:0;">
+                            <button onclick="window.sendFriendRequest(document.getElementById('friend-search').value)" style="padding:10px 20px; font-size:0.8rem;">Send Request</button>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'all') {
+                const { data } = await window.supabaseClient
+                    .from('friend_requests')
+                    .select('*')
+                    .eq('status', 'accepted')
+                    .or(`from_user.eq.${me},to_user.eq.${me}`);
+                
+                if (!data || data.length === 0) {
+                    view.innerHTML = '<div style="text-align:center; padding:50px; opacity:0.5;">Wumpus is waiting for friends.</div>';
+                    return;
+                }
+
+                view.innerHTML = `<h4 style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); padding-bottom:15px;">All Friends — ${data.length}</h4>`;
+                for (let f of data) {
+                    const other = f.from_user === me ? f.to_user : f.from_user;
+                    const item = document.createElement('div');
+                    item.className = 'friend-item';
+                    item.innerHTML = `
+                        <div class="friend-info">
+                            <img id="f-pfp-${other}" src="https://via.placeholder.com/32" style="width:32px; height:32px; border-radius:50%;">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:700; font-size:0.9rem;">${other}</span>
+                                <span style="font-size:0.7rem; color:var(--text-muted);">Nexus Member</span>
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <div class="f-action-btn" onclick="event.stopPropagation(); setMode('dm', '${other}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>
+                            <div class="f-action-btn decline" onclick="event.stopPropagation(); declineFriend('${f.id}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+                        </div>
+                    `;
+                    item.onclick = () => window.showProfileSummary(other);
+                    view.appendChild(item);
+                    
+                    // Fetch PFP
+                    window.supabaseClient.from('profiles').select('avatar_url').eq('username', other).maybeSingle().then(({data}) => {
+                        if (data && data.avatar_url) document.getElementById('f-pfp-' + other).src = data.avatar_url;
+                    });
+                }
+            } else if (tab === 'pending') {
+                const { data } = await window.supabaseClient
+                    .from('friend_requests')
+                    .select('*')
+                    .eq('status', 'pending')
+                    .or(`from_user.eq.${me},to_user.eq.${me}`);
+
+                if (!data || data.length === 0) {
+                    view.innerHTML = '<div style="text-align:center; padding:50px; opacity:0.5;">No pending requests.</div>';
+                    return;
+                }
+
+                view.innerHTML = `<h4 style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); padding-bottom:15px;">Pending — ${data.length}</h4>`;
+                data.forEach(f => {
+                    const isIncoming = f.to_user === me;
+                    const name = isIncoming ? f.from_user : f.to_user;
+                    const item = document.createElement('div');
+                    item.className = 'friend-item';
+                    item.innerHTML = `
+                        <div class="friend-info">
+                            <img id="f-pfp-${name}" src="https://via.placeholder.com/32" style="width:32px; height:32px; border-radius:50%;">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:700; font-size:0.9rem;">${name}</span>
+                                <span style="font-size:0.7rem; color:var(--text-muted);">${isIncoming ? 'Incoming Friend Request' : 'Outgoing Friend Request'}</span>
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            ${isIncoming ? `<div class="f-action-btn accept" onclick="acceptFriend('${f.id}', '${name}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>` : ''}
+                            <div class="f-action-btn decline" onclick="declineFriend('${f.id}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+                        </div>
+                    `;
+                    view.appendChild(item);
+
+                    // Fetch PFP
+                    window.supabaseClient.from('profiles').select('avatar_url').eq('username', name).maybeSingle().then(({data}) => {
+                        if (data && data.avatar_url) document.getElementById('f-pfp-' + name).src = data.avatar_url;
+                    });
+                });
+            }
+        }
+
+        function send() {
+            const i = document.getElementById('mIn'); if (!i.value.trim()) return;
+            const d = { user: me, text: i.value, pic: localStorage.getItem('rbx_pic'), time: Date.now() };
+            if (mode === 'global') {
+                globalChan.publish('msg', d);
+            } else if (mode === 'dm' && target) {
+                // Send to private room
+                if (currentDMChannel) {
+                    currentDMChannel.publish('msg', d);
+                    // Also ping the target's personal alert channel
+                    ably.channels.get('dm-' + target).publish('ping', { user: me, pic: localStorage.getItem('rbx_pic') });
+                }
+            }
+            i.value = '';
+        }
+
+        // Add subscribers for saved DM users
+        function initDMList() {
+            const dmUsers = JSON.parse(localStorage.getItem('nexus_dm_users') || '[]');
+            dmUsers.forEach(u => addList(u));
+        }
+        initDMList();
+    </script>
+</body>
+
+</html>
