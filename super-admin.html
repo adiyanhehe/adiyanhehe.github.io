@@ -99,11 +99,12 @@
 
     <div class="sidebar">
         <h1>COMMAND_CENTER</h1>
-        <button class="nav-btn active" onclick="showSection('global')">Global Controls</button>
-        <button class="nav-btn" onclick="showSection('threads')">Manage Threads</button>
-        <button class="nav-btn" onclick="showSection('users')">User Control</button>
-        <button class="nav-btn" onclick="showSection('reports')">Reports</button>
-        <button class="nav-btn" onclick="showSection('messages')">Message Logs</button>
+        <button class="nav-btn" onclick="showSection('threads')">Threads</button>
+        <button class="nav-btn" onclick="showSection('users')">Users</button>
+        <button class="nav-btn" onclick="showSection('reports')">Reports Center</button>
+        <button class="nav-btn" onclick="showSection('staff')">Staff Management</button>
+        <button class="nav-btn" onclick="showSection('config')">Site Config</button>
+        <button class="nav-btn" onclick="showSection('messages')">Live Hub</button>
         <button class="nav-btn" style="margin-top:auto;" onclick="location.href='index.html'">EXIT_CORE</button>
     </div>
 
@@ -199,15 +200,58 @@
             </div>
         </div>
 
+        <!-- SECTION: STAFF -->
+        <div id="view-staff" class="section-view">
+            <h2 class="header-title">Staff<br>RECRUITMENT.</h2>
+            <div class="card">
+                <h3>Nexus Command Staff</h3>
+                <p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:15px;">Promote entities to CORE_ADMIN level.</p>
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <input type="text" id="staff-name" placeholder="User to promote (@...)">
+                    <button class="btn" style="white-space:nowrap;" onclick="promoteUser()">PROMOTE</button>
+                </div>
+                <table id="staff-table">
+                    <thead><tr><th>Admin</th><th>Privilege</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="staff-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECTION: CONFIG -->
+        <div id="view-config" class="section-view">
+            <h2 class="header-title">System<br>RUNTIME CONFIG.</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Global Settings</h3>
+                    <div style="margin-bottom:15px;">
+                        <label style="font-size:0.7rem; color:var(--text-muted);">SITE_NAME</label>
+                        <input type="text" id="cfg-sitename" placeholder="Nexus Platform">
+                        <button class="btn" onclick="saveConfig()">Save Settings</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Security State</h3>
+                    <label style="display:flex; align-items:center; gap:10px; opacity:0.8; margin-bottom:20px;">
+                        <input type="checkbox" id="cfg-lock" style="width:20px; height:20px; margin:0;">
+                        <span>Enforce Maintenance Barrier</span>
+                    </label>
+                    <button class="btn btn-danger" onclick="executeSecurityLock()">Commit Security State</button>
+                </div>
+            </div>
+        </div>
+
         <!-- SECTION: MESSAGES -->
         <div id="view-messages" class="section-view">
-            <h2 class="header-title">Nexus<br>Live Stream.</h2>
+            <h2 class="header-title">Nexus<br>Live Hub.</h2>
             <div class="card">
-                <h3>Incoming Transmissions (Real-time)</h3>
-                <div id="live-chat" style="max-height:500px; overflow-y:auto; background:rgba(0,0,0,0.5); padding:20px; border-radius:10px; font-family:monospace; font-size:0.8rem;">
-                    <div style="color:var(--accent);">-- AWAITING CONNECTION --</div>
+                <h3>Global Hub Monitoring</h3>
+                <div id="live-chat" style="max-height:500px; overflow-y:auto; background:rgba(0,0,0,0.5); padding:20px; border-radius:10px; font-family:monospace; font-size:0.8rem; border:1px solid var(--border);">
+                    <div style="color:var(--accent);">-- HUB_CONNECTED: MONITORING_ACTIVE --</div>
                 </div>
-                <button class="btn btn-danger" style="margin-top:20px;" onclick="clearLiveChat()">Purge Stream</button>
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="btn btn-danger" onclick="clearLiveChat()">Purge Admin View</button>
+                    <button class="btn" style="background:#ff9900;" onclick="broadcastClear()">Execute Global Clear</button>
+                </div>
             </div>
         </div>
 
@@ -263,7 +307,9 @@
             fetchThreads();
             fetchUsers();
             fetchReports();
-            
+            fetchStaff();
+
+            // Real-time synchronization
             live.subscribe('msg', (m) => {
                 const stream = document.getElementById('live-chat');
                 const row = document.createElement('div');
@@ -271,6 +317,12 @@
                 row.innerHTML = `<span style="color:#444;">[${new Date().toLocaleTimeString()}]</span> <span style="color:var(--accent); font-weight:900;">@${m.data.user}</span>: ${m.data.text}`;
                 stream.prepend(row);
                 if(stream.children.length > 100) stream.lastChild.remove();
+            });
+
+            // Sync new threads live
+            ably.channels.get('nexus-posts').subscribe('new', (m) => {
+                showToast(`New thread from @${m.data.author}`);
+                fetchThreads(); // Refresh list to include new one
             });
         }
 
@@ -298,7 +350,14 @@
 
         function forceSync(action, value) {
             sync.publish('config_update', { action: action, value: value });
-            showToast(`Remote Execution: ${action.toUpperCase()} processed.`);
+            showToast(`Broadcast Signal: ${action.toUpperCase()} transmitted.`);
+        }
+
+        function broadcastClear() {
+            if(confirm("Clear Global Hub for ALL clients?")) {
+                sync.publish('config_update', { action: 'clear_chat' });
+                showToast("Global Reset Signal Dispatched.");
+            }
         }
 
         async function fetchThreads() {
@@ -430,9 +489,46 @@
         }
 
         async function toggleVerify(dbId, currentStatus) {
-            await window.supabaseClient.from('profiles').update({ is_verified: !currentStatus }).eq('id', dbId);
-            showToast("Entity Verification Toggled.");
+            const { error } = await window.supabaseClient.from('profiles').update({ is_verified: !currentStatus }).eq('id', dbId);
+            if(!error) showToast("Identity Handshake Updated.");
             fetchUsers();
+        }
+
+        async function fetchStaff() {
+            const { data } = await window.supabaseClient.from('profiles').select('*').eq('is_admin', true);
+            const list = document.getElementById('staff-list');
+            list.innerHTML = '';
+            if(data) data.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:900;">@${s.username}</td>
+                    <td><span style="color:var(--accent);">CORE_ACCESS</span></td>
+                    <td><span style="color:#00ff00;">READY</span></td>
+                    <td><button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;" onclick="demoteUser('${s.id}')">REVOKE</button></td>
+                `;
+                list.appendChild(tr);
+            });
+        }
+
+        async function promoteUser() {
+            const u = document.getElementById('staff-name').value.replace('@', '');
+            if(!u) return;
+            const { error } = await window.supabaseClient.from('profiles').update({ is_admin: true }).eq('username', u);
+            if(!error) {
+                showToast(`Admin privileges granted to @${u}.`);
+                fetchStaff();
+            } else {
+                alert("Promotion failed: User not found in database.");
+            }
+        }
+
+        async function demoteUser(id) {
+            if(!confirm("Revoke admin privileges?")) return;
+            const { error } = await window.supabaseClient.from('profiles').update({ is_admin: false }).eq('id', id);
+            if(!error) {
+                showToast("Admin privileges revoked.");
+                fetchStaff();
+            }
         }
 
         function showToast(msg) {
