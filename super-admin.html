@@ -223,6 +223,12 @@
             const userMe = localStorage.getItem('rbx_user');
             const emailMe = session?.user?.email || null;
 
+            // Always remove preloader once auth check is complete
+            gsap.to('.preloader', { opacity: 0, duration: 1, onComplete: () => {
+                const p = document.querySelector('.preloader');
+                if (p) p.remove();
+            }});
+
             if (window.isAdmin && window.isAdmin(userMe, emailMe)) {
                 document.getElementById('auth-gate').style.display = 'none';
                 initDashboard();
@@ -239,7 +245,6 @@
         const live = ably.channels.get('global-hub');
 
         function initDashboard() {
-            gsap.to('.preloader', { opacity: 0, duration: 1, onComplete: () => document.querySelector('.preloader').remove() });
             fetchThreads();
             fetchUsers();
             fetchReports();
@@ -462,19 +467,7 @@
             document.getElementById('live-chat').innerHTML = '<div style="color:var(--accent);">-- STREAM PURGED --</div>';
         }
 
-        // --- CURSOR ---
-        const dot = document.getElementById('cursor-dot');
-        const bg = document.getElementById('cursor-bg');
-        let lx = 0, ly = 0, ldx = 0, ldy = 0, lbx = 0, lby = 0;
-        window.onmousemove = (e) => { lx = e.clientX; ly = e.clientY; };
-        function updateCursor() {
-            ldx += (lx - ldx) * 0.2; ldy += (ly - ldy) * 0.2;
-            dot.style.left = ldx + 'px'; dot.style.top = ldy + 'px';
-            lbx += (lx - lbx) * 0.1; lby += (ly - lby) * 0.1;
-            bg.style.left = lbx + 'px'; bg.style.top = lby + 'px';
-            requestAnimationFrame(updateCursor);
-        }
-        updateCursor();
+        // Cursor logic already handled at top of script
 
     </script>
 </body>
