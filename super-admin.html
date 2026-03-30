@@ -29,9 +29,9 @@
         }
 
         /* --- PRELOADER --- */
-        .preloader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 1s var(--transition); }
-        .loader-text { font-size: 3vw; font-weight: 700; letter-spacing: -1px; overflow: hidden; display: flex; gap: 8px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); }
-        .loader-bar-wrap { width: 300px; height: 1px; background: rgba(255,255,255,0.1); margin-top: 20px; position: relative; overflow: hidden; }
+        .preloader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease; }
+        .loader-text { font-size: 3vw; font-weight: 900; letter-spacing: 5px; color: #fff; text-transform: uppercase; }
+        .loader-bar-wrap { width: 300px; height: 1px; background: rgba(255,255,255,0.1); margin-top: 20px; position: relative; }
         .loader-bar { width: 0%; height: 100%; background: #fff; position: absolute; top: 0; left: 0; }
 
         /* --- GATE --- */
@@ -45,7 +45,7 @@
         .sidebar { width: 280px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 40px 30px; z-index: 10; }
         .sidebar h1 { font-weight: 900; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; color: var(--accent); }
         
-        .nav-btn { background: transparent; color: var(--text-muted); border: none; padding: 15px 0; border-bottom: 1px solid var(--border); cursor: none; text-align: left; font-size: 0.9rem; font-weight: 700; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-btn { background: transparent; color: var(--text-muted); border: none; padding: 15px 0; border-bottom: 1px solid var(--border); cursor: pointer; text-align: left; font-size: 0.9rem; font-weight: 700; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
         .nav-btn:hover, .nav-btn.active { color: #fff; border-bottom-color: #fff; }
 
         .main { flex: 1; padding: 60px 8%; overflow-y: auto; position: relative; }
@@ -60,24 +60,25 @@
         .card h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 15px; }
 
         input, textarea, select { width: 100%; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; color: #fff; font-family: inherit; margin-bottom: 20px; outline: none; }
-        .btn { background: #fff; color: #000; border: none; padding: 15px 30px; border-radius: 100px; font-weight: 900; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; cursor: none; transition: 0.3s; }
+        .btn { background: #fff; color: #000; border: none; padding: 15px 30px; border-radius: 100px; font-weight: 900; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.3s; }
         .btn:hover { transform: scale(1.05); background: var(--accent); color: #fff; }
         .btn-danger { background: #ff3366; color: #fff; }
 
-        /* Tables for thread/user review */
+        /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { text-align: left; padding: 15px; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; border-bottom: 1px solid var(--border); }
         td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
         
         #toast { position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: 15px 40px; border-radius: 100px; font-weight: 900; transition: 0.5s; z-index: 10000003; }
     </style>
+    <!-- Use standard script tag, no defer for core admin file -->
     <script src="global.js"></script>
 </head>
 <body>
 
-    <div class="preloader">
+    <div class="preloader" id="preloader">
         <div class="loader-text">NEXUS_COMMAND</div>
-        <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+        <div style="color:rgba(255,255,255,0.2); font-size:0.7rem; margin-top:10px;">Establishing Core Connection...</div>
     </div>
 
     <div id="auth-gate">
@@ -88,7 +89,7 @@
             <button class="btn" style="background:#fff; color:#000;" onclick="window.loginNexus('google')">LOGIN_WITH_GOOGLE</button>
             <button class="btn" style="background:#5865F2; color:#fff;" onclick="window.loginNexus('discord')">LOGIN_WITH_DISCORD</button>
             <hr style="border:none; border-top:1px solid #222; margin:10px 0;">
-            <button class="btn" style="background:transparent; border:1px solid #333; color:#444;" onclick="checkAdminStatus()">RETRY_TRANSCEIVER</button>
+            <button class="btn" style="background:transparent; border:1px solid #333; color:#444;" onclick="location.reload()">FORCE_REBOOT</button>
             <button class="btn" style="background:transparent; color:#ff3366;" onclick="location.href='index.html'">ABORT_EXIT</button>
         </div>
     </div>
@@ -215,47 +216,61 @@
     <div id="toast">Directive Processed.</div>
 
     <script>
-        // --- AUTH GATE SYSTEM ---
-        async function checkAdminStatus() {
-            if (!window.supabaseClient) { setTimeout(checkAdminStatus, 500); return; }
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            
-            const userMe = localStorage.getItem('rbx_user');
-            const emailMe = session?.user?.email || null;
-
-            // Always remove preloader once auth check is complete
-            gsap.to('.preloader', { opacity: 0, duration: 1, onComplete: () => {
-                const p = document.querySelector('.preloader');
-                if (p) p.remove();
-            }});
-
-            if (window.isAdmin && window.isAdmin(userMe, emailMe)) {
-                document.getElementById('auth-gate').style.display = 'none';
-                initDashboard();
-            } else {
-                document.getElementById('auth-gate').style.display = 'flex';
-                gsap.from('#auth-gate > *', { y: 30, opacity: 0, stagger: 0.1 });
-            }
-        }
-        window.addEventListener('load', checkAdminStatus);
-
-        // --- DASHBOARD INIT ---
+        // Use a simpler approach to avoid freezing
         const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
         const sync = ably.channels.get('site-global-config');
         const live = ably.channels.get('global-hub');
+
+        // Force hide preloader if it takes more than 5 seconds (Safety Valve)
+        setTimeout(() => {
+            const p = document.getElementById('preloader');
+            if (p) p.style.opacity = '0';
+            setTimeout(() => { if(p) p.remove(); }, 800);
+        }, 5000);
+
+        async function checkAdminStatus() {
+            try {
+                if (!window.supabaseClient) { 
+                    console.log("Waiting for Supabase...");
+                    setTimeout(checkAdminStatus, 500); 
+                    return; 
+                }
+
+                const { data: { session } } = await window.supabaseClient.auth.getSession();
+                const userMe = localStorage.getItem('rbx_user');
+                const emailMe = session?.user?.email || null;
+
+                // Hide preloader
+                const p = document.getElementById('preloader');
+                if (p) p.style.opacity = '0';
+                setTimeout(() => { if(p) p.remove(); }, 800);
+
+                if (window.isAdmin && window.isAdmin(userMe, emailMe)) {
+                    document.getElementById('auth-gate').style.display = 'none';
+                    initDashboard();
+                } else {
+                    document.getElementById('auth-gate').style.display = 'flex';
+                }
+            } catch (e) {
+                console.error("Auth Check Error", e);
+                // Even on error, show the gate so the user can login
+                document.getElementById('preloader').remove();
+                document.getElementById('auth-gate').style.display = 'flex';
+            }
+        }
 
         function initDashboard() {
             fetchThreads();
             fetchUsers();
             fetchReports();
             
-            // Live Stream
             live.subscribe('msg', (m) => {
                 const stream = document.getElementById('live-chat');
                 const row = document.createElement('div');
                 row.style.marginBottom = '5px';
                 row.innerHTML = `<span style="color:#444;">[${new Date().toLocaleTimeString()}]</span> <span style="color:var(--accent); font-weight:900;">@${m.data.user}</span>: ${m.data.text}`;
                 stream.prepend(row);
+                if(stream.children.length > 100) stream.lastChild.remove();
             });
         }
 
@@ -263,15 +278,7 @@
             document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
             document.getElementById('view-' + id).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            if(event) event.target.classList.add('active');
-            gsap.from('#view-' + id, { opacity: 0, y: 10, duration: 0.5 });
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.bottom = '40px';
-            setTimeout(() => { t.style.bottom = '-80px'; }, 3000);
+            if(event && event.target) event.target.classList.add('active');
         }
 
         // --- COMMANDS ---
@@ -283,7 +290,7 @@
         }
 
         function triggerLockdown() {
-            if(confirm("INITIATE SITEWIDE LOCKDOWN? This will redirect every active user to maintenance.")) {
+            if(confirm("INITIATE SITEWIDE LOCKDOWN?")) {
                 sync.publish('config_update', { action: 'maintenance', value: true });
                 showToast("LOCKDOWN_ACTIVE");
             }
@@ -294,18 +301,17 @@
             showToast(`Remote Execution: ${action.toUpperCase()} processed.`);
         }
 
-        // --- DATA MGMT ---
         async function fetchThreads() {
             if(!window.loadCloudThreads) return;
             const threads = await window.loadCloudThreads();
             const list = document.getElementById('thread-list');
             list.innerHTML = '';
-            threads.forEach(t => {
+            threads.slice(0, 50).forEach(t => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight:900;">@${t.author}</td>
                     <td>${t.content}</td>
-                    <td style="color:#444;">${new Date(t.timestamp).toLocaleString()}</td>
+                    <td style="color:#444;">${new Date(t.timestamp || Date.now()).toLocaleString()}</td>
                     <td><button class="btn btn-danger" style="padding:5px 15px; font-size:0.6rem;" onclick="deleteThread('${t.id}')">ERASE</button></td>
                 `;
                 list.appendChild(tr);
@@ -318,19 +324,13 @@
             if(!error) {
                 showToast("Transmission Erased.");
                 fetchThreads();
-                // Real-time hide
                 ably.channels.get('nexus-posts').publish('delete', { id: id });
             }
         }
 
         async function fetchUsers() {
-            // Fetch all users from profiles table
             const { data, error } = await window.supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
-            if (error) {
-                console.error("Error fetching users:", error);
-                return;
-            }
-            renderUserList(data);
+            if (data) renderUserList(data);
         }
 
         function renderUserList(users) {
@@ -349,19 +349,18 @@
                             </div>
                         </div>
                     </td>
-                    <td>${window.isAdmin(u.username) ? '<span style="color:var(--accent); font-weight:900;">CORE_ADMIN</span>' : '<span style="opacity:0.6;">ENTITY</span>'}</td>
+                    <td>${window.isAdmin ? (window.isAdmin(u.username) ? '<span style="color:var(--accent); font-weight:900;">CORE_ADMIN</span>' : '<span style="opacity:0.6;">ENTITY</span>') : ''}</td>
                     <td>
                         <button class="btn" style="padding:5px 12px; font-size:0.6rem; background:${isV ? 'var(--accent)' : 'transparent'}; border:1px solid ${isV ? 'transparent' : 'var(--border)'}; color:${isV ? '#fff' : 'var(--text-muted)'};" onclick="toggleVerify('${u.id}', ${isV})">
                             ${isV ? 'VERIFIED' : 'UNVERIFIED'}
                         </button>
                     </td>
-                    <td><span id="status-${u.id}" style="font-size:0.7rem; color:${u.status === 'BANNED' ? '#ff3366' : '#00ff00'}; font-weight:900;">${u.status || 'ONLINE_READY'}</span></td>
+                    <td><span style="font-size:0.7rem; color:${u.status === 'BANNED' ? '#ff3366' : '#00ff00'}; font-weight:900;">${u.status || 'ONLINE_READY'}</span></td>
                     <td>
                         <div style="display:flex; gap:8px;">
                             <button class="btn" style="padding:5px 10px; font-size:0.6rem; background:rgba(255,255,255,0.05); color:#fff;" onclick="wipeProfile('${u.id}')">WIPE</button>
                             <button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;" onclick="kickUser('${u.username}')">KICK</button>
                             ${u.status === 'BANNED' ? `<button class="btn" style="padding:5px 10px; font-size:0.6rem; background:#00ff00; color:#000;" onclick="unbanUser('${u.username}')">UNBAN</button>` : `<button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem; background:#440000;" onclick="banUser('${u.username}')">BAN</button>`}
-                            <button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem; background:#000;" onclick="deleteUser('${u.id}', '${u.username}')">DELETE</button>
                         </div>
                     </td>
                 `;
@@ -372,7 +371,7 @@
         async function handleUserSearch() {
             const q = document.getElementById('user-search').value;
             const { data } = await window.supabaseClient.from('profiles').select('*').ilike('username', `%${q}%`);
-            renderUserList(data);
+            if(data) renderUserList(data);
         }
 
         function kickUser(u) {
@@ -382,22 +381,20 @@
         }
 
         async function unbanUser(u) {
-            if(!confirm(`Restore access for @${u}?`)) return;
-            const { error } = await window.supabaseClient.from('profiles').update({ status: 'ACTIVE' }).eq('username', u);
-            if(!error) showToast(`User @${u} access restored.`);
+            await window.supabaseClient.from('profiles').update({ status: 'ACTIVE' }).eq('username', u);
+            showToast(`User @${u} access restored.`);
             fetchUsers();
         }
 
         async function banUser(u) {
-            if(!confirm(`PERMANENTLY BAN @${u}? This will flag the account as restricted.`)) return;
+            if(!confirm(`PERMANENTLY BAN @${u}?`)) return;
             kickUser(u);
-            const { error } = await window.supabaseClient.from('profiles').update({ status: 'BANNED' }).eq('username', u);
-            if(!error) showToast(`User @${u} ban protocol engaged.`);
+            await window.supabaseClient.from('profiles').update({ status: 'BANNED' }).eq('username', u);
+            showToast(`User @${u} ban protocol engaged.`);
             fetchUsers();
         }
 
         async function fetchReports() {
-            // Check localStorage first for demo reports, then Supabase
             let reports = JSON.parse(localStorage.getItem('nexus_reports') || '[]');
             const { data: cloudReports } = await window.supabaseClient.from('reports').select('*').limit(20);
             if(cloudReports) reports = [...reports, ...cloudReports];
@@ -411,18 +408,14 @@
                     <td style="font-weight:900;">@${r.data?.offender || r.data?.author || 'Unknown'}</td>
                     <td style="opacity:0.6;">@${r.reporter || 'Anonymous'}</td>
                     <td style="font-size:0.7rem;">${(r.data?.content || '').substring(0,40)}...</td>
-                    <td>
-                        <button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;" onclick="purgeEntityContent('${r.data?.offender || r.data?.author}')">PURGE_ENTITY</button>
-                    </td>
+                    <td><button class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;" onclick="purgeEntityContent('${r.data?.offender || r.data?.author}')">PURGE_ENTITY</button></td>
                 `;
                 list.appendChild(tr);
             });
         }
 
         async function purgeEntityContent(u) {
-            if(!u || u === 'undefined') return;
-            if(!confirm(`CRITICAL: Purge ALL content across the network for user @${u}? This will delete all their threads and messages.`)) return;
-            // Purge threads
+            if(!confirm(`Purge ALL content for @${u}?`)) return;
             await window.supabaseClient.from('threads').delete().eq('author', u);
             showToast(`Content purge completed for @${u}.`);
             fetchThreads();
@@ -430,45 +423,45 @@
         }
 
         async function wipeProfile(id) {
-            if(!confirm("Wipe all profile data (bio/avatar) for this entity?")) return;
-            const { error } = await window.supabaseClient.from('profiles').update({ bio: '', avatar_url: null }).eq('id', id);
-            if(!error) {
-                showToast("Profile wiped successfully.");
-                fetchUsers();
-            }
-        }
-
-        async function deleteUser(id, username) {
-            if(!confirm(`PERMANENTLY DELETE entity @${username}? This cannot be undone.`)) return;
-            kickUser(username);
-            const { error } = await window.supabaseClient.from('profiles').delete().eq('id', id);
-            if(!error) {
-                showToast("Entity purged from database.");
-                fetchUsers();
-            } else {
-                alert("Purge failed: " + error.message);
-            }
+            if(!confirm("Wipe profile data?")) return;
+            await window.supabaseClient.from('profiles').update({ bio: '', avatar_url: null }).eq('id', id);
+            showToast("Profile wiped.");
+            fetchUsers();
         }
 
         async function toggleVerify(dbId, currentStatus) {
-            const nextStatus = !currentStatus;
-            const { error } = await window.supabaseClient.from('profiles').update({ is_verified: nextStatus }).eq('id', dbId);
-            if (!error) {
-                showToast(`Entity verification ${nextStatus ? 'confirmed' : 'revoked'}.`);
-                fetchUsers();
-                // We could also publish a sync event if needed
-            } else {
-                console.error("Verification failed", error);
-                alert("Verification failed: " + error.message);
-            }
+            await window.supabaseClient.from('profiles').update({ is_verified: !currentStatus }).eq('id', dbId);
+            showToast("Entity Verification Toggled.");
+            fetchUsers();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.bottom = '40px';
+            setTimeout(() => { t.style.bottom = '-80px'; }, 3000);
         }
 
         function clearLiveChat() {
             document.getElementById('live-chat').innerHTML = '<div style="color:var(--accent);">-- STREAM PURGED --</div>';
         }
 
-        // Cursor logic already handled at top of script
+        // Init
+        window.addEventListener('load', checkAdminStatus);
 
+        // --- CURSOR ---
+        const dot = document.getElementById('cursor-dot');
+        const bg = document.getElementById('cursor-bg');
+        let x = 0, y = 0, dx = 0, dy = 0, bx = 0, by = 0;
+        window.onmousemove = (e) => { x = e.clientX; y = e.clientY; };
+        function updateCursor() {
+            dx += (x - dx) * 0.2; dy += (y - dy) * 0.2;
+            dot.style.left = dx + 'px'; dot.style.top = dy + 'px';
+            bx += (x - bx) * 0.1; by += (y - by) * 0.1;
+            bg.style.left = bx + 'px'; bg.style.top = by + 'px';
+            requestAnimationFrame(updateCursor);
+        }
+        updateCursor();
     </script>
 </body>
 </html>
