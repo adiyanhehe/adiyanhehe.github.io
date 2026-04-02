@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus // Database Cleanup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-dim: #71767b;
+            --accent: #1d9bf0;
+            --danger: #f4212e;
+            --success: #00ba7c;
+            --warning: #f0b232;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+        }
+
+        .login-gate {
+            text-align: center;
+            padding: 60px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+        }
+
+        .login-gate h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .login-gate a {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            border: 2px solid var(--border);
+            color: #fff;
+        }
+
+        .btn-primary:hover, .btn-secondary:hover {
+            transform: scale(1.05);
+        }
+
+        .admin-panel {
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--accent);
+        }
+
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .cleanup-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .cleanup-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cleanup-section p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .danger-zone {
+            border-color: var(--danger);
+        }
+
+        .danger-zone h3 {
+            color: var(--danger);
+        }
+
+        .warning-zone {
+            border-color: var(--warning);
+        }
+
+        .warning-zone h3 {
+            color: var(--warning);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #d41e2b;
+            transform: scale(1.02);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #000;
+        }
+
+        .btn-warning:hover {
+            background: #e0a52e;
+            transform: scale(1.02);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #00a56a;
+            transform: scale(1.02);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .log-area {
+            background: #0a0a0a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .log-entry.success { color: var(--success); }
+        .log-entry.error { color: var(--danger); }
+        .log-entry.info { color: var(--accent); }
+        .log-entry.warning { color: var(--warning); }
+
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .confirm-modal.active {
+            display: flex;
+        }
+
+        .confirm-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .confirm-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .confirm-content p {
+            color: var(--text-dim);
+            margin-bottom: 25px;
+        }
+
+        .confirm-content .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .nav-bar a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .nav-bar a:hover, .nav-bar a.active {
+            color: var(--text-main);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-bar .fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧹 Database Cleanup</h1>
+            <p>Nexus Administration Panel - Clear old data from Supabase</p>
+        </div>
+
+        <div class="nav-bar">
+            <a href="index.html">Home</a>
+            <a href="super-admin.html">Admin</a>
+            <a href="cleanup.html" class="active">Cleanup</a>
+        </div>
+
+        <!-- Login Gate -->
+        <div id="login-gate" class="login-gate">
+            <h2>🔒 Admin Access Required</h2>
+            <p style="color: var(--text-dim); margin-bottom: 30px;">You must be logged in as an administrator to access this panel.</p>
+            <a href="auth.html?mode=login&redirect=cleanup.html" class="btn-primary">Login</a>
+            <a href="index.html">Go Home</a>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-panel" class="admin-panel">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="value" id="stat-posts">-</div>
+                    <div class="label">Posts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-messages">-</div>
+                    <div class="label">Messages</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-reports">-</div>
+                    <div class="label">Reports</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-users">-</div>
+                    <div class="label">Users</div>
+                </div>
+            </div>
+
+            <!-- Warning Zone -->
+            <div class="cleanup-section warning-zone">
+                <h3>⚠️ Clear Old Messages</h3>
+                <p>Remove messages older than a specified time period. This helps keep the database clean without losing recent data.</p>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <select id="message-age" style="padding: 10px 15px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-family: inherit;">
+                        <option value="7">Older than 7 days</option>
+                        <option value="30">Older than 30 days</option>
+                        <option value="90">Older than 90 days</option>
+                        <option value="180">Older than 180 days</option>
+                    </select>
+                    <button class="btn btn-warning" onclick="confirmClearOldMessages()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                        Clear Old Messages
+                    </button>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="cleanup-section danger-zone">
+                <h3>🔥 Danger Zone</h3>
+                <p>These actions are irreversible. Use with extreme caution. Make sure you have a backup before proceeding.</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button class="btn btn-danger" onclick="confirmClearAllPosts()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        Clear ALL Posts (Threads)
+                    </button>
+                    
+                    <button class="btn btn-danger" onclick="confirmClearAllMessages()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Clear ALL Messages (Chat)
+                    </button>
+                    
+                    <button class="btn btn-danger" onclick="confirmClearAllReports()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                        Clear ALL Reports
+                    </button>
+                    
+                    <button class="btn btn-danger" onclick="confirmClearEverything()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        NUKE EVERYTHING (Full Reset)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Utility Zone -->
+            <div class="cleanup-section">
+                <h3>🔧 Utilities</h3>
+                <p>Helpful tools for database maintenance.</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button class="btn btn-success" onclick="refreshStats()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        Refresh Statistics
+                    </button>
+                    
+                    <button class="btn" style="background: #6c757d; color: #fff;" onclick="exportData()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export Data (Backup)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Log Area -->
+            <div class="log-area" id="log-area">
+                <div class="log-entry info">System ready. Waiting for commands...</div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="confirm-modal">
+            <div class="confirm-content">
+                <h3 id="confirm-title">Confirm Action</h3>
+                <p id="confirm-message">Are you sure you want to proceed?</p>
+                <div class="progress-bar" id="progress-bar" style="display: none;">
+                    <div class="fill" id="progress-fill"></div>
+                </div>
+                <div class="btn-group" id="confirm-buttons">
+                    <button class="btn btn-danger" id="confirm-yes">Yes, Proceed</button>
+                    <button class="btn" style="background: #6c757d; color: #fff;" onclick="closeModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://your-project.supabase.co'; // Will be auto-detected
+        let supabaseClient = null;
+
+        // Check if Supabase is available from global.js
+        if (window.supabaseClient) {
+            supabaseClient = window.supabaseClient;
+        }
+
+        // State
+        let pendingAction = null;
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Check if user is admin
+            const user = localStorage.getItem('rbx_user');
+            const isAdmin = localStorage.getItem('rbx_admin') === 'true';
+            
+            if (!user) {
+                document.getElementById('login-gate').style.display = 'block';
+                document.getElementById('admin-panel').style.display = 'none';
+                return;
+            }
+
+            // Wait for supabase client if not loaded
+            if (!supabaseClient) {
+                await new Promise(resolve => {
+                    const check = setInterval(() => {
+                        if (window.supabaseClient) {
+                            supabaseClient = window.supabaseClient;
+                            clearInterval(check);
+                            resolve();
+                        }
+                    }, 100);
+                    setTimeout(resolve, 3000); // Timeout after 3 seconds
+                });
+            }
+
+            if (!supabaseClient && !isAdmin) {
+                log('Access denied. Admin privileges required.', 'error');
+                document.getElementById('login-gate').style.display = 'block';
+                document.getElementById('admin-panel').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('login-gate').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            
+            // Animate entrance
+            gsap.from('.stat-card', { y: 20, opacity: 0, duration: 0.5, stagger: 0.1 });
+            gsap.from('.cleanup-section', { y: 20, opacity: 0, duration: 0.5, stagger: 0.1, delay: 0.3 });
+
+            // Load stats
+            refreshStats();
+        });
+
+        async function refreshStats() {
+            log('Fetching database statistics...', 'info');
+            
+            if (!supabaseClient) {
+                log('Supabase client not available. Using simulated data.', 'warning');
+                // Simulate for demo
+                document.getElementById('stat-posts').textContent = Math.floor(Math.random() * 1000);
+                document.getElementById('stat-messages').textContent = Math.floor(Math.random() * 5000);
+                document.getElementById('stat-reports').textContent = Math.floor(Math.random() * 50);
+                document.getElementById('stat-users').textContent = Math.floor(Math.random() * 500);
+                return;
+            }
+
+            try {
+                // Count posts
+                const { count: postsCount } = await supabaseClient.from('posts').select('*', { count: 'exact', head: true });
+                document.getElementById('stat-posts').textContent = postsCount || 0;
+
+                // Count reports
+                const { count: reportsCount } = await supabaseClient.from('reports').select('*', { count: 'exact', head: true });
+                document.getElementById('stat-reports').textContent = reportsCount || 0;
+
+                // Count users (profiles)
+                const { count: usersCount } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true });
+                document.getElementById('stat-users').textContent = usersCount || 0;
+
+                log('Statistics refreshed successfully.', 'success');
+            } catch (e) {
+                log('Error fetching stats: ' + e.message, 'error');
+            }
+        }
+
+        function confirmClearAllPosts() {
+            showConfirmModal(
+                'Clear ALL Posts?',
+                'This will permanently delete ALL posts/threads from the database. This action cannot be undone. Are you absolutely sure?',
+                async () => {
+                    await clearTable('posts', 'posts');
+                }
+            );
+        }
+
+        function confirmClearAllMessages() {
+            showConfirmModal(
+                'Clear ALL Messages?',
+                'This will permanently delete ALL chat messages from the database. This action cannot be undone. Are you absolutely sure?',
+                async () => {
+                    await clearTable('messages', 'messages');
+                }
+            );
+        }
+
+        function confirmClearAllReports() {
+            showConfirmModal(
+                'Clear ALL Reports?',
+                'This will permanently delete ALL reports from the database. This action cannot be undone.',
+                async () => {
+                    await clearTable('reports', 'reports');
+                }
+            );
+        }
+
+        function confirmClearOldMessages() {
+            const days = document.getElementById('message-age').value;
+            showConfirmModal(
+                `Clear Messages Older Than ${days} Days?`,
+                `This will delete all messages older than ${days} days. Recent messages will be preserved.`,
+                async () => {
+                    await clearOldMessages(days);
+                }
+            );
+        }
+
+        function confirmClearEverything() {
+            showConfirmModal(
+                '⚠️ NUKE EVERYTHING ⚠️',
+                'This will DELETE ALL DATA from the database including posts, messages, reports, and friend requests. This is a COMPLETE RESET. Are you absolutely sure?',
+                async () => {
+                    await nukeEverything();
+                }
+            );
+        }
+
+        function showConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            document.getElementById('confirm-modal').classList.add('active');
+            
+            pendingAction = onConfirm;
+            
+            document.getElementById('confirm-yes').onclick = async () => {
+                document.getElementById('confirm-buttons').style.display = 'none';
+                document.getElementById('progress-bar').style.display = 'block';
+                
+                if (pendingAction) {
+                    await pendingAction();
+                }
+            };
+        }
+
+        function closeModal() {
+            document.getElementById('confirm-modal').classList.remove('active');
+            document.getElementById('confirm-buttons').style.display = 'flex';
+            document.getElementById('progress-bar').style.display = 'none';
+            document.getElementById('progress-fill').style.width = '0%';
+            pendingAction = null;
+        }
+
+        async function clearTable(table, displayName) {
+            if (!supabaseClient) {
+                log(`[SIMULATED] Would clear all ${displayName}`, 'warning');
+                closeModal();
+                return;
+            }
+
+            try {
+                log(`Clearing ${displayName}...`, 'info');
+                
+                const { error } = await supabaseClient.from(table).delete().neq('id', 0);
+                
+                if (error) {
+                    log(`Error clearing ${displayName}: ${error.message}`, 'error');
+                } else {
+                    log(`Successfully cleared all ${displayName}!`, 'success');
+                    refreshStats();
+                }
+            } catch (e) {
+                log(`Error: ${e.message}`, 'error');
+            }
+            
+            closeModal();
+        }
+
+        async function clearOldMessages(days) {
+            if (!supabaseClient) {
+                log(`[SIMULATED] Would clear messages older than ${days} days`, 'warning');
+                closeModal();
+                return;
+            }
+
+            try {
+                log(`Clearing messages older than ${days} days...`, 'info');
+                
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - days);
+                
+                const { error } = await supabaseClient
+                    .from('messages')
+                    .delete()
+                    .lt('created_at', cutoffDate.toISOString());
+                
+                if (error) {
+                    log(`Error: ${error.message}`, 'error');
+                } else {
+                    log(`Successfully cleared old messages!`, 'success');
+                    refreshStats();
+                }
+            } catch (e) {
+                log(`Error: ${e.message}`, 'error');
+            }
+            
+            closeModal();
+        }
+
+        async function nukeEverything() {
+            if (!supabaseClient) {
+                log('[SIMULATED] Would nuke everything', 'warning');
+                closeModal();
+                return;
+            }
+
+            const tables = ['posts', 'messages', 'reports', 'friend_requests'];
+            
+            for (let i = 0; i < tables.length; i++) {
+                const table = tables[i];
+                const progress = ((i + 1) / tables.length) * 100;
+                document.getElementById('progress-fill').style.width = progress + '%';
+                
+                log(`Clearing ${table}...`, 'info');
+                
+                const { error } = await supabaseClient.from(table).delete().neq('id', 0);
+                
+                if (error) {
+                    log(`Error clearing ${table}: ${error.message}`, 'error');
+                } else {
+                    log(`Cleared ${table}`, 'success');
+                }
+                
+                // Small delay between operations
+                await new Promise(r => setTimeout(r, 500));
+            }
+            
+            log('🧨 FULL DATABASE RESET COMPLETE!', 'success');
+            refreshStats();
+            closeModal();
+        }
+
+        async function exportData() {
+            if (!supabaseClient) {
+                log('[SIMULATED] Would export data', 'warning');
+                return;
+            }
+
+            log('Exporting data...', 'info');
+            
+            try {
+                const backup = {
+                    timestamp: new Date().toISOString(),
+                    posts: null,
+                    reports: null
+                };
+
+                const { data: postsData } = await supabaseClient.from('posts').select('*');
+                backup.posts = postsData;
+
+                const { data: reportsData } = await supabaseClient.from('reports').select('*');
+                backup.reports = reportsData;
+
+                // Download as JSON
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `nexus-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                log('Data exported successfully!', 'success');
+            } catch (e) {
+                log(`Export error: ${e.message}`, 'error');
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('log-area');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+    </script>
+</body>
+</html>
