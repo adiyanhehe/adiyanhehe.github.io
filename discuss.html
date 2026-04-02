@@ -2006,6 +2006,34 @@
                 if (sender === state.me) return;
                 addDMContact(sender, m.data.pic);
             });
+
+            // ============================================
+            // FRIEND REQUEST LISTENER
+            // ============================================
+            // Listen for friend request notifications
+            const friendRequestChannel = ably.channels.get('friend-requests-' + state.me);
+            friendRequestChannel.subscribe('new_request', (m) => {
+                const fromUser = m.data.from_user;
+                
+                // Show notification
+                if (window.showTopNotification) {
+                    window.showTopNotification(`New friend request from @${fromUser}`);
+                } else if (window.showNotification) {
+                    showNotification(`New friend request from @${fromUser}`);
+                }
+                
+                // Refresh friends dashboard if open
+                if (state.mode === 'friends') {
+                    showFriendsDashboard('pending');
+                }
+                
+                // Store in localStorage for persistence
+                let pendingRequests = JSON.parse(localStorage.getItem('pending_friend_requests') || '[]');
+                if (!pendingRequests.find(r => r.from_user === fromUser)) {
+                    pendingRequests.push(m.data);
+                    localStorage.setItem('pending_friend_requests', JSON.stringify(pendingRequests));
+                }
+            });
         }
 
         function renderMessage(data) {
