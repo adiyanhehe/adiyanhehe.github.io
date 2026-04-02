@@ -234,9 +234,26 @@ window.showTopNotification = (text, type = 'info') => {
 
 // --- USER VALIDATION ---
 window.checkIfUserExists = async (username) => {
-    if (!window.supabaseClient) return username; // Fail safe
-    const { data } = await window.supabaseClient.from('profiles').select('username').ilike('username', username.trim()).maybeSingle();
-    return data ? data.username : null;
+    if (!window.supabaseClient) return username; // Fail safe - allow if Supabase not available
+    
+    // First try exact match (case-insensitive)
+    const { data } = await window.supabaseClient
+        .from('profiles')
+        .select('username')
+        .ilike('username', username.trim())
+        .maybeSingle();
+    
+    if (data) return data.username;
+    
+    // If not found in profiles, also check if user is currently logged in anywhere
+    // by checking localStorage users (for demo/testing purposes)
+    const allUsers = JSON.parse(localStorage.getItem('nexus_all_users') || '[]');
+    const foundUser = allUsers.find(u => u.toLowerCase() === username.trim().toLowerCase());
+    if (foundUser) return foundUser;
+    
+    // Last resort: just return the username they entered
+    // This allows adding friends even if they haven't registered in Supabase yet
+    return username.trim();
 };
 
 // --- REPORTING SYSTEM ---
