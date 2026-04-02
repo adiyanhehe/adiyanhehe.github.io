@@ -59,8 +59,28 @@
         }
         .compose-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
         .media-actions { display: flex; gap: 15px; }
-        .media-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text-dim); padding: 8px; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        .media-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text-dim); padding: 8px; border-radius: 10px; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
         .media-btn:hover { color: var(--nexus-blue); border-color: var(--nexus-blue); background: rgba(0, 162, 255, 0.05); }
+        .media-btn input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        
+        /* Preview area for uploaded media */
+        .media-preview { margin-top: 12px; position: relative; display: none; }
+        .media-preview.active { display: block; }
+        .media-preview img, .media-preview video { max-width: 100%; border-radius: 12px; border: 1px solid var(--border); }
+        .media-preview .remove-media { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(0,0,0,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; border: none; font-size: 1rem; }
+        
+        /* GIF Picker */
+        .gif-picker-panel {
+            display: none; position: absolute; bottom: 100%; right: 0; width: 320px; height: 400px;
+            background: #15171a; border: 1px solid var(--border); border-radius: 16px;
+            z-index: 1000; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .gif-picker-panel.active { display: flex; flex-direction: column; }
+        .gif-picker-header { padding: 12px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+        .gif-picker-header input { flex: 1; background: #202327; border: none; border-radius: 20px; padding: 8px 15px; color: #fff; font-size: 0.85rem; outline: none; }
+        .gif-picker-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
+        .gif-picker-grid img { width: 100%; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .gif-picker-grid img:hover { transform: scale(1.05); }
         .btn-post { 
             background: var(--nexus-blue); 
             color: #fff; 
@@ -323,10 +343,28 @@
         </div>
     </div>
 
+    <!-- Media Preview Area -->
+    <div id="media-preview" class="media-preview">
+        <button class="remove-media" onclick="removeMedia()">✕</button>
+        <div id="media-preview-content"></div>
+    </div>
+
+    <!-- GIF Picker Panel -->
+    <div id="gif-picker" class="gif-picker-panel">
+        <div class="gif-picker-header">
+            <input type="text" placeholder="Search GIFs..." oninput="searchGifs(this.value)">
+        </div>
+        <div class="gif-picker-grid" id="gif-grid"></div>
+    </div>
+
     <script>
         const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
         const postChan = ably.channels.get('nexus-posts');
         const me = localStorage.getItem('rbx_user');
+        
+        // State for media upload
+        let currentMediaFile = null;
+        let currentMediaBase64 = null;
 
         window.onload = async () => {
             if(!me) {
@@ -414,18 +452,107 @@
             });
         }
 
+        // File upload with file picker
         function addMedia(type) {
-            const url = prompt(`Enter ${type} URL:`);
-            if(url) document.getElementById('post-in').value += ` ${url} `;
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = type === 'image' ? 'image/*' : 'video/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                currentMediaFile = file;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    currentMediaBase64 = ev.target.result;
+                    const preview = document.getElementById('media-preview');
+                    const content = document.getElementById('media-preview-content');
+                    if (type === 'image') {
+                        content.innerHTML = `<img src="${currentMediaBase64}" style="max-width:100%; border-radius:12px;">`;
+                    } else {
+                        content.innerHTML = `<video src="${currentMediaBase64}" controls style="max-width:100%; border-radius:12px;"></video>`;
+                    }
+                    preview.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
+        function removeMedia() {
+            currentMediaFile = null;
+            currentMediaBase64 = null;
+            document.getElementById('media-preview').classList.remove('active');
+            document.getElementById('media-preview-content').innerHTML = '';
+        }
+
+        // GIF Picker
+        async function searchGifs(query) {
+            const grid = document.getElementById('gif-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '<div style="grid-column:1/-1; color:var(--text-dim); font-size:0.8rem; text-align:center; padding:20px;">Loading...</div>';
+            
+            try {
+                const apiKey = 'mXATbjqF4qWGc5LMZS9ZDNDnEvV2uB9p';
+                const url = query
+                    ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=12&rating=g`
+                    : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=12&rating=g`;
+                
+                const response = await fetch(url);
+                const json = await response.json();
+                
+                if (!json.data || json.data.length === 0) {
+                    grid.innerHTML = '<div style="grid-column:1/-1; color:var(--text-dim); font-size:0.8rem; text-align:center; padding:20px;">No GIFs found.</div>';
+                    return;
+                }
+                
+                grid.innerHTML = '';
+                json.data.forEach(gif => {
+                    const img = document.createElement('img');
+                    img.src = gif.images.fixed_height_small.url;
+                    img.onclick = () => {
+                        currentMediaBase64 = gif.images.downsized.url;
+                        const preview = document.getElementById('media-preview');
+                        const content = document.getElementById('media-preview-content');
+                        content.innerHTML = `<img src="${currentMediaBase64}" style="max-width:100%; border-radius:12px;">`;
+                        preview.classList.add('active');
+                        document.getElementById('gif-picker').classList.remove('active');
+                    };
+                    grid.appendChild(img);
+                });
+            } catch (e) {
+                console.error('GIF search error:', e);
+                grid.innerHTML = '<div style="grid-column:1/-1; color:var(--danger); font-size:0.8rem; text-align:center; padding:20px;">Failed to load GIFs.</div>';
+            }
+        }
+
+        // Toggle GIF picker
+        function toggleGifPicker() {
+            const picker = document.getElementById('gif-picker');
+            picker.classList.toggle('active');
+            if (picker.classList.contains('active')) {
+                searchGifs('');
+            }
         }
 
         async function post() {
-            const i = document.getElementById('post-in'); if(!i.value.trim()) return;
+            const i = document.getElementById('post-in'); 
+            if (!i.value.trim() && !currentMediaBase64) return;
+            
+            let text = i.value.trim();
+            // Append media URL if uploaded
+            if (currentMediaBase64) {
+                text += (text ? ' ' : '') + currentMediaBase64;
+            }
+            
             const postData = { 
                 user: me, 
                 pic: localStorage.getItem('rbx_pic'), 
-                text: i.value,
-                time: Date.now()
+                text: text,
+                time: Date.now(),
+                likes: 0,
+                replies: 0,
+                reposts: 0
             };
 
             // 1. TRANSMIT REAL-TIME
@@ -436,7 +563,9 @@
                 window.saveThreadToCloud(postData);
             }
 
-            i.value = ''; i.style.height = "60px";
+            i.value = ''; 
+            i.style.height = "60px";
+            removeMedia();
             const currentPosts = parseInt(document.getElementById('stat-posts').innerText);
             document.getElementById('stat-posts').innerText = currentPosts + 1;
         }
@@ -555,14 +684,25 @@
         }
 
         function toggleLike(id) {
-            const el = document.getElementById(id).querySelector('.action-icon');
-            if(el.classList.contains('liked')) { 
-                localStorage.removeItem(`like_${id}`); 
-                el.classList.remove('liked'); 
-            } else { 
-                localStorage.setItem(`like_${id}`, 'true'); 
-                el.classList.add('liked'); 
-                gsap.from(el.querySelector('svg'), { scale: 1.5, duration: 0.4, ease: "back.out(3)" }); 
+            const post = document.getElementById(id);
+            if (!post) return;
+            // Target the like action icon (3rd action-icon, index 2)
+            const likeActions = post.querySelectorAll('.action-icon');
+            const el = likeActions[2]; // Like is the 3rd action (after reply, repost)
+            if (!el) return;
+            
+            const countSpan = el.querySelector('span');
+            let currentCount = parseInt(countSpan ? countSpan.innerText : 0);
+            
+            if (el.classList.contains('liked')) {
+                localStorage.removeItem(`like_${id}`);
+                el.classList.remove('liked');
+                if (countSpan) countSpan.innerText = Math.max(0, currentCount - 1);
+            } else {
+                localStorage.setItem(`like_${id}`, 'true');
+                el.classList.add('liked');
+                if (countSpan) countSpan.innerText = currentCount + 1;
+                gsap.from(el.querySelector('svg'), { scale: 1.5, duration: 0.4, ease: "back.out(3)" });
             }
         }
 
@@ -580,14 +720,20 @@
         function goMyProfile() { location.href=`profile.html?user=${me}`; }
 
         function toggleSavePost(id, dataRaw) {
-            const el = document.getElementById(id).querySelector('.action-icon:last-child');
+            const post = document.getElementById(id);
+            if (!post) return;
+            // Target the save action icon (4th action-icon, index 3)
+            const likeActions = post.querySelectorAll('.action-icon');
+            const el = likeActions[3]; // Save is the 4th action
+            if (!el) return;
+            
             const svg = el.querySelector('svg');
-            if(localStorage.getItem('save_'+id)) {
-                localStorage.removeItem('save_'+id);
+            if (localStorage.getItem('save_' + id)) {
+                localStorage.removeItem('save_' + id);
                 el.classList.remove('saved');
                 svg.setAttribute('fill', 'none');
             } else {
-                localStorage.setItem('save_'+id, decodeURIComponent(dataRaw));
+                localStorage.setItem('save_' + id, decodeURIComponent(dataRaw));
                 el.classList.add('saved');
                 svg.setAttribute('fill', 'var(--nexus-blue)');
                 gsap.from(el, { scale: 1.5, duration: 0.4, ease: "back.out(2)" });
@@ -604,11 +750,37 @@
         function closeReply() { document.getElementById('reply-modal').style.display='none'; }
         
         async function sendReply() {
-            const txt = document.getElementById('reply-in').value; if(!txt.trim()) return;
-            const replyData = { user: me, text: `Replying to ${document.getElementById('reply-target').innerText}: ${txt}`, pic: localStorage.getItem('rbx_pic'), time: Date.now() };
+            const txt = document.getElementById('reply-in').value; 
+            if (!txt.trim()) return;
+            
+            // Update reply count on the original post
+            if (currentReplyId) {
+                const originalPost = document.getElementById(currentReplyId);
+                if (originalPost) {
+                    const replyAction = originalPost.querySelectorAll('.action-icon')[0]; // First action is reply
+                    if (replyAction) {
+                        const countSpan = replyAction.querySelector('span');
+                        if (countSpan) {
+                            let currentCount = parseInt(countSpan.innerText || 0);
+                            countSpan.innerText = currentCount + 1;
+                        }
+                    }
+                }
+            }
+            
+            const replyData = { 
+                user: me, 
+                text: `Replying to @${document.getElementById('reply-target').innerText}: ${txt}`, 
+                pic: localStorage.getItem('rbx_pic'), 
+                time: Date.now(),
+                likes: 0,
+                replies: 0,
+                reposts: 0
+            };
             postChan.publish('new', replyData);
             if(window.saveThreadToCloud) window.saveThreadToCloud(replyData);
             closeReply();
+            document.getElementById('reply-in').value = '';
         }
 
         async function repost(id, dataRaw) {
