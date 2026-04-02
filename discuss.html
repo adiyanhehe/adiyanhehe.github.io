@@ -1967,8 +1967,13 @@
         }
 
         function setupDMListeners() {
-            // Listen for DM pings on personal channel
-            ably.channels.get('dm-' + state.me).subscribe('ping', (m) => {
+            // Listen for DM pings on personal channel - only for current user
+            const personalChannel = ably.channels.get('dm-' + state.me);
+            
+            personalChannel.subscribe('ping', (m) => {
+                // Ignore if message is from ourselves
+                if (m.data.user === state.me) return;
+                
                 const sender = m.data.user;
                 addDMContact(sender, m.data.pic);
 
@@ -1995,8 +2000,21 @@
             if (data.system || data.type === 'system') return;
             if (data.text && data.text.startsWith('Welcome to') && data.user === 'System') return;
             
+            // DM Privacy Check: Only show DM messages if user is participant
+            if (state.mode === 'dm' && data._dmRoom) {
+                const expectedRoom = ['dm_room', state.me, state.target].sort().join('_');
+                if (data._dmRoom !== expectedRoom) return; // Not in this DM room
+                if (data.user !== state.me && data.user !== state.target) return; // Not a participant
+            }
+            
             // Check for duplicate message
             if (document.getElementById(messageId)) return;
+            
+            // Skip very old messages (older than 24 hours for global, keep DMs)
+            if (state.mode === 'global' && data.time) {
+                const msgAge = Date.now() - data.time;
+                if (msgAge > 24 * 60 * 60 * 1000) return; // Skip messages older than 24 hours
+            }
 
             // Process message text (mentions, images)
             let processedText = processMessageText(data.text);
@@ -2347,8 +2365,20 @@
         }
 
         function loadDMHistory(username) {
+            // Only load DM history if we're actually in DM mode with this specific user
+            if (state.mode !== 'dm' || state.target !== username) return;
+            
+            // Verify this is a DM between current user and target
+            const expectedRoomName = ['dm_room', state.me, username].sort().join('_');
+            
             const history = JSON.parse(localStorage.getItem(`dm_history_${username}`) || '[]');
-            history.forEach(renderMessage);
+            
+            // Filter to only show messages where current user is participant
+            const filteredHistory = history.filter(msg => 
+                msg.user === state.me || msg.user === username
+            );
+            
+            filteredHistory.forEach(renderMessage);
         }
 
         function promptNewDM() {
