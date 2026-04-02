@@ -1991,6 +1991,13 @@
             const isAdminUser = window.isAdmin && window.isAdmin(state.me);
             const timeStr = new Date(data.time || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            // Skip system messages and old duplicate messages
+            if (data.system || data.type === 'system') return;
+            if (data.text && data.text.startsWith('Welcome to') && data.user === 'System') return;
+            
+            // Check for duplicate message
+            if (document.getElementById(messageId)) return;
+
             // Process message text (mentions, images)
             let processedText = processMessageText(data.text);
 
@@ -1999,9 +2006,13 @@
             messageEl.id = messageId;
 
             const avatarId = 'avatar-' + Math.random().toString(36).substr(2, 9);
+            
+            // Get profile picture from localStorage cache or use placeholder
+            const cachedPic = localStorage.getItem('pfp_' + data.user);
+            const picUrl = cachedPic || data.pic || 'https://via.placeholder.com/42';
 
             messageEl.innerHTML = `
-                <img id="${avatarId}" class="message-avatar" src="${data.pic || 'https://via.placeholder.com/42'}" alt="${data.user}" onclick="showProfileSummary('${data.user}')">
+                <img id="${avatarId}" class="message-avatar" src="${picUrl}" alt="${data.user}" onclick="showProfileSummary('${data.user}')">
                 <div class="message-content">
                     <div class="message-meta">
                         <span class="message-author" onclick="showProfileSummary('${data.user}')">${data.user}</span>
@@ -2024,13 +2035,25 @@
                     </button>
                 </div>`;
 
-            // Back-fill profile picture if missing
-            if (!data.pic && window.supabaseClient) {
-                window.supabaseClient.from('profiles').select('avatar_url').eq('username', data.user).maybeSingle().then(({ data: profile }) => {
-                    if (profile && profile.avatar_url) {
-                        document.getElementById(avatarId).src = profile.avatar_url;
-                    }
-                });
+            // Back-fill profile picture if missing or use cached version
+            if (!data.pic) {
+                // Check localStorage cache first
+                const cachedAvatar = localStorage.getItem('pfp_' + data.user);
+                if (cachedAvatar && document.getElementById(avatarId)) {
+                    document.getElementById(avatarId).src = cachedAvatar;
+                } else if (window.supabaseClient) {
+                    // Fetch from Supabase and cache it
+                    window.supabaseClient.from('profiles').select('avatar_url').eq('username', data.user).maybeSingle().then(({ data: profile }) => {
+                        if (profile && profile.avatar_url) {
+                            localStorage.setItem('pfp_' + data.user, profile.avatar_url);
+                            const avatarEl = document.getElementById(avatarId);
+                            if (avatarEl) avatarEl.src = profile.avatar_url;
+                        }
+                    });
+                }
+            } else {
+                // Cache the provided profile picture
+                localStorage.setItem('pfp_' + data.user, data.pic);
             }
 
             container.appendChild(messageEl);
