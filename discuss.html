@@ -1970,21 +1970,41 @@
             // Listen for DM pings on personal channel - only for current user
             const personalChannel = ably.channels.get('dm-' + state.me);
             
-            personalChannel.subscribe('ping', (m) => {
-                // Ignore if message is from ourselves
-                if (m.data.user === state.me) return;
-                
+            // Subscribe to all DM messages
+            personalChannel.subscribe('msg', (m) => {
                 const sender = m.data.user;
+                
+                // Ignore if message is from ourselves
+                if (sender === state.me) return;
+                
+                // Add contact to DM list if not exists
                 addDMContact(sender, m.data.pic);
-
+                
+                // If we're in DM with this user, render the message
                 if (state.mode === 'dm' && state.target === sender) {
-                    // Already in conversation, ignore ping
+                    renderMessage(m.data);
+                    // Clear unread for this user
+                    state.unreadCounts[sender] = 0;
+                    localStorage.setItem('unread_counts', JSON.stringify(state.unreadCounts));
+                    updateUnreadUI(sender);
                 } else {
+                    // Increment unread count
                     state.unreadCounts[sender] = (state.unreadCounts[sender] || 0) + 1;
                     localStorage.setItem('unread_counts', JSON.stringify(state.unreadCounts));
                     updateUnreadUI(sender);
-                    if (window.showNotification) showNotification(`New message from @${sender}`);
+                    
+                    // Show notification
+                    if (window.showNotification) {
+                        showNotification(`New message from @${sender}`);
+                    }
                 }
+            });
+            
+            // Also subscribe to ping for backward compatibility
+            personalChannel.subscribe('ping', (m) => {
+                const sender = m.data.user;
+                if (sender === state.me) return;
+                addDMContact(sender, m.data.pic);
             });
         }
 
@@ -3186,15 +3206,19 @@
             if (state.mode === 'global') {
                 globalChannel.publish('msg', messageData);
             } else if (state.mode === 'dm' && state.target) {
+                // Send to the shared DM room
                 if (state.currentDMChannel) {
                     state.currentDMChannel.publish('msg', messageData);
-                    // Ping the recipient
-                    ably.channels.get('dm-' + state.target).publish('ping', {
-                        user: state.me,
-                        pic: localStorage.getItem('rbx_pic')
-                    });
                 }
+                
+                // Also send ping to recipient's personal channel
+                ably.channels.get('dm-' + state.target).publish('msg', messageData);
+                
+                // Persist locally
                 persistDM(state.target, messageData);
+                
+                // Render our own message
+                renderMessage(messageData);
             } else if (state.mode === 'group' && state.target) {
                 // Save to group messages
                 const key = `group_${state.target}_messages`;
