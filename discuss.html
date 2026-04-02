@@ -2180,16 +2180,22 @@
 
             if (state.mode === 'global') {
                 globalChannel.publish('msg', messageData);
+                // Render our own global message immediately
+                renderMessage(messageData);
             } else if (state.mode === 'dm' && state.target) {
+                // Send to the shared DM room
                 if (state.currentDMChannel) {
                     state.currentDMChannel.publish('msg', messageData);
-                    // Ping the recipient
-                    ably.channels.get('dm-' + state.target).publish('ping', {
-                        user: state.me,
-                        pic: localStorage.getItem('rbx_pic')
-                    });
                 }
+                
+                // Also send to recipient's personal channel for notification
+                ably.channels.get('dm-' + state.target).publish('msg', messageData);
+                
+                // Persist locally
                 persistDM(state.target, messageData);
+                
+                // IMPORTANT: Render our own message immediately so we see it
+                renderMessage(messageData);
             }
 
             input.value = '';
