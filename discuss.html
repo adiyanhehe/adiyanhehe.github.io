@@ -1872,17 +1872,17 @@
                                     <h3 style="font-size:1.25rem;">${state.me}</h3>
                                     <div style="color:var(--text-muted); font-size:0.9rem;">${state.me}#0000</div>
                                 </div>
-                                <button class="popout-btn primary" style="width:auto; padding:8px 20px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: 700; cursor: pointer;">Edit User Profile</button>
+                                <button class="popout-btn primary" onclick="setSettingsTab('profile')" style="width:auto; padding:8px 20px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: 700; cursor: pointer;">Edit User Profile</button>
                             </div>
                         </div>
                         <div style="padding:16px; background:#2b2d31; margin:16px; border-radius:8px;">
                             <div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
-                                <div><div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Display Name</div><div style="font-weight: 600;">${state.me}</div></div>
-                                <button style="background: #4e5058; color: white; border: none; padding: 6px 16px; border-radius: 3px; font-weight: 600; cursor: pointer;">Edit</button>
+                                <div><div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Display Name</div><div style="font-weight: 600;">${localStorage.getItem('profile_dn') || state.me || 'Adiyan'}</div></div>
+                                <button onclick="setSettingsTab('profile')" style="background: #4e5058; color: white; border: none; padding: 6px 16px; border-radius: 3px; font-weight: 600; cursor: pointer;">Edit</button>
                             </div>
                             <div style="display:flex; justify-content:space-between; padding:12px 0;">
-                                <div><div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Username</div><div style="font-weight: 600;">${state.me.toLowerCase()}</div></div>
-                                <button style="background: #4e5058; color: white; border: none; padding: 6px 16px; border-radius: 3px; font-weight: 600; cursor: pointer;">Edit</button>
+                                <div><div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Username</div><div style="font-weight: 600;">${(state.me || 'user').toLowerCase()}</div></div>
+                                <button onclick="setSettingsTab('profile')" style="background: #4e5058; color: white; border: none; padding: 6px 16px; border-radius: 3px; font-weight: 600; cursor: pointer;">Edit</button>
                             </div>
                         </div>
                     </div>
@@ -2010,6 +2010,7 @@
                         </div>
                     </div>
                 `;
+                setTimeout(() => loadProfile(), 0);
             } else {
                 content.innerHTML = `<div style="text-align:center; padding:100px; color:var(--text-muted); font-size: 1.2rem; font-weight: 700;">Tab "${tab}" coming soon.</div>`;
             }
@@ -2081,7 +2082,8 @@
             target: null,
             currentDMChannel: null,
             unreadCounts: JSON.parse(localStorage.getItem('unread_counts') || '{}'),
-            typingTimeout: null
+            typingTimeout: null,
+            listenersInitialized: false
         };
 
         // ============================================
@@ -2106,9 +2108,8 @@
             initPickers();
             initDMList();
             initGroupList();
-            setupPresence();
-            setupMessageListeners();
-            setupDMListeners();
+            // These listeners will be called inside syncSelf once state.me is ready
+        
 
             // GSAP entrance animations
             gsap.from('.sidebar', { x: -300, opacity: 0, duration: 1, ease: 'power4.out' });
@@ -3290,6 +3291,17 @@
                     console.error('Profile sync failed:', e);
                 }
             }
+            
+            // Critical Listeners must only initialize after identity is confirmed
+            if (!state.listenersInitialized) {
+                setupPresence();
+                setupMessageListeners();
+                setupDMListeners();
+                state.listenersInitialized = true;
+            }
+            
+            const currentStatus = localStorage.getItem('nexus_status_mode') || 'online';
+            updateStatusUI(currentStatus);
         }
 
         // ============================================
