@@ -1904,12 +1904,12 @@
 
                             <div style="margin-bottom:24px;">
                                 <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Display Name</div>
-                                <input type="text" value="Adiyan" style="width:100%; background:#1e1f22; border:1px solid rgba(255,255,255,0.05); border-radius:3px; padding:10px; color:#f2f3f5; font-size:1rem;">
+                                <input type="text" id="profile-display-name" value="Adiyan" style="width:100%; background:#1e1f22; border:1px solid rgba(255,255,255,0.05); border-radius:3px; padding:10px; color:#f2f3f5; font-size:1rem;" oninput="document.getElementById('prev-name').textContent = this.value || 'Adiyan'">
                             </div>
 
                             <div style="margin-bottom:24px;">
                                 <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Pronouns</div>
-                                <input type="text" value="HE HIM \\\\ taken gng" style="width:100%; background:#1e1f22; border:1px solid rgba(255,255,255,0.05); border-radius:3px; padding:10px; color:#f2f3f5; font-size:1rem;">
+                                <input type="text" id="profile-pronouns" value="HE HIM \\\\ taken gng" style="width:100%; background:#1e1f22; border:1px solid rgba(255,255,255,0.05); border-radius:3px; padding:10px; color:#f2f3f5; font-size:1rem;" oninput="document.getElementById('prev-pronouns').textContent = state.me + ' • ' + (this.value || 'HE HIM \\\\ taken gng')">
                             </div>
 
                             <div style="margin-bottom:24px;">
@@ -1946,7 +1946,7 @@
                                 <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Bio</div>
                                 <div style="font-size:0.85rem; color:#dbdee1; margin-bottom:8px;">You can use markdown and links if you'd like.</div>
                                 <div style="background:#1e1f22; border:1px solid rgba(255,255,255,0.05); border-radius:4px; position:relative;">
-                                    <textarea style="width:100%; height:120px; background:transparent; border:none; resize:none; padding:12px; color:#f2f3f5; font-family:inherit; outline:none;">Locked in.</textarea>
+                                    <textarea id="profile-bio" style="width:100%; height:120px; background:transparent; border:none; resize:none; padding:12px; color:#f2f3f5; font-family:inherit; outline:none;">Locked in.</textarea>
                                     <div style="position:absolute; bottom:12px; right:12px; color:#5c5e66; font-size:0.75rem; font-weight:600;">190</div>
                                     <div style="position:absolute; top:12px; right:12px; cursor:pointer; color:#b5bac1;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.5 8a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm-7 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm3.5 8c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg></div>
                                 </div>
@@ -1961,6 +1961,9 @@
                                 </div>
                             </div>
 
+                            <div style="margin-bottom:32px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                <button onclick="saveProfile()" style="background:#23a559; color:#fff; border:none; padding:10px 24px; border-radius:4px; font-weight:700; cursor:pointer;">Save Changes</button>
+                            </div>
                         </div>
 
                         <!-- RIGHT SIDE: Preview -->
@@ -1985,8 +1988,8 @@
                                     </div>
                                 </div>
                                 <div style="padding: 12px 16px;">
-                                    <div style="font-size: 1.25rem; font-weight: 800; color: #f2f3f5; margin: 0;">Adiyan</div>
-                                    <div style="font-size: 0.85rem; color: #dbdee1; margin-bottom:8px;">adigusi • HE HIM \\\\ taken gng</div>
+                                    <div id="prev-name" style="font-size: 1.25rem; font-weight: 800; color: #f2f3f5; margin: 0;">Adiyan</div>
+                                    <div id="prev-pronouns" style="font-size: 0.85rem; color: #dbdee1; margin-bottom:8px;">adigusi • HE HIM \\\\ taken gng</div>
                                     <div style="display: flex; align-items: center; gap: 4px; margin-bottom:16px;">
                                         <img src="https://cdn.discordapp.com/badges/2ba85e33f355663628bbdc8c345a9a5f.png" style="width:22px; height:22px; border-radius:4px;">
                                         <img src="https://cdn.discordapp.com/badges/8c8d2342ec654d008984cb32dae8deac.png" style="width:22px; height:22px; border-radius:4px;">
@@ -3869,7 +3872,60 @@
                     created_at: new Date().toISOString()
                 }]);
             } catch (e) {
-                console.error('Failed to store message in Supabase:', e);
+                console.error('Failed to store message in Supabase. Sending will still complete locally.', e);
+            }
+        }
+
+        async function loadProfile() {
+            const dn = document.getElementById('profile-display-name');
+            const pr = document.getElementById('profile-pronouns');
+            const bio = document.getElementById('profile-bio');
+            if(!dn) return;
+            
+            dn.value = localStorage.getItem('profile_dn') || state.me || 'Adiyan';
+            pr.value = localStorage.getItem('profile_pr') || 'HE HIM \\\\ taken gng';
+            bio.value = localStorage.getItem('profile_bio') || 'Locked in.';
+            
+            document.getElementById('prev-name').textContent = dn.value;
+            document.getElementById('prev-pronouns').textContent = state.me + ' • ' + pr.value;
+            
+            if (window.supabaseClient) {
+                const { data } = await window.supabaseClient.from('profiles').select('*').eq('username', state.me).maybeSingle();
+                if (data) {
+                    dn.value = data.display_name || state.me;
+                    pr.value = data.pronouns || pr.value;
+                    bio.value = data.bio || bio.value;
+                    document.getElementById('prev-name').textContent = dn.value;
+                    document.getElementById('prev-pronouns').textContent = state.me + ' • ' + pr.value;
+                    
+                    localStorage.setItem('profile_dn', dn.value);
+                    localStorage.setItem('profile_pr', pr.value);
+                    localStorage.setItem('profile_bio', bio.value);
+                }
+            }
+        }
+
+        async function saveProfile() {
+            const dn = document.getElementById('profile-display-name').value;
+            const pr = document.getElementById('profile-pronouns').value;
+            const bio = document.getElementById('profile-bio').value;
+            
+            localStorage.setItem('profile_dn', dn);
+            localStorage.setItem('profile_pr', pr);
+            localStorage.setItem('profile_bio', bio);
+            
+            try {
+                if (window.supabaseClient) {
+                    await window.supabaseClient.from('profiles').upsert([{
+                        username: state.me,
+                        display_name: dn,
+                        pronouns: pr,
+                        bio: bio
+                    }], { onConflict: 'username' });
+                }
+                showNotification('Profile saved successfully!');
+            } catch (err) {
+                showNotification('Saved locally (database error)');
             }
         }
 
