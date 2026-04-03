@@ -36,53 +36,281 @@
             --right-sidebar-width: 340px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-main); overflow: hidden; height: 100vh; }
 
-        .app-layout { display: flex; height: calc(100vh - 48px); margin-top: 48px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100dvh;
+        }
+
+        .app-layout {
+            display: flex;
+            height: calc(100dvh - 48px);
+            margin-top: 48px;
+        }
 
         /* Sidebar & Rails */
-        .server-rail { width: var(--server-rail-width); background: #1e1f22; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; border-right: 1px solid rgba(0,0,0,0.2); flex-shrink: 0; }
-        .server-icon { width: 48px; height: 48px; background: #313338; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
-        .server-icon:hover, .server-icon.active { border-radius: 16px; background: var(--accent); }
-        
-        .sidebar { width: var(--sidebar-width); background: var(--bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; }
-        .sidebar-header { height: var(--header-height); border-bottom: 1px solid rgba(0,0,0,0.2); padding: 0 16px; display: flex; align-items: center; font-weight: 700; box-shadow: 0 1px 0 rgba(0,0,0,0.1); }
-        .sidebar-content { flex: 1; overflow-y: auto; padding-top: 8px; }
+        .server-rail {
+            width: var(--server-rail-width);
+            background: #1e1f22;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 8px;
+            border-right: 1px solid rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            background: #313338;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .server-icon:hover,
+        .server-icon.active {
+            border-radius: 16px;
+            background: var(--accent);
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            height: var(--header-height);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-top: 8px;
+        }
 
         /* Main View */
-        .chat-layout { flex: 1; display: flex; background: var(--bg-main); min-width: 0; }
-        .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
-        .chat-header { height: var(--header-height); border-bottom: 1px solid rgba(0,0,0,0.2); display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 10; background: var(--bg-main); }
-        .messages-container { flex: 1; overflow-y: auto; padding: 20px; }
-        .input-area { padding: 16px; }
+        .chat-layout {
+            flex: 1;
+            display: flex;
+            background: var(--bg-main);
+            min-width: 0;
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+        }
+
+        .chat-header {
+            height: var(--header-height);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            z-index: 10;
+            background: var(--bg-main);
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .input-area {
+            padding: 16px;
+        }
 
         /* Right Sidebar (Member/Profile) */
-        .right-sidebar { width: var(--right-sidebar-width); background: var(--bg-sidebar); border-left: 1px solid rgba(255,255,255,0.05); overflow-y: auto; flex-shrink: 0; }
-        .sidebar-profile-card { background: var(--bg-popout); border-radius: 8px; margin: 16px; overflow: hidden; position: relative; }
-        .profile-banner { height: 100px; background: linear-gradient(135deg, #222, #444); }
-        .pfp-wrap { margin-top: -30px; padding: 0 16px; margin-bottom: 12px; }
-        .pfp-wrap img { width: 120px; height: 120px; border-radius: 50%; border: 8px solid var(--bg-sidebar); }
+        .right-sidebar {
+            width: var(--right-sidebar-width);
+            background: var(--bg-sidebar);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-profile-card {
+            background: var(--bg-popout);
+            border-radius: 8px;
+            margin: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .profile-banner {
+            height: 100px;
+            background: linear-gradient(135deg, #222, #444);
+        }
+
+        .pfp-wrap {
+            margin-top: -30px;
+            padding: 0 16px;
+            margin-bottom: 12px;
+        }
+
+        .pfp-wrap img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 8px solid var(--bg-sidebar);
+        }
 
         /* Overlays */
-        .popout { position: fixed; bottom: 60px; left: 80px; width: 340px; background: var(--bg-popout); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); z-index: 1000; display: none; padding-bottom: 16px; animation: slideIn 0.2s ease; overflow: hidden; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .popout {
+            position: fixed;
+            bottom: 60px;
+            left: 80px;
+            width: 340px;
+            background: var(--bg-popout);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: none;
+            padding-bottom: 16px;
+            animation: slideIn 0.2s ease;
+            overflow: hidden;
+        }
 
-        .settings-overlay { position: fixed; inset: 0; background: var(--bg-main); z-index: 2000; display: none; flex-direction: row; animation: openScale 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        @keyframes openScale { from { opacity:0; transform:scale(1.1); } to { opacity:1; transform:scale(1); } }
-        
-        .settings-sidebar { width: 35%; background: var(--bg-sidebar); display: flex; flex-direction: column; align-items: flex-end; padding: 60px 20px; }
-        .settings-content { flex: 1; padding: 60px 40px; max-width: 800px; overflow-y: auto; }
-        .settings-item { width: 190px; padding: 8px 12px; margin-bottom: 2px; border-radius: 4px; cursor: pointer; color: var(--text-muted); font-weight: 600; font-size: 0.95rem; }
-        .settings-item:hover, .settings-item.active { background: rgba(255,255,255,0.05); color: #fff; }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
 
-        .user-slot-new { margin-top: auto; background: #232428; padding: 6px 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .user-slot-new:hover { background: #2b2d31; }
-        .user-slot-new img { width: 32px; height: 32px; border-radius: 50%; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #232428; position: absolute; bottom: 0; right: 0; }
-        
-        .btn-action { background: none; border: none; color: var(--text-muted); padding: 5px; cursor: pointer; border-radius: 4px; }
-        .btn-action:hover { background: rgba(255,255,255,0.05); color: #fff; }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .settings-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-main);
+            z-index: 2000;
+            display: none;
+            flex-direction: row;
+            animation: openScale 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes openScale {
+            from {
+                opacity: 0;
+                transform: scale(1.1);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .settings-sidebar {
+            width: 35%;
+            background: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding: 60px 20px;
+        }
+
+        .settings-content {
+            flex: 1;
+            padding: 60px 40px;
+            max-width: 800px;
+            overflow-y: auto;
+        }
+
+        .settings-item {
+            width: 190px;
+            padding: 8px 12px;
+            margin-bottom: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .settings-item:hover,
+        .settings-item.active {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .user-slot-new {
+            margin-top: auto;
+            background: #232428;
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .user-slot-new:hover {
+            background: #2b2d31;
+        }
+
+        .user-slot-new img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #232428;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .btn-action {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
 
         /* ============================================
            SIDEBAR NAVIGATION
@@ -101,8 +329,16 @@
             transition: background 0.15s, color 0.15s;
             position: relative;
         }
-        .user-link:hover { background: rgba(255,255,255,0.06); color: var(--text-header); }
-        .user-link.active { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .user-link:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-header);
+        }
+
+        .user-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
 
         .section-header {
             display: flex;
@@ -115,6 +351,7 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
+
         .add-btn {
             cursor: pointer;
             color: var(--text-muted);
@@ -123,7 +360,10 @@
             line-height: 1;
             padding: 2px;
         }
-        .add-btn:hover { color: var(--text-header); }
+
+        .add-btn:hover {
+            color: var(--text-header);
+        }
 
         .nav-item {
             display: flex;
@@ -137,8 +377,16 @@
             font-size: 0.85rem;
             transition: background 0.15s, color 0.15s;
         }
-        .nav-item:hover { background: rgba(255,255,255,0.06); color: var(--text-header); }
-        .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-header);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
 
         /* ============================================
            MESSAGE BUBBLES
@@ -151,8 +399,14 @@
             position: relative;
             transition: background 0.1s;
         }
-        .message:hover { background: rgba(255,255,255,0.03); }
-        .message:hover .message-actions { opacity: 1; }
+
+        .message:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .message:hover .message-actions {
+            opacity: 1;
+        }
 
         .message-avatar {
             width: 40px;
@@ -164,7 +418,10 @@
             margin-top: 2px;
         }
 
-        .message-content { flex: 1; min-width: 0; }
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
 
         .message-meta {
             display: flex;
@@ -179,7 +436,10 @@
             font-size: 0.95rem;
             cursor: pointer;
         }
-        .message-author:hover { text-decoration: underline; }
+
+        .message-author:hover {
+            text-decoration: underline;
+        }
 
         .message-time {
             font-size: 0.7rem;
@@ -218,8 +478,16 @@
             align-items: center;
             transition: background 0.15s, color 0.15s;
         }
-        .message-action-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-header); }
-        .message-action-btn.delete:hover { background: rgba(218,55,60,0.2); color: #da373c; }
+
+        .message-action-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-header);
+        }
+
+        .message-action-btn.delete:hover {
+            background: rgba(218, 55, 60, 0.2);
+            color: #da373c;
+        }
 
         /* ============================================
            INPUT AREA
@@ -245,7 +513,9 @@
             padding: 10px 0;
         }
 
-        .input-wrapper input::placeholder { color: var(--text-muted); }
+        .input-wrapper input::placeholder {
+            color: var(--text-muted);
+        }
 
         .input-icon-btn {
             background: none;
@@ -259,7 +529,10 @@
             display: flex;
             align-items: center;
         }
-        .input-icon-btn:hover { color: var(--text-header); }
+
+        .input-icon-btn:hover {
+            color: var(--text-header);
+        }
 
         .send-btn {
             background: var(--accent);
@@ -272,7 +545,10 @@
             font-size: 0.85rem;
             transition: background 0.15s;
         }
-        .send-btn:hover { background: var(--accent-hover); }
+
+        .send-btn:hover {
+            background: var(--accent-hover);
+        }
 
         /* ============================================
            TYPING INDICATOR
@@ -297,13 +573,16 @@
             background: var(--bg-popout);
             border-radius: 12px;
             border: 1px solid var(--border);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
             z-index: 500;
             display: none;
             overflow: hidden;
             flex-direction: column;
         }
-        .picker-panel.open { display: flex; }
+
+        .picker-panel.open {
+            display: flex;
+        }
 
         .picker-header {
             padding: 12px 16px;
@@ -334,7 +613,9 @@
             border-radius: 6px;
         }
 
-        .gif-grid { grid-template-columns: repeat(3, 1fr); }
+        .gif-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
 
         .gif-item {
             border-radius: 6px;
@@ -344,7 +625,10 @@
             aspect-ratio: 1;
             transition: transform 0.15s;
         }
-        .gif-item:hover { transform: scale(1.05); }
+
+        .gif-item:hover {
+            transform: scale(1.05);
+        }
 
         /* ============================================
            SERVER DIVIDER
@@ -352,7 +636,7 @@
         .server-divider {
             width: 32px;
             height: 2px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 1px;
         }
 
@@ -380,7 +664,7 @@
         }
 
         .friend-item:hover {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .friend-info {
@@ -1263,7 +1547,7 @@
             align-items: center;
             padding: 0 16px;
             height: var(--header-height);
-            border-bottom: 1px solid rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.2);
             gap: 8px;
             flex-shrink: 0;
         }
@@ -1280,12 +1564,12 @@
         }
 
         .friend-tab:hover {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
             color: var(--text-header);
         }
 
         .friend-tab.active {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
         }
 
@@ -1321,7 +1605,7 @@
 
         .active-now-sidebar {
             width: 360px;
-            border-left: 1px solid rgba(255,255,255,0.05);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
             padding: 24px 16px;
             overflow-y: auto;
             flex-shrink: 0;
@@ -1353,28 +1637,37 @@
         <div class="server-rail">
             <div class="server-icon active" onclick="setServer('home')" title="Home">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
                 </svg>
             </div>
             <div class="server-divider"></div>
             <div class="server-icon" onclick="setServer('xusen')" title="Xusen Intelligence Technology">
-                <img src="jay.png" style="width: 100%; height: 100%; border-radius: inherit; object-fit: cover;" onerror="this.outerHTML='X'">
+                <img src="jay.png" style="width: 100%; height: 100%; border-radius: inherit; object-fit: cover;"
+                    onerror="this.outerHTML='X'">
             </div>
             <div class="server-icon" onclick="setServer('pakistan')" title="Pakistan">P</div>
             <div class="server-icon" onclick="setServer('reaper')" title="Reaper">R</div>
             <div class="server-icon" onclick="setServer('aahan')" title="Aahan">A</div>
             <div class="server-icon" onclick="setServer('zohamoni')" title="Zohamoni">Z</div>
             <div class="server-divider"></div>
-            <div class="server-icon" style="color: var(--success);" onclick="showNotification('Server creation coming soon!')" title="Add Server">+</div>
-            <div class="server-icon" style="color: var(--success);" onclick="showNotification('Server discovery coming soon!')" title="Explore Servers">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+            <div class="server-icon" style="color: var(--success);"
+                onclick="showNotification('Server creation coming soon!')" title="Add Server">+</div>
+            <div class="server-icon" style="color: var(--success);"
+                onclick="showNotification('Server discovery coming soon!')" title="Explore Servers">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z" />
+                </svg>
             </div>
         </div>
 
         <div class="chat-layout">
             <div class="sidebar">
-                <div id="sidebar-header" style="padding: 10px; border-bottom: 1px solid var(--border); background: var(--panel);">
-                    <button onclick="promptNewDM()" style="width: 100%; padding: 8px 10px; background: #000; border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); font-size: 0.8rem; text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                <div id="sidebar-header"
+                    style="padding: 10px; border-bottom: 1px solid var(--border); background: var(--panel);">
+                    <button onclick="promptNewDM()"
+                        style="width: 100%; padding: 8px 10px; background: #000; border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); font-size: 0.8rem; text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
                         Find or start a conversation
                     </button>
                 </div>
@@ -1382,28 +1675,33 @@
                 <div id="sidebar-home-content">
                     <div class="user-link active" id="btn-friends" onclick="setMode('friends')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                            <path
+                                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                         </svg>
                         Friends
                     </div>
                     <div class="user-link" id="btn-nitro" onclick="setMode('nitro')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
-                            <path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            <path
+                                d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                         </svg>
                         Nitro
                     </div>
                     <div class="user-link" id="btn-shop" onclick="setMode('shop')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
-                            <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
+                            <path
+                                d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
                         </svg>
                         Shop
                     </div>
                     <div class="user-link" id="btn-quests" style="position: relative;" onclick="setMode('quests')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            <path
+                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
                         Quests
-                        <span style="position: absolute; right: 10px; background: var(--accent); color: #fff; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; font-weight: 900;">NEW</span>
+                        <span
+                            style="position: absolute; right: 10px; background: var(--accent); color: #fff; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; font-weight: 900;">NEW</span>
                     </div>
                 </div>
 
@@ -1417,15 +1715,19 @@
 
                 <div class="section-header">
                     Group Chats
-                    <span class="add-btn" onclick="createGroup()" title="Create Group Chat" style="font-size:1.1rem;">👥</span>
+                    <span class="add-btn" onclick="createGroup()" title="Create Group Chat"
+                        style="font-size:1.1rem;">👥</span>
                 </div>
                 <div id="group-list" style="padding-bottom: 10px;"></div>
 
                 <div class="section-header">
                     Actions
                 </div>
-                <div class="user-link" onclick="promptNewDM()" style="padding:10px 15px; margin:2px 8px; border-radius:6px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; gap:12px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <div class="user-link" onclick="promptNewDM()"
+                    style="padding:10px 15px; margin:2px 8px; border-radius:6px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; gap:12px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
                     New DM
                 </div>
 
@@ -1436,8 +1738,12 @@
                         <div id="my-status-dot" class="status-dot status-online"></div>
                     </div>
                     <div style="flex:1; min-width:0;">
-                        <div id="my-name" style="font-size:0.85rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Adiyan</div>
-                        <div id="my-status-text" style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">and oh i know its hard to se...</div>
+                        <div id="my-name"
+                            style="font-size:0.85rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            Adiyan</div>
+                        <div id="my-status-text"
+                            style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            and oh i know its hard to se...</div>
                     </div>
                     <div style="display:flex; gap:0;">
                         <button class="btn-action">🎙️</button>
@@ -1807,19 +2113,19 @@
             const friendRequestChannel = ably.channels.get('friend-requests-' + state.me);
             friendRequestChannel.subscribe('new_request', (m) => {
                 const fromUser = m.data.from_user;
-                
+
                 // Show notification
                 if (window.showTopNotification) {
                     window.showTopNotification(`New friend request from @${fromUser}`);
                 } else if (window.showNotification) {
                     showNotification(`New friend request from @${fromUser}`);
                 }
-                
+
                 // Refresh friends dashboard if open
                 if (state.mode === 'friends') {
                     showFriendsDashboard('pending');
                 }
-                
+
                 // Store in localStorage for persistence
                 let pendingRequests = JSON.parse(localStorage.getItem('pending_friend_requests') || '[]');
                 if (!pendingRequests.find(r => r.from_user === fromUser)) {
@@ -1990,7 +2296,7 @@
         // ============================================
         async function updateMessageStatus(messageId, status, userId = null) {
             if (!window.supabaseClient || !messageId) return;
-            
+
             try {
                 const { data, error } = await window.supabaseClient
                     .from('message_status')
@@ -2000,7 +2306,7 @@
                         status: status,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'message_id,user_id' });
-                
+
                 if (error) console.error('Message status update failed:', error);
             } catch (e) {
                 console.error('Message status error:', e);
@@ -2009,7 +2315,7 @@
 
         async function getMessageStatus(messageId) {
             if (!window.supabaseClient || !messageId) return null;
-            
+
             try {
                 const { data, error } = await window.supabaseClient
                     .from('message_status')
@@ -2017,7 +2323,7 @@
                     .eq('message_id', messageId)
                     .eq('user_id', state.me)
                     .maybeSingle();
-                
+
                 if (error) throw error;
                 return data;
             } catch (e) {
@@ -2029,15 +2335,15 @@
         function renderMessageStatus(messageId, status) {
             const messageEl = document.getElementById(messageId);
             if (!messageEl) return;
-            
+
             const existingStatus = messageEl.querySelector('.message-status');
             if (existingStatus) existingStatus.remove();
-            
+
             const statusEl = document.createElement('span');
             statusEl.className = 'message-status';
             statusEl.style.cssText = 'font-size:0.7rem; color:var(--text-muted); margin-left:8px; opacity:0.6;';
-            
-            switch(status) {
+
+            switch (status) {
                 case 'sent':
                     statusEl.innerHTML = '✓';
                     break;
@@ -2049,7 +2355,7 @@
                     statusEl.style.color = '#43b581';
                     break;
             }
-            
+
             const metaEl = messageEl.querySelector('.message-meta');
             if (metaEl) metaEl.appendChild(statusEl);
         }
@@ -2159,7 +2465,7 @@
                 });
 
                 loadDMHistory(target);
-                
+
                 // Track message status
                 if (window.markMessagesAsRead) markMessagesAsRead(target);
                 if (window.fetchUndeliveredMessages) fetchUndeliveredMessages(target);
@@ -2174,9 +2480,9 @@
         // ============================================
         function initDMList() {
             const dmList = document.getElementById('dm-list');
-            if(!dmList) return;
+            if (!dmList) return;
             const dmUsers = JSON.parse(localStorage.getItem('nexus_dm_users') || '[]');
-            
+
             if (dmUsers.length === 0) {
                 dmList.innerHTML = '<div style="padding:10px 15px; color:var(--text-muted); font-size:0.8rem;">No direct messages yet. Click + to start!</div>';
             } else {
@@ -2219,7 +2525,7 @@
 
             document.querySelectorAll('.user-link').forEach(link => link.classList.remove('active'));
             if (state.mode === 'dm' && state.target === username) contactEl.classList.add('active');
-            
+
             // ... (rest of addDMContact logic)
 
             // Fetch real profile picture if available (with retry)
@@ -2230,7 +2536,7 @@
                         const pfpEl = document.getElementById('pfp-' + username);
                         if (pfpEl) pfpEl.src = data.avatar_url;
                     }
-                }).catch(() => {});
+                }).catch(() => { });
             }
 
             dmList.appendChild(contactEl);
@@ -2329,7 +2635,7 @@
                         <div class="friend-tab ${tab === 'online' ? 'active' : ''}" onclick="showFriendsDashboard('online')" style="text-transform:none; font-weight:600;">Online</div>
                         <div class="friend-tab ${tab === 'all' ? 'active' : ''}" onclick="showFriendsDashboard('all')" style="text-transform:none; font-weight:600;">All</div>
                         <div class="friend-tab ${tab === 'pending' ? 'active' : ''}" onclick="showFriendsDashboard('pending')" style="text-transform:none; font-weight:600;">Pending</div>
-                        <div class="friend-tab ${tab === 'add' ? 'active' : ''}" onclick="showFriendsDashboard('add')" style="text-transform:none; font-weight:600; background:${tab==='add'?'var(--success)':'rgba(35,165,89,0.2)'}; color:${tab==='add'?'#fff':'#23a559'}; bo-shadow:none;">Add Friend</div>
+                        <div class="friend-tab ${tab === 'add' ? 'active' : ''}" onclick="showFriendsDashboard('add')" style="text-transform:none; font-weight:600; background:${tab === 'add' ? 'var(--success)' : 'rgba(35,165,89,0.2)'}; color:${tab === 'add' ? '#fff' : '#23a559'}; bo-shadow:none;">Add Friend</div>
                     </div>
                     <div class="friends-layout">
                         <div class="friends-main">
@@ -2379,7 +2685,7 @@
                         .eq('status', 'accepted')
                         .or(`from_user.eq.${state.me},to_user.eq.${state.me}`);
                     friendsData = data || [];
-                    
+
                     if (tab === 'online') {
                         globalChannel.presence.get((err, members) => {
                             const onlineUsers = members.map(m => m.data.user);
@@ -2397,12 +2703,12 @@
                         .or(`from_user.eq.${state.me},to_user.eq.${state.me}`);
                     renderFriendsList(data || [], 'Pending', true);
                 }
-                
+
                 // Populate Active Now Sidebar with real online friends
                 globalChannel.presence.get(async (err, members) => {
                     const activeNow = document.getElementById('active-now-list');
                     activeNow.innerHTML = '';
-                    
+
                     // Fetch accepted friends first to filter online list
                     let friends = [];
                     if (window.supabaseClient) {
@@ -2411,7 +2717,7 @@
                     }
 
                     const onlineFriends = members.filter(m => m.data.user !== state.me && friends.includes(m.data.user));
-                    
+
                     if (onlineFriends.length === 0) {
                         activeNow.innerHTML = `
                             <div style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:20px; opacity:0.5;">
@@ -2425,14 +2731,14 @@
                         const user = m.data.user;
                         const status = m.data.customStatus || m.data.statusMode || 'Online';
                         const pic = m.data.pic || 'https://via.placeholder.com/32';
-                        
+
                         const item = document.createElement('div');
                         item.className = 'active-now-item';
                         item.style.cssText = 'background:#1e1f22; padding:12px; border-radius:8px; display:flex; align-items:center; gap:12px; cursor:pointer; margin-bottom:10px; border:1px solid rgba(255,255,255,0.05); transition:0.2s;';
                         item.onmouseover = () => item.style.background = '#2b2d31';
                         item.onmouseout = () => item.style.background = '#1e1f22';
                         item.onclick = () => showProfileSummary(user);
-                        
+
                         item.innerHTML = `
                             <div style="position:relative; width:36px; height:36px; flex-shrink:0;">
                                 <img src="${pic}" style="border-radius:50%; width:100%; height:100%; object-fit:cover;">
@@ -2454,9 +2760,9 @@
         // ============================================
         function initGroupList() {
             const groupList = document.getElementById('group-list');
-            if(!groupList) return;
+            if (!groupList) return;
             const groups = JSON.parse(localStorage.getItem('nexus_groups') || '[]');
-            
+
             if (groups.length === 0) {
                 groupList.innerHTML = '<div style="padding:10px 15px; color:var(--text-muted); font-size:0.8rem;">No groups yet. Click 👥 to create one!</div>';
             } else {
@@ -2510,7 +2816,7 @@
 
             const sidebarHeader = document.getElementById('sidebar-header');
             const sidebarHome = document.getElementById('sidebar-home-content');
-            
+
             // Remove existing server content if any
             const existingServer = document.getElementById('sidebar-server-content');
             if (existingServer) existingServer.remove();
@@ -2522,7 +2828,7 @@
             } else {
                 sidebarHeader.style.display = 'none';
                 sidebarHome.style.display = 'none';
-                
+
                 const serverNames = {
                     'xusen': 'Xusen Intelligence Technology',
                     'pakistan': 'Pakistan',
@@ -2530,7 +2836,7 @@
                     'aahan': 'Aahan',
                     'zohamoni': 'Zohamoni'
                 };
-                
+
                 const serverContent = document.createElement('div');
                 serverContent.id = 'sidebar-server-content';
                 serverContent.style.padding = '20px';
@@ -2610,7 +2916,7 @@
         function renderFriendsList(data, label, isPending = false) {
             const view = document.getElementById('friends-view');
             const countLabel = document.getElementById('friends-count-label');
-            
+
             if (!data || data.length === 0) {
                 countLabel.textContent = `${label} — 0`;
                 view.innerHTML = '<div class="empty-state" style="padding-top:100px;"><div class="empty-state-icon">👻</div><div class="empty-state-title">No one here...</div></div>';
@@ -2787,16 +3093,16 @@
                 setTimeout(syncSelf, 500);
                 return;
             }
-            
+
             state.me = user;
             document.getElementById('my-name').textContent = user;
-            
+
             // Set profile picture from localStorage or fallback
             const storedPic = localStorage.getItem('rbx_pic');
             const fallbackPic = 'https://via.placeholder.com/36';
             const pfpEl = document.getElementById('my-pfp');
             pfpEl.src = storedPic || fallbackPic;
-            
+
             // If no stored pic, try to fetch from Supabase
             if (!storedPic && window.supabaseClient) {
                 try {
@@ -2805,7 +3111,7 @@
                         .select('avatar_url')
                         .eq('username', user)
                         .maybeSingle();
-                    
+
                     if (data && data.avatar_url) {
                         localStorage.setItem('rbx_pic', data.avatar_url);
                         pfpEl.src = data.avatar_url;
@@ -3374,7 +3680,7 @@
             } else if (state.mode === 'dm' && state.target) {
                 // Mark as sent immediately
                 renderMessageStatus(messageId, 'sent');
-                
+
                 // Send to the shared DM room
                 if (state.currentDMChannel) {
                     state.currentDMChannel.publish('msg', messageData);
@@ -3391,7 +3697,7 @@
 
                 // Render our own message
                 renderMessage(messageData);
-                
+
                 // Update to delivered after a short delay
                 setTimeout(() => renderMessageStatus(messageId, 'delivered'), 1500);
             } else if (state.mode === 'group' && state.target) {
@@ -3415,7 +3721,7 @@
         // Store message in Supabase for offline delivery and status tracking
         async function storeMessageInSupabase(recipient, messageData) {
             if (!window.supabaseClient) return;
-            
+
             try {
                 await window.supabaseClient.from('messages').insert([{
                     id: messageData.id,
@@ -3435,20 +3741,20 @@
         // ============================================
         async function fetchUserProfilePic(username) {
             if (!window.supabaseClient || !username) return null;
-            
+
             // Check localStorage cache first
             const cached = localStorage.getItem('pfp_' + username);
             if (cached) return cached;
-            
+
             try {
                 const { data, error } = await window.supabaseClient
                     .from('profiles')
                     .select('avatar_url')
                     .eq('username', username)
                     .maybeSingle();
-                
+
                 if (error) throw error;
-                
+
                 if (data && data.avatar_url) {
                     localStorage.setItem('pfp_' + username, data.avatar_url);
                     return data.avatar_url;
@@ -3462,15 +3768,15 @@
         // Update all visible profile pictures for a user
         async function updateProfilePicsForUser(username, picUrl) {
             if (!picUrl) return;
-            
+
             // Update in DM list
             const pfpEl = document.getElementById('pfp-' + username);
             if (pfpEl) pfpEl.src = picUrl;
-            
+
             // Update in friends list
             const friendPfpEl = document.getElementById('f-pfp-' + username);
             if (friendPfpEl) friendPfpEl.src = picUrl;
-            
+
             // Update in messages
             document.querySelectorAll(`.message-avatar[onclick*="${username}"]`).forEach(el => {
                 el.src = picUrl;
@@ -3482,7 +3788,7 @@
         // ============================================
         async function fetchUndeliveredMessages(recipient) {
             if (!window.supabaseClient) return;
-            
+
             try {
                 const { data, error } = await window.supabaseClient
                     .from('messages')
@@ -3491,9 +3797,9 @@
                     .eq('recipient_id', state.me)
                     .in('status', ['sent', 'delivered'])
                     .order('created_at', { ascending: true });
-                
+
                 if (error) throw error;
-                
+
                 if (data && data.length > 0) {
                     // Convert Supabase messages to chat format and render
                     data.forEach(msg => {
@@ -3504,7 +3810,7 @@
                             pic: localStorage.getItem('rbx_pic'),
                             time: new Date(msg.created_at).getTime()
                         };
-                        
+
                         // Only render if not already shown
                         if (!document.getElementById(msg.id)) {
                             renderMessage(messageData);
@@ -3512,7 +3818,7 @@
                             updateMessageStatus(msg.id, 'read');
                         }
                     });
-                    
+
                     // Update messages status to read in Supabase
                     await window.supabaseClient
                         .from('messages')
@@ -3527,7 +3833,7 @@
         // Mark messages as read when viewing a DM conversation
         async function markMessagesAsRead(recipient) {
             if (!window.supabaseClient) return;
-            
+
             try {
                 await window.supabaseClient
                     .from('messages')
@@ -3535,7 +3841,7 @@
                     .eq('sender_id', recipient)
                     .eq('recipient_id', state.me)
                     .eq('status', 'delivered');
-                
+
                 // Update UI for all messages from this user
                 const messages = document.querySelectorAll('.message');
                 messages.forEach(msg => {
@@ -3795,158 +4101,229 @@
             }
         });
     </script>
-        <!-- ============================================
+    <!-- ============================================
              OVERLAYS & POP-OUTS
              ============================================ -->
-        
-        <!-- Profile Pop-out -->
-        <div id="profile-popout" class="popout" style="width: 340px; background: #111214; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); padding: 0; overflow: visible;">
-            <!-- Top Area (Avatar & Speech Bubble) -->
-            <div style="padding: 16px 16px 0 16px; position: relative;">
-                <!-- Speech Bubble -->
-                <div style="position: absolute; top: 16px; left: 110px; right: 16px; background: #2b2d31; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; color: #dbdee1; line-height: 1.3;">
-                    <div style="position: absolute; left: -6px; top: 12px; width: 12px; height: 12px; background: #2b2d31; transform: rotate(45deg);"></div>
-                    and oh i know its hard to see you but i wish you...
+
+    <!-- Profile Pop-out -->
+    <div id="profile-popout" class="popout"
+        style="width: 340px; background: #111214; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); padding: 0; overflow: visible;">
+        <!-- Top Area (Avatar & Speech Bubble) -->
+        <div style="padding: 16px 16px 0 16px; position: relative;">
+            <!-- Speech Bubble -->
+            <div
+                style="position: absolute; top: 16px; left: 110px; right: 16px; background: #2b2d31; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; color: #dbdee1; line-height: 1.3;">
+                <div
+                    style="position: absolute; left: -6px; top: 12px; width: 12px; height: 12px; background: #2b2d31; transform: rotate(45deg);">
                 </div>
-                
-                <!-- Avatar -->
-                <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; padding: 6px; background: #111214; z-index: 2; margin-top: 10px;">
-                    <img id="popout-pfp" src="jay.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                    <!-- DND Status Icon -->
-                    <div style="position: absolute; bottom: 0px; right: 0px; width: 22px; height: 22px; background: #111214; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <div style="width: 16px; height: 16px; background: #da373c; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;">
-                            <div style="width: 8px; height: 2px; background: #111214; border-radius: 1px;"></div>
-                        </div>
-                    </div>
-                </div>
+                and oh i know its hard to see you but i wish you...
             </div>
 
-            <!-- User Info Section -->
-            <div style="padding: 12px 16px;">
-                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                    <h2 id="popout-name" style="font-size: 1.25rem; font-weight: 800; color: #f2f3f5; margin: 0;">Adiyan</h2>
-                </div>
-                <div id="popout-handle" style="font-size: 0.85rem; color: #dbdee1;">adigusi • HE HIM \\ taken gng</div>
-                
-                <!-- Badges -->
-                <div style="display: flex; align-items: center; gap: 4px; margin-top: 8px;">
-                    <img src="https://cdn.discordapp.com/badges/2ba85e33f355663628bbdc8c345a9a5f.png" title="Nitro" style="width: 22px; height: 22px; border-radius: 4px;" onerror="this.style.display='none'">
-                    <img src="https://cdn.discordapp.com/badges/8c8d2342ec654d008984cb32dae8deac.png" title="Server Booster" style="width: 22px; height: 22px; border-radius: 4px;" onerror="this.style.display='none'">
-                    <div style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; line-height: 1;">
-                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22h20L12 2z"/></svg>
-                         <span style="font-size: 0.7rem; font-weight: 700; color: #dbdee1;">RBLX</span>
-                    </div>
-                </div>
-                
-                <div style="height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0;"></div>
-
-                <!-- Game Collection -->
-                <div style="margin-bottom: 12px;">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: #dbdee1; margin-bottom: 8px;">Game Collection</div>
-                    <div style="display: flex; gap: 4px;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Red_Dead_Redemption_2_Logo.png/800px-Red_Dead_Redemption_2_Logo.png" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Forza_Horizon_5_logo.png/1200px-Forza_Horizon_5_logo.png" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1) ;">
-                        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/9/91/CSGO_cover_art.jpg/220px-CSGO_cover_art.jpg" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1) ;">
-                        <div style="width: 32px; height: 32px; border-radius: 4px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #dbdee1; border: 1px solid rgba(255,255,255,0.1);">+6</div>
-                    </div>
-                </div>
-                
-                <div style="height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0;"></div>
-
-                <!-- Playing Activity -->
-                <div style="margin-bottom: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <div style="font-size: 0.75rem; font-weight: 700; color: #dbdee1; text-transform: uppercase;">Playing</div>
-                        <div style="cursor: pointer; color: #dbdee1;">...</div>
-                    </div>
-                    <div style="display: flex; gap: 12px;">
-                        <div style="position: relative; width: 64px; height: 64px; border-radius: 8px; flex-shrink: 0; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Grand_Theft_Auto_VI.jpg/220px-Grand_Theft_Auto_VI.jpg" style="width: 100%; height: 100%; object-fit: cover;">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Rockstar_Games_Logo.svg/1200px-Rockstar_Games_Logo.svg.png" style="position: absolute; bottom: 4px; right: 4px; width: 16px; height: 16px; border-radius: 2px; padding: 2px; background: #000; border: 1px solid #fff;">
-                        </div>
-                        <div style="min-width: 0;">
-                            <div style="font-size: 0.9rem; font-weight: 700; color: #f2f3f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Grand Theft Auto VI</div>
-                            <div style="font-size: 0.85rem; color: #dbdee1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;">Story Mode - Playing as Lucia</div>
-                            <div style="font-size: 0.85rem; color: #23a559; display: flex; align-items: center; gap: 4px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                                18:38:47
-                            </div>
-                            <div style="font-size: 0.85rem; color: #dbdee1; display: flex; align-items: center; gap: 4px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                                Location: Vice City (10 of 1)
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Menu Buttons -->
-                <style>
-                    .popout-action-row {
-                        display: flex; align-items: center; justify-content: space-between; 
-                        background: #2b2d31; padding: 12px; border-radius: 4px; margin-bottom: 2px;
-                        cursor: pointer; transition: background 0.1s;
-                        color: #dbdee1; font-size: 0.9rem; font-weight: 500;
-                    }
-                    .popout-action-row:hover { background: #3f4147; color: #f2f3f5; }
-                </style>
-                
-                <div class="popout-action-row" onclick="toggleSettings('profile')">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Edit Profile
-                    </div>
-                </div>
-                
-                <div class="popout-action-row">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 16px; height: 16px; background: #da373c; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <div style="width: 8px; height: 2px; background: #2b2d31; border-radius: 1px;"></div>
-                        </div>
-                        Do Not Disturb
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23M12 7v5M12 2v2M4.5 4.5l15 15"/></svg>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                    </div>
-                </div>
-                
-                <div class="popout-action-row" style="margin-top: 8px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5 22v-2a7 7 0 0 1 14 0v2"/></svg>
-                        Switch Accounts
-                    </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-                
-                <div class="popout-action-row" style="border-radius: 4px 4px 8px 8px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                        Copy User ID
+            <!-- Avatar -->
+            <div
+                style="position: relative; width: 80px; height: 80px; border-radius: 50%; padding: 6px; background: #111214; z-index: 2; margin-top: 10px;">
+                <img id="popout-pfp" src="jay.png"
+                    style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                <!-- DND Status Icon -->
+                <div
+                    style="position: absolute; bottom: 0px; right: 0px; width: 22px; height: 22px; background: #111214; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <div
+                        style="width: 16px; height: 16px; background: #da373c; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 8px; height: 2px; background: #111214; border-radius: 1px;"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Settings Overlay -->
-        <div id="settings-overlay" class="settings-overlay">
-            <div class="settings-sidebar">
-                <div style="width: 190px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase;">USER SETTINGS</div>
-                <div class="settings-item active" onclick="setSettingsTab('account')">My Account</div>
-                <div class="settings-item" onclick="setSettingsTab('profile')">Profiles</div>
-                <div class="settings-item" onclick="setSettingsTab('privacy')">Privacy & Safety</div>
-                <div style="width: 190px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase;">APP SETTINGS</div>
-                <div class="settings-item" onclick="setSettingsTab('appearance')">Appearance</div>
-                <div class="settings-item" onclick="setSettingsTab('notifications')">Notifications</div>
-                <button class="logout-btn" onclick="logoutNexus()" style="width:190px; margin-top:auto; padding:10px; background:#da373c; color:#fff; border:none; border-radius:4px; font-weight:700; cursor:pointer; opacity:0.8; transition:0.2s;">Log Out</button>
+        <!-- User Info Section -->
+        <div style="padding: 12px 16px;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                <h2 id="popout-name" style="font-size: 1.25rem; font-weight: 800; color: #f2f3f5; margin: 0;">Adiyan
+                </h2>
             </div>
-            <div class="settings-content" id="settings-content-view">
-                <!-- Content injected by JS -->
+            <div id="popout-handle" style="font-size: 0.85rem; color: #dbdee1;">adigusi • HE HIM \\ taken gng</div>
+
+            <!-- Badges -->
+            <div style="display: flex; align-items: center; gap: 4px; margin-top: 8px;">
+                <img src="https://cdn.discordapp.com/badges/2ba85e33f355663628bbdc8c345a9a5f.png" title="Nitro"
+                    style="width: 22px; height: 22px; border-radius: 4px;" onerror="this.style.display='none'">
+                <img src="https://cdn.discordapp.com/badges/8c8d2342ec654d008984cb32dae8deac.png" title="Server Booster"
+                    style="width: 22px; height: 22px; border-radius: 4px;" onerror="this.style.display='none'">
+                <div
+                    style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; line-height: 1;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 22h20L12 2z" />
+                    </svg>
+                    <span style="font-size: 0.7rem; font-weight: 700; color: #dbdee1;">RBLX</span>
+                </div>
             </div>
-            <div class="settings-close" onclick="toggleSettings()" style="position:fixed; top:60px; right:60px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer;">
-                <div style="width:36px; height:36px; border-radius:50%; border:2px solid var(--text-muted); display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:var(--text-muted); font-weight:300;">×</div>
-                <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; letter-spacing:0.5px;">ESC</div>
+
+            <div style="height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0;"></div>
+
+            <!-- Game Collection -->
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: #dbdee1; margin-bottom: 8px;">Game Collection
+                </div>
+                <div style="display: flex; gap: 4px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Red_Dead_Redemption_2_Logo.png/800px-Red_Dead_Redemption_2_Logo.png"
+                        style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Forza_Horizon_5_logo.png/1200px-Forza_Horizon_5_logo.png"
+                        style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1) ;">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/thumb/9/91/CSGO_cover_art.jpg/220px-CSGO_cover_art.jpg"
+                        style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1) ;">
+                    <div
+                        style="width: 32px; height: 32px; border-radius: 4px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #dbdee1; border: 1px solid rgba(255,255,255,0.1);">
+                        +6</div>
+                </div>
+            </div>
+
+            <div style="height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0;"></div>
+
+            <!-- Playing Activity -->
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #dbdee1; text-transform: uppercase;">
+                        Playing</div>
+                    <div style="cursor: pointer; color: #dbdee1;">...</div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div
+                        style="position: relative; width: 64px; height: 64px; border-radius: 8px; flex-shrink: 0; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Grand_Theft_Auto_VI.jpg/220px-Grand_Theft_Auto_VI.jpg"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Rockstar_Games_Logo.svg/1200px-Rockstar_Games_Logo.svg.png"
+                            style="position: absolute; bottom: 4px; right: 4px; width: 16px; height: 16px; border-radius: 2px; padding: 2px; background: #000; border: 1px solid #fff;">
+                    </div>
+                    <div style="min-width: 0;">
+                        <div
+                            style="font-size: 0.9rem; font-weight: 700; color: #f2f3f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            Grand Theft Auto VI</div>
+                        <div
+                            style="font-size: 0.85rem; color: #dbdee1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;">
+                            Story Mode - Playing as Lucia</div>
+                        <div style="font-size: 0.85rem; color: #23a559; display: flex; align-items: center; gap: 4px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                            </svg>
+                            18:38:47
+                        </div>
+                        <div style="font-size: 0.85rem; color: #dbdee1; display: flex; align-items: center; gap: 4px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                            </svg>
+                            Location: Vice City (10 of 1)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Menu Buttons -->
+            <style>
+                .popout-action-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background: #2b2d31;
+                    padding: 12px;
+                    border-radius: 4px;
+                    margin-bottom: 2px;
+                    cursor: pointer;
+                    transition: background 0.1s;
+                    color: #dbdee1;
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                }
+
+                .popout-action-row:hover {
+                    background: #3f4147;
+                    color: #f2f3f5;
+                }
+            </style>
+
+            <div class="popout-action-row" onclick="toggleSettings('profile')">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Edit Profile
+                </div>
+            </div>
+
+            <div class="popout-action-row">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div
+                        style="width: 16px; height: 16px; background: #da373c; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 8px; height: 2px; background: #2b2d31; border-radius: 1px;"></div>
+                    </div>
+                    Do Not Disturb
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23M12 7v5M12 2v2M4.5 4.5l15 15" />
+                    </svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="popout-action-row" style="margin-top: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="7" r="4" />
+                        <path d="M5 22v-2a7 7 0 0 1 14 0v2" />
+                    </svg>
+                    Switch Accounts
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6" />
+                </svg>
+            </div>
+
+            <div class="popout-action-row" style="border-radius: 4px 4px 8px 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copy User ID
+                </div>
             </div>
         </div>
-    </body>
+    </div>
+
+    <!-- Settings Overlay -->
+    <div id="settings-overlay" class="settings-overlay">
+        <div class="settings-sidebar">
+            <div
+                style="width: 190px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase;">
+                USER SETTINGS</div>
+            <div class="settings-item active" onclick="setSettingsTab('account')">My Account</div>
+            <div class="settings-item" onclick="setSettingsTab('profile')">Profiles</div>
+            <div class="settings-item" onclick="setSettingsTab('privacy')">Privacy & Safety</div>
+            <div
+                style="width: 190px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase;">
+                APP SETTINGS</div>
+            <div class="settings-item" onclick="setSettingsTab('appearance')">Appearance</div>
+            <div class="settings-item" onclick="setSettingsTab('notifications')">Notifications</div>
+            <button class="logout-btn" onclick="logoutNexus()"
+                style="width:190px; margin-top:auto; padding:10px; background:#da373c; color:#fff; border:none; border-radius:4px; font-weight:700; cursor:pointer; opacity:0.8; transition:0.2s;">Log
+                Out</button>
+        </div>
+        <div class="settings-content" id="settings-content-view">
+            <!-- Content injected by JS -->
+        </div>
+        <div class="settings-close" onclick="toggleSettings()"
+            style="position:fixed; top:60px; right:60px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer;">
+            <div
+                style="width:36px; height:36px; border-radius:50%; border:2px solid var(--text-muted); display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:var(--text-muted); font-weight:300;">
+                ×</div>
+            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; letter-spacing:0.5px;">ESC</div>
+        </div>
+    </div>
+</body>
 
 </html>
