@@ -11,24 +11,42 @@
 
     <style>
         /* ============================================
-           CSS VARIABLES - Design System Foundation
+           CSS VARIABLES - Discord Design System
            ============================================ */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
         :root {
-            /* Colors */
-            --bg: #000000;
-            --surface: #050505;
-            --panel: rgba(10, 10, 10, 0.85);
-            --border: rgba(255, 255, 255, 0.06);
-            --text-main: #ffffff;
-            --text-muted: #8b8c8f;
-            --accent: #00A2FF;
-            --accent-hover: #33b8ff;
-            --danger: #da373c;
+            /* Discord Color Palette */
+            --bg-deep: #1e1f22;
+            --bg-sidebar: #2b2d31;
+            --bg-main: #313338;
+            --bg-hover: #35373c;
+            --bg-header: rgba(49, 51, 56, 0.95);
+            
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-default: rgba(255, 255, 255, 0.08);
+            
+            --text-main: #dbdee1;
+            --text-muted: #949ba4;
+            --text-header: #f2f3f5;
+            --text-link: #00a8fc;
+            
+            --accent: #5865f2;
+            --accent-hover: #4752c4;
+            --accent-light: rgba(88, 101, 242, 0.15);
+            
             --success: #23a559;
             --warning: #f0b232;
+            --danger: #da373c;
+            
+            /* Status Colors */
+            --status-online: #23a559;
+            --status-idle: #f0b232;
+            --status-dnd: #da373c;
+            --status-offline: #80848e;
 
             /* Spacing */
-            --header-height: 60px;
+            --header-height: 48px;
             --sidebar-width: 240px;
             --server-rail-width: 72px;
             --member-width: 240px;
@@ -36,6 +54,13 @@
             /* Transitions */
             --transition: cubic-bezier(0.76, 0, 0.24, 1);
             --transition-fast: cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 50%;
         }
 
         /* ============================================
@@ -1764,11 +1789,7 @@
                         <div class="user-slot-name" id="my-name" style="font-size: 0.8rem; font-weight: 800;">Adiyan</div>
                         <div class="user-slot-status" id="my-status-text" style="font-size: 0.65rem; color: var(--text-muted);">and oh i know its hard to se...</div>
                     </div>
-                    <div style="display: flex; gap: 4px; align-items: center;">
-                        <button class="user-slot-actions" style="background:none; border:none; padding:4px; color:var(--text-muted); cursor:pointer;">🎙️</button>
-                        <button class="user-slot-actions" style="background:none; border:none; padding:4px; color:var(--text-muted); cursor:pointer;">🎧</button>
-                        <button class="user-slot-actions" onclick="setStatus()" style="background:none; border:none; padding:4px; color:var(--text-muted); cursor:pointer;">⚙️</button>
-                    </div>
+                    <button class="user-slot-actions" onclick="setStatus()" style="background:none; border:none; padding:4px; color:var(--text-muted); cursor:pointer;">⚙️</button>
                 </div>
             </div>
 
@@ -3657,7 +3678,56 @@
             }
         }
 
-        // Fetch undelivered messages from Supabase (for offline delivery)
+        // ============================================
+        // PROFILE PICTURE FETCHING SYSTEM
+        // ============================================
+        async function fetchUserProfilePic(username) {
+            if (!window.supabaseClient || !username) return null;
+            
+            // Check localStorage cache first
+            const cached = localStorage.getItem('pfp_' + username);
+            if (cached) return cached;
+            
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('profiles')
+                    .select('avatar_url')
+                    .eq('username', username)
+                    .maybeSingle();
+                
+                if (error) throw error;
+                
+                if (data && data.avatar_url) {
+                    localStorage.setItem('pfp_' + username, data.avatar_url);
+                    return data.avatar_url;
+                }
+            } catch (e) {
+                console.error('Failed to fetch profile picture:', e);
+            }
+            return null;
+        }
+
+        // Update all visible profile pictures for a user
+        async function updateProfilePicsForUser(username, picUrl) {
+            if (!picUrl) return;
+            
+            // Update in DM list
+            const pfpEl = document.getElementById('pfp-' + username);
+            if (pfpEl) pfpEl.src = picUrl;
+            
+            // Update in friends list
+            const friendPfpEl = document.getElementById('f-pfp-' + username);
+            if (friendPfpEl) friendPfpEl.src = picUrl;
+            
+            // Update in messages
+            document.querySelectorAll(`.message-avatar[onclick*="${username}"]`).forEach(el => {
+                el.src = picUrl;
+            });
+        }
+
+        // ============================================
+        // FETCH UNDELIVERED MESSAGES
+        // ============================================
         async function fetchUndeliveredMessages(recipient) {
             if (!window.supabaseClient) return;
             
