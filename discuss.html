@@ -1731,12 +1731,22 @@
 
                 <div class="section-header" style="margin-top: 10px;">
                     Direct Messages
-                    <div style="display:flex; gap:8px;">
-                        <span class="add-btn" onclick="promptNewDM()" title="New DM">+</span>
-                        <span class="add-btn" onclick="createGroup()" title="Create Group Chat" style="font-size:1.1rem;">👥</span>
-                    </div>
                 </div>
-                <div id="dm-list"></div>
+                <div id="dm-list" style="padding-bottom: 10px;"></div>
+                
+                <div class="section-header">
+                    Group Chats
+                    <span class="add-btn" onclick="createGroup()" title="Create Group Chat" style="font-size:1.1rem;">👥</span>
+                </div>
+                <div id="group-list" style="padding-bottom: 10px;"></div>
+                
+                <div class="section-header">
+                    Actions
+                </div>
+                <div class="user-link" onclick="promptNewDM()" style="padding:10px 15px; margin:2px 8px; border-radius:6px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; gap:12px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    New DM
+                </div>
 
                 <!-- User Profile Slot -->
                 <div class="user-slot" id="user-slot">
