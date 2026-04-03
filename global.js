@@ -160,15 +160,30 @@ async function checkGlobalAuth() {
     const authNav = document.getElementById('auth-nav');
     if (!authNav) return;
     try {
+        // First check if we have a valid session
         const { data: { session } } = await window.supabaseClient.auth.getSession();
+        
         if (session) {
             const user = session.user;
-            const { data: profile } = await window.supabaseClient.from('profiles').select('*').eq('id', user.id).single();
+            console.log('User session found:', user.email);
+            
+            // Fetch profile
+            const { data: profile, error: profileError } = await window.supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .maybeSingle();
+            
+            if (profileError) {
+                console.error('Profile fetch error:', profileError);
+            }
+            
             if (profile && profile.status === 'BANNED') {
                 alert("ACCESS_DENIED: YOUR ACCOUNT HAS BEEN PERMANENTLY SUSPENDED.");
                 logoutNexus();
                 return;
             }
+            
             const name = profile?.username || user.user_metadata?.full_name || user.email.split('@')[0];
             const pic = user.user_metadata.avatar_url || 'https://via.placeholder.com/100';
 
@@ -182,9 +197,21 @@ async function checkGlobalAuth() {
             authNav.innerHTML = `<a href="profile.html?user=${name}" class="nav-item interactable" style="color:#00A2FF; font-weight:900;">@${name}</a>
                                  <a href="#" onclick="logoutNexus()" class="nav-item interactable" style="opacity:0.4; font-size:0.7rem;">LOGOUT</a>`;
         } else {
+            // No active session - check if we have stored user data (fallback for demo)
+            const storedUser = localStorage.getItem('rbx_user');
+            if (storedUser) {
+                // User has stored data but no session - they need to re-login
+                console.log('Stored user found but no session - requiring re-auth');
+                localStorage.removeItem('rbx_user');
+                localStorage.removeItem('rbx_pic');
+                localStorage.removeItem('rbx_email');
+            }
             authNav.innerHTML = `<a href="auth.html" class="nav-item interactable" style="background:#fff; color:#000; padding:8px 20px; border-radius:100px;">Login</a>`;
         }
-    } catch (e) { console.log("Auth Error:", e); }
+    } catch (e) {
+        console.error("Auth Error:", e);
+        authNav.innerHTML = `<a href="auth.html" class="nav-item interactable" style="background:#fff; color:#000; padding:8px 20px; border-radius:100px;">Login</a>`;
+    }
 }
 
 async function logoutNexus() {
