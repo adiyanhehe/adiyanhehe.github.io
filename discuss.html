@@ -52,9 +52,12 @@
         }
 
         .app-layout {
+            position: absolute;
+            top: 48px;
+            bottom: 0;
+            left: 0;
+            right: 0;
             display: flex;
-            height: calc(100dvh - 48px);
-            margin-top: 48px;
         }
 
         /* Sidebar & Rails */
@@ -1734,9 +1737,9 @@
                 <!-- User Profile Slot -->
                 <div class="user-slot-new" id="user-slot" onclick="toggleProfilePopout()">
                     <div style="position:relative; width:32px; height:32px;">
-                        <img id="my-pfp" src="jay.png" alt="Profile">
-                        <div id="my-status-dot" class="status-dot status-online"></div>
-                    </div>
+                            <img id="my-pfp" src="jay.png" alt="Profile">
+                            <div id="my-status-dot" class="status-dot status-online" style="cursor: pointer; position: relative; z-index: 10;" onclick="event.stopPropagation(); document.getElementById('status-modal-overlay').style.display='flex'"></div>
+                        </div>
                     <div style="flex:1; min-width:0;">
                         <div id="my-name"
                             style="font-size:0.85rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -1866,6 +1869,126 @@
                             <div style="display:flex; justify-content:space-between; padding:12px 0;">
                                 <div><div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Username</div><div style="font-weight: 600;">${state.me.toLowerCase()}</div></div>
                                 <button style="background: #4e5058; color: white; border: none; padding: 6px 16px; border-radius: 3px; font-weight: 600; cursor: pointer;">Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'profile') {
+                content.innerHTML = `
+                    <h2 style="font-size:1.5rem; margin-bottom:20px; font-weight: 800;">Profiles</h2>
+
+                    <div style="display:flex; gap:40px;">
+                        <!-- LEFT SIDE: Inputs -->
+                        <div style="flex:1;">
+                            <div style="background: linear-gradient(90deg, #5865F2, #E8B4C0, #B4E8DC); border-radius:8px; padding:12px; display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px; cursor: pointer;">
+                                <div style="display:flex; align-items:center; gap:12px; color:#111; font-weight:600; font-size:0.9rem;">
+                                    <div style="width:40px; height:40px; background:#fff; border-radius:4px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);">🎉</div>
+                                    Check out the latest avatar decorations, profile effects, and nameplates.
+                                </div>
+                                <button style="background:#fff; color:#111; border:none; border-radius:4px; padding:6px 12px; font-weight:700; cursor:pointer;">Go to Shop</button>
+                            </div>
+
+                            <div style="margin-bottom:24px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Display Name</div>
+                                <input type="text" value="Adiyan" style="width:100%; background:#1e1f22; border:1px solid rgba(255,255,255,0.05); border-radius:3px; padding:10px; color:#f2f3f5; font-size:1rem;">
+                            </div>
+
+                            <div style="margin-bottom:24px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Pronouns</div>
+                                <input type="text" value="HE HIM \\\\ taken gng" style="width:100%; background:#1e1f22; border:1px solid rgba(255,255,255,0.05); border-radius:3px; padding:10px; color:#f2f3f5; font-size:1rem;">
+                            </div>
+
+                            <div style="margin-bottom:24px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Profile Widgets</div>
+                                <button style="background:#5865f2; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:600; cursor:pointer;">Add Widgets</button>
+                            </div>
+
+                            <div style="margin-bottom:24px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Avatar</div>
+                                <div style="display:flex; gap:12px;">
+                                    <button style="background:#5865f2; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:600; cursor:pointer;">Change Avatar</button>
+                                    <button style="background:transparent; color:#f2f3f5; border:none; padding:8px 16px; border-radius:4px; font-weight:600; cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Remove Avatar</button>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom:24px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Avatar Decoration</div>
+                                <button style="background:#5865f2; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:600; cursor:pointer;">Change Decoration</button>
+                            </div>
+                            
+                            <div style="margin-bottom:24px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Profile Effect</div>
+                                <button style="background:#5865f2; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:600; cursor:pointer;">Change Effect</button>
+                            </div>
+                            
+                            <div style="margin-bottom:32px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Banner Color</div>
+                                <div style="width:64px; height:64px; background:#000; border-radius:8px; display:flex; align-items:flex-start; justify-content:flex-end; padding:4px; cursor:pointer; border:2px solid transparent;" onmouseover="this.style.borderColor='rgba(255,255,255,0.2)'" onmouseout="this.style.borderColor='transparent'">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom:32px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Bio</div>
+                                <div style="font-size:0.85rem; color:#dbdee1; margin-bottom:8px;">You can use markdown and links if you'd like.</div>
+                                <div style="background:#1e1f22; border:1px solid rgba(255,255,255,0.05); border-radius:4px; position:relative;">
+                                    <textarea style="width:100%; height:120px; background:transparent; border:none; resize:none; padding:12px; color:#f2f3f5; font-family:inherit; outline:none;">Locked in.</textarea>
+                                    <div style="position:absolute; bottom:12px; right:12px; color:#5c5e66; font-size:0.75rem; font-weight:600;">190</div>
+                                    <div style="position:absolute; top:12px; right:12px; cursor:pointer; color:#b5bac1;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.5 8a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm-7 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm3.5 8c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg></div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom:24px;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Server Tag</div>
+                                <div style="font-size:0.85rem; color:#dbdee1; margin-bottom:8px;">Choose a server tag to rep next to your name across Discord.</div>
+                                <div style="background:#1e1f22; border-radius:8px; padding:16px; display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="font-size:0.95rem; font-weight:600; color:#f2f3f5;">Level up your look, only with <span style="color:#a5b4fc;">Nitro</span></div>
+                                    <button style="background:#fff; color:#111; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer;">Try it out</button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- RIGHT SIDE: Preview -->
+                        <div style="width: 340px; flex-shrink:0;">
+                            <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Preview</div>
+                            
+                            <!-- High fidelity preview replica -->
+                            <div style="background:#111214; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.4); padding:0; overflow:hidden; margin-bottom:24px;">
+                                <div style="padding:16px 16px 0 16px; position:relative;">
+                                    <div style="height: 100px; width: 100%; position: absolute; top:0; left:0; background: linear-gradient(135deg, #222, #444);"></div>
+                                    <div style="position: absolute; top: 16px; left: 110px; right: 16px; background: #2b2d31; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; color: #dbdee1; line-height: 1.3;">
+                                        <div style="position: absolute; left: -6px; top: 12px; width: 12px; height: 12px; background: #2b2d31; transform: rotate(45deg);"></div>
+                                        and oh i know its hard to see you but i wish you...
+                                    </div>
+                                    <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; padding: 6px; background: #111214; z-index: 2; margin-top: 10px;">
+                                        <img src="\${localStorage.getItem('rbx_pic') || 'jay.png'}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                        <div style="position: absolute; bottom: 0px; right: 0px; width: 22px; height: 22px; background: #111214; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <div style="width: 16px; height: 16px; background: #da373c; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;">
+                                                <div style="width: 8px; height: 2px; background: #111214; border-radius: 1px;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="padding: 12px 16px;">
+                                    <div style="font-size: 1.25rem; font-weight: 800; color: #f2f3f5; margin: 0;">Adiyan</div>
+                                    <div style="font-size: 0.85rem; color: #dbdee1; margin-bottom:8px;">adigusi • HE HIM \\\\ taken gng</div>
+                                    <div style="display: flex; align-items: center; gap: 4px; margin-bottom:16px;">
+                                        <img src="https://cdn.discordapp.com/badges/2ba85e33f355663628bbdc8c345a9a5f.png" style="width:22px; height:22px; border-radius:4px;">
+                                        <img src="https://cdn.discordapp.com/badges/8c8d2342ec654d008984cb32dae8deac.png" style="width:22px; height:22px; border-radius:4px;">
+                                    </div>
+                                    <button style="width:100%; padding:10px; background:#5865f2; color:#fff; border:none; border-radius:4px; font-weight:600; cursor:pointer;">Example Button</button>
+                                </div>
+                            </div>
+
+                            <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Nameplate</div>
+                            <div style="background:#2b2d31; border-radius:8px; display:flex; align-items:center; padding:12px 16px; gap:12px;">
+                                <img src="\${localStorage.getItem('rbx_pic') || 'jay.png'}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+                                <span style="font-size:0.9rem; font-weight:700; color:#f2f3f5;">Adiyan</span>
+                                <div style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; line-height: 1;">
+                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22h20L12 2z"/></svg>
+                                     <span style="font-size: 0.65rem; font-weight: 700; color: #dbdee1;">RBLX</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4295,8 +4418,69 @@
         </div>
     </div>
 
+    <!-- Status Modal -->
+    <div id="status-modal-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2500; display:none; align-items:center; justify-content:center;" onclick="if(event.target===this) this.style.display='none'">
+        <div style="background:#313338; width:440px; border-radius:8px; overflow:hidden; position:relative; box-shadow:0 8px 32px rgba(0,0,0,0.8); animation:openScale 0.2s ease;">
+            
+            <div style="padding:20px; display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-size:1.25rem; font-weight:800; color:#f2f3f5; margin:0;">Set your status</h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dbdee1" stroke-width="2" style="cursor:pointer;" onclick="document.getElementById('status-modal-overlay').style.display='none'"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </div>
+
+            <div style="padding: 0 20px;">
+                <!-- Profile Preview Card inside Settings Modal -->
+                <div style="background:#111214; border-radius:8px; display:flex; flex-direction:column; align-items:center; position:relative; overflow:hidden;">
+                    <!-- Banner -->
+                    <div style="width:100%; height:80px; background:#000;"></div>
+                    
+                    <!-- Avatar section inside preview -->
+                    <div style="width:100%; position:relative; padding:0 16px;">
+                        <img src="jay.png" style="width:64px; height:64px; border-radius:50%; border:6px solid #111214; margin-top:-32px; background:#111214; position:relative; z-index:2; object-fit: cover;">
+                        <div style="position:absolute; left:60px; top:-4px; width:20px; height:20px; background:#da373c; border:4px solid #111214; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:3;">
+                            <div style="width:8px; height:2px; background:#111214;"></div>
+                        </div>
+
+                        <!-- Mini Speech bubble next to avatar in preview -->
+                        <div style="position:absolute; left:96px; top: -14px; background:#2b2d31; border-radius:8px; padding:6px 10px; font-size:0.85rem; color:#dbdee1; min-width: 150px; z-index:1;">
+                            <div style="position:absolute; left:-4px; top:12px; width:8px; height:8px; background:#2b2d31; transform:rotate(45deg);"></div>
+                            <span id="status-preview-text">and oh i know its hard to see you but i wish you...</span>
+                        </div>
+                    </div>
+                    
+                    <div style="padding:12px 16px 16px 16px; width:100%;">
+                        <div style="font-size:1.1rem; font-weight:800; color:#f2f3f5;">Adiyan</div>
+                        <div style="font-size:0.85rem; color:#dbdee1; margin-bottom:8px;">adigusi • HE HIM \\ taken gng</div>
+                        <div style="display:flex; gap:4px; align-items: center;">
+                            <img src="https://cdn.discordapp.com/badges/2ba85e33f355663628bbdc8c345a9a5f.png" style="width:20px; height:20px; border-radius:4px;">
+                            <img src="https://cdn.discordapp.com/badges/8c8d2342ec654d008984cb32dae8deac.png" style="width:20px; height:20px; border-radius:4px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input section -->
+                <div style="margin-top:20px;">
+                    <div style="font-size:0.75rem; font-weight:800; color:#dbdee1; text-transform:uppercase; margin-bottom:8px;">Status</div>
+                    <div style="position:relative; background:#1e1f22; border:1px solid #5865f2; border-radius:4px; display:flex; align-items:center; padding:10px 12px; gap:10px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dbdee1" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+                        <input type="text" id="status-input-val" value="and oh i know its hard to see you but i wish you" oninput="document.getElementById('status-preview-text').textContent = this.value || 'what\\'s cooking?'" style="flex:1; background:transparent; border:none; outline:none; color:#f2f3f5; font-size:0.9rem; font-family:inherit;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#a0a4ab" onclick="document.getElementById('status-input-val').value=''; document.getElementById('status-preview-text').textContent='';" style="cursor:pointer;"><circle cx="12" cy="12" r="10"/><path stroke="#1e1f22" stroke-width="2" d="M15 9l-6 6M9 9l6 6"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div style="background:#2b2d31; padding:16px 20px; margin-top:24px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="color:#dbdee1; font-size:0.9rem; display:flex; align-items:center; gap:4px; cursor:pointer; font-weight: 500;">
+                    Don't clear
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <button onclick="document.getElementById('status-modal-overlay').style.display='none'" style="background:#5865f2; color:white; border:none; border-radius:3px; padding:8px 24px; font-weight:600; cursor:pointer;">Save</button>
+            </div>
+            
+        </div>
+    </div>
+
     <!-- Settings Overlay -->
-    <div id="settings-overlay" class="settings-overlay">
         <div class="settings-sidebar">
             <div
                 style="width: 190px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase;">
