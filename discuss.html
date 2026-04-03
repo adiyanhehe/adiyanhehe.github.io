@@ -1718,25 +1718,29 @@
             const msgsContainer = document.getElementById('msgs');
             msgsContainer.innerHTML = '';
 
-            // Update sidebar active states
-            document.querySelectorAll('.user-link').forEach(link => link.classList.remove('active'));
+            // Reset UI components
+            const inputArea = document.querySelector('.input-area');
+            if (inputArea) inputArea.style.display = 'block';
+            document.querySelectorAll('.user-link, .nav-item, .server-icon').forEach(el => el.classList.remove('active'));
 
             if (mode === 'friends') {
-                document.getElementById('btn-friends')?.classList.add('active');
-                document.getElementById('chat-title').innerHTML = `
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.4;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                    <span>Friends</span>`;
+                const btnFriends = document.getElementById('btn-friends');
+                if (btnFriends) btnFriends.classList.add('active');
+                document.getElementById('chat-title').innerHTML = `<span>Friends</span>`;
                 showFriendsDashboard();
             } else if (mode === 'nitro') {
-                document.getElementById('btn-nitro')?.classList.add('active');
+                const btnNitro = document.getElementById('btn-nitro');
+                if (btnNitro) btnNitro.classList.add('active');
                 document.getElementById('chat-title').textContent = 'Nitro';
                 showNitroDashboard();
             } else if (mode === 'shop') {
-                document.getElementById('btn-shop')?.classList.add('active');
+                const btnShop = document.getElementById('btn-shop');
+                if (btnShop) btnShop.classList.add('active');
                 document.getElementById('chat-title').textContent = 'Shop';
                 showShopDashboard();
             } else if (mode === 'quests') {
-                document.getElementById('btn-quests')?.classList.add('active');
+                const btnQuests = document.getElementById('btn-quests');
+                if (btnQuests) btnQuests.classList.add('active');
                 document.getElementById('chat-title').textContent = 'Quests';
                 showQuestsDashboard();
             } else if (mode === 'global') {
@@ -1744,26 +1748,26 @@
                     state.currentDMChannel.unsubscribe();
                     state.currentDMChannel = null;
                 }
-                document.getElementById('btn-global').classList.add('active');
-                document.getElementById('chat-title').innerHTML = `
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    Global Hub`;
-                document.querySelector('.input-area').style.display = 'block';
+                const btnGlobal = document.getElementById('btn-global');
+                if (btnGlobal) btnGlobal.classList.add('active');
+                document.getElementById('chat-title').innerHTML = `# Global Hub`;
                 document.getElementById('mIn').placeholder = 'Message #global-hub';
 
-                // Reload global history
                 globalChannel.history({ limit: 30 }, (err, page) => {
                     if (!err) page.items.reverse().forEach(m => renderMessage(m.data));
                 });
             } else if (mode === 'dm') {
-                const dmEl = document.getElementById('u-' + target);
-                if (dmEl) dmEl.classList.add('active');
+                const contactEl = document.getElementById('u-' + target);
+                if (contactEl) contactEl.classList.add('active');
 
-                document.getElementById('chat-title').textContent = '@ ' + target;
-                document.querySelector('.input-area').style.display = 'block';
-                document.getElementById('mIn').placeholder = 'Message @' + target;
+                document.getElementById('chat-title').innerText = `@ ${target}`;
+                document.getElementById('mIn').placeholder = `Message @${target}`;
 
-                // Join private DM room
+                // Mark as read in state and session
+                state.unreadCounts[target] = 0;
+                localStorage.setItem('unread_counts', JSON.stringify(state.unreadCounts));
+                updateUnreadUI(target);
+
                 if (state.currentDMChannel) state.currentDMChannel.unsubscribe();
                 const roomName = ['dm_room', state.me, target].sort().join('_');
                 state.currentDMChannel = ably.channels.get(roomName);
@@ -1772,7 +1776,6 @@
                     persistDM(target, m.data);
                     if (state.mode === 'dm' && state.target === target) {
                         renderMessage(m.data);
-                        // Mark as read immediately when receiving in active conversation
                         if (m.data.id) renderMessageStatus(m.data.id, 'read');
                     }
                 });
@@ -1783,19 +1786,13 @@
 
                 loadDMHistory(target);
                 
-                // Mark all messages from this user as read
-                markMessagesAsRead(target);
-                
-                // Check Supabase for any undelivered messages
-                fetchUndeliveredMessages(target);
-            } else if (mode === 'saved') {
-                document.getElementById('chat-title').textContent = '★ Bookmarks';
-                document.querySelector('.input-area').style.display = 'none';
-                const saved = JSON.parse(localStorage.getItem('nexus_saved_messages') || '[]');
-                saved.forEach(renderMessage);
+                // Track message status
+                if (window.markMessagesAsRead) markMessagesAsRead(target);
+                if (window.fetchUndeliveredMessages) fetchUndeliveredMessages(target);
             }
 
-            gsap.from('#chat-title', { opacity: 0, x: -20, duration: 0.5 });
+            updateRightSidebar();
+            if (window.gsap) gsap.from('#chat-title', { opacity: 0, x: -20, duration: 0.5 });
         }
 
         // ============================================
@@ -1868,57 +1865,6 @@
             }
         }
 
-        function toggleProfilePopout() {
-            const popout = document.getElementById('profile-popout');
-            const isVisible = popout.style.display === 'block';
-            popout.style.display = isVisible ? 'none' : 'block';
-        }
-
-        function toggleSettings() {
-            const overlay = document.getElementById('settings-overlay');
-            const isVisible = overlay.style.display === 'flex';
-            overlay.style.display = isVisible ? 'none' : 'flex';
-            if (!isVisible) setSettingsTab('account');
-        }
-
-        function setSettingsTab(tab) {
-            document.querySelectorAll('.settings-item').forEach(el => {
-                el.classList.remove('active');
-                if (el.textContent.toLowerCase().includes(tab)) el.classList.add('active');
-            });
-
-            const content = document.getElementById('settings-content-view');
-            if (tab === 'account') {
-                content.innerHTML = `
-                    <h2 style="font-size:1.5rem; margin-bottom:20px;">My Account</h2>
-                    <div class="profile-preview-card" style="background:#111214; border-radius:12px; overflow:hidden;">
-                        <div style="height:100px; background:linear-gradient(45deg, #111, #333);"></div>
-                        <div style="padding:16px; margin-top:-45px;">
-                            <img src="${localStorage.getItem('rbx_pic')}" style="width:80px; height:80px; border-radius:50%; border:6px solid #111214;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:10px;">
-                                <div>
-                                    <h3 style="font-size:1.25rem;">${state.me}</h3>
-                                    <div style="color:var(--text-muted); font-size:0.9rem;">${state.me}#0000</div>
-                                </div>
-                                <button class="popout-btn primary" style="width:auto; padding:8px 20px;">Edit User Profile</button>
-                            </div>
-                        </div>
-                        <div style="padding:16px; background:#2b2d31; margin:16px; border-radius:8px;">
-                            <div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border);">
-                                <div><div class="section-label">Display Name</div><div>${state.me}</div></div>
-                                <button class="popout-btn" style="width:auto;">Edit</button>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; padding:12px 0;">
-                                <div><div class="section-label">Username</div><div>${state.me.toLowerCase()}</div></div>
-                                <button class="popout-btn" style="width:auto;">Edit</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                content.innerHTML = `<div style="text-align:center; padding:100px; color:var(--text-muted);">Tab "${tab}" coming soon.</div>`;
-            }
-        }
 
         // ============================================
         // DM PERSISTENCE
@@ -3460,6 +3406,53 @@
             }
         });
     </script>
-</body>
+        <!-- ============================================
+             OVERLAYS & POP-OUTS
+             ============================================ -->
+        
+        <!-- Profile Pop-out -->
+        <div id="profile-popout" class="popout">
+            <div class="profile-banner" style="height: 100px; background: linear-gradient(135deg, #222, #444);"></div>
+            <div style="padding:0 16px; margin-top:-45px;">
+                <img id="popout-pfp" src="jay.png" style="width:90px; height:90px; border-radius:50%; border:6px solid var(--bg-popout);">
+                <div id="popout-status-dot-large" class="status-dot status-online" style="width:20px; height:20px; bottom:10px; right:12px; border:4px solid var(--bg-popout);"></div>
+            </div>
+            <div style="padding:16px; background:rgba(0,0,0,0.3); margin:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                <h2 id="popout-name" style="font-size:1.25rem; font-weight:800; margin-bottom:4px;">Adiyan</h2>
+                <div id="popout-handle" style="color:var(--text-muted); font-size:0.9rem; margin-bottom:12px;">adigusi • He/Him</div>
+                
+                <div class="popout-section" style="padding-top:12px; border-top:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Bio</div>
+                    <div id="popout-bio" style="font-size:0.9rem; color: var(--text-main);">Locked in.</div>
+                </div>
+
+                <div class="popout-actions" style="display:flex; gap:8px; margin-top:20px;">
+                    <button class="popout-btn primary" style="flex:1; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 700;" onclick="toggleSettings('profile')">Edit Profile</button>
+                    <button class="popout-btn" style="flex:1; padding: 10px; background: #2b2d31; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 700;" onclick="toggleSettings('account')">Account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Overlay -->
+        <div id="settings-overlay" class="settings-overlay">
+            <div class="settings-sidebar">
+                <div style="width: 190px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase;">USER SETTINGS</div>
+                <div class="settings-item active" onclick="setSettingsTab('account')">My Account</div>
+                <div class="settings-item" onclick="setSettingsTab('profile')">Profiles</div>
+                <div class="settings-item" onclick="setSettingsTab('privacy')">Privacy & Safety</div>
+                <div style="width: 190px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase;">APP SETTINGS</div>
+                <div class="settings-item" onclick="setSettingsTab('appearance')">Appearance</div>
+                <div class="settings-item" onclick="setSettingsTab('notifications')">Notifications</div>
+                <button class="logout-btn" onclick="logoutNexus()" style="width:190px; margin-top:auto; padding:10px; background:#da373c; color:#fff; border:none; border-radius:4px; font-weight:700; cursor:pointer; opacity:0.8; transition:0.2s;">Log Out</button>
+            </div>
+            <div class="settings-content" id="settings-content-view">
+                <!-- Content injected by JS -->
+            </div>
+            <div class="settings-close" onclick="toggleSettings()" style="position:fixed; top:60px; right:60px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer;">
+                <div style="width:36px; height:36px; border-radius:50%; border:2px solid var(--text-muted); display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:var(--text-muted); font-weight:300;">×</div>
+                <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; letter-spacing:0.5px;">ESC</div>
+            </div>
+        </div>
+    </body>
 
 </html>
