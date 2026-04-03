@@ -2339,9 +2339,13 @@
             contactEl.className = 'user-link';
             contactEl.style.cssText = 'padding:8px 15px; margin:2px 8px; border-radius:4px; display:flex; align-items:center; gap:12px; cursor:pointer;';
 
+            // Check localStorage cache for profile picture first
+            const cachedPfp = localStorage.getItem('pfp_' + username);
+            const pfpSrc = cachedPfp || pic || 'https://via.placeholder.com/32';
+
             contactEl.innerHTML = `
                 <div style="position:relative; width:32px; height:32px; flex-shrink:0;">
-                    <img id="pfp-${username}" src="${pic || 'https://via.placeholder.com/32'}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                    <img id="pfp-${username}" src="${pfpSrc}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
                     <div id="status-${username}" class="status-dot" style="display:none;"></div>
                 </div>
                 <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; font-size:0.9rem; color:#888;">${username}</div>
@@ -2357,13 +2361,15 @@
                 setMode('dm', username);
             };
 
-            // Fetch real profile picture if available
-            if (!pic && window.supabaseClient) {
+            // Fetch real profile picture if available (with retry)
+            if (!cachedPfp && window.supabaseClient) {
                 window.supabaseClient.from('profiles').select('avatar_url').eq('username', username).maybeSingle().then(({ data }) => {
                     if (data && data.avatar_url) {
-                        document.getElementById('pfp-' + username).src = data.avatar_url;
+                        localStorage.setItem('pfp_' + username, data.avatar_url);
+                        const pfpEl = document.getElementById('pfp-' + username);
+                        if (pfpEl) pfpEl.src = data.avatar_url;
                     }
-                });
+                }).catch(() => {});
             }
 
             dmList.appendChild(contactEl);
