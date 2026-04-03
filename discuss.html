@@ -730,80 +730,61 @@
            FRIENDS DASHBOARD
            ============================================ */
         .friends-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #313338;
+        }
+        .friends-header {
+            height: 48px;
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,0.2);
+            gap: 20px;
+        }
+        .friends-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .friends-main {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: var(--bg);
-        }
-
-        .friends-nav {
-            padding: 0 20px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            border-bottom: 1px solid var(--border);
-            background: rgba(10, 10, 10, 0.4);
-        }
-
-        .friend-tab {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 6px;
-            transition: all 0.3s var(--transition-fast);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .friend-tab:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-        }
-
-        .friend-tab.active {
-            background: var(--accent);
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(0, 162, 255, 0.3);
-        }
-
-        .friend-tab.add-friend {
-            background: var(--success);
-            color: #fff;
-            margin-left: auto;
-        }
-
-        .friend-tab.add-friend:hover {
-            background: #1a8a3c;
-            transform: scale(1.05);
-        }
-
-        .friends-list {
-            flex: 1;
-            padding: 30px;
+            padding: 20px;
             overflow-y: auto;
         }
-
+        .friends-search-wrapper {
+            margin-bottom: 20px;
+        }
+        .friends-search-input {
+            width: 100%;
+            padding: 10px 15px;
+            background: #1e1f22;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        .active-now-sidebar {
+            width: 350px;
+            border-left: 1px solid rgba(255,255,255,0.05);
+            padding: 20px;
+            background: #313338;
+        }
         .friend-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            background: rgba(255, 255, 255, 0.02);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: background 0.2s;
             border: 1px solid transparent;
-            transition: all 0.3s var(--transition-fast);
-            cursor: pointer;
         }
-
         .friend-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: var(--border);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(255,255,255,0.05);
         }
 
         .friend-info {
@@ -1695,54 +1676,54 @@
          ============================================ -->
     <div class="app-layout">
         <div class="server-rail">
-            <div class="server-icon active" title="Direct Messages" onclick="setMode('global')">
+            <div class="server-icon active" onclick="setServer('home')" title="Home">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
                 </svg>
             </div>
             <div class="server-divider"></div>
-            <div class="server-icon" style="background: white; color: #000;" title="Xusen Intelligence Technology">
+            <div class="server-icon" onclick="setServer('xusen')" title="Xusen Intelligence Technology">
                 <img src="jay.png" style="width: 100%; height: 100%; border-radius: inherit; object-fit: cover;" onerror="this.outerHTML='X'">
             </div>
-            <div class="server-icon" title="Pakistan">P</div>
-            <div class="server-icon" title="Reaper">R</div>
-            <div class="server-icon" title="Aahan">A</div>
-            <div class="server-icon" title="Zohamoni">Z</div>
+            <div class="server-icon" onclick="setServer('pakistan')" title="Pakistan">P</div>
+            <div class="server-icon" onclick="setServer('reaper')" title="Reaper">R</div>
+            <div class="server-icon" onclick="setServer('aahan')" title="Aahan">A</div>
+            <div class="server-icon" onclick="setServer('zohamoni')" title="Zohamoni">Z</div>
             <div class="server-divider"></div>
-            <div class="server-icon" style="color: var(--success);" title="Add Server">+</div>
-            <div class="server-icon" style="color: var(--success);" title="Explore Servers">
+            <div class="server-icon" style="color: var(--success);" onclick="showNotification('Server creation coming soon!')" title="Add Server">+</div>
+            <div class="server-icon" style="color: var(--success);" onclick="showNotification('Server discovery coming soon!')" title="Explore Servers">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
             </div>
         </div>
 
         <div class="chat-layout">
             <div class="sidebar">
-                <div style="padding: 10px; border-bottom: 1px solid var(--border); background: var(--panel);">
-                    <button style="width: 100%; padding: 8px 10px; background: #000; border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); font-size: 0.8rem; text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                <div id="sidebar-header" style="padding: 10px; border-bottom: 1px solid var(--border); background: var(--panel);">
+                    <button onclick="promptNewDM()" style="width: 100%; padding: 8px 10px; background: #000; border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); font-size: 0.8rem; text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
                         Find or start a conversation
                     </button>
                 </div>
 
-                <div style="padding: 10px 0;">
+                <div id="sidebar-home-content">
                     <div class="user-link active" id="btn-friends" onclick="setMode('friends')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                         </svg>
                         Friends
                     </div>
-                    <div class="user-link">
+                    <div class="user-link" id="btn-nitro" onclick="setMode('nitro')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
                             <path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
                         Nitro
                     </div>
-                    <div class="user-link">
+                    <div class="user-link" id="btn-shop" onclick="setMode('shop')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
                             <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
                         </svg>
                         Shop
                     </div>
-                    <div class="user-link" style="position: relative;">
+                    <div class="user-link" id="btn-quests" style="position: relative;" onclick="setMode('quests')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                         </svg>
@@ -1756,66 +1737,7 @@
                     <span class="add-btn" onclick="promptNewDM()" style="font-size: 1.2rem;">+</span>
                 </div>
                 <div id="dm-list" style="padding-bottom: 10px;">
-                    <div class="user-link">
-                        <img src="jay.png" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--success);">
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Xusen Intelligence Technology</div>
-                            <div style="font-size: 0.75rem; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">9 Members</div>
-                        </div>
-                    </div>
-                    <div class="user-link">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #da373c; display: flex; align-items: center; justify-content: center; font-weight: 900;">P</div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; font-size: 0.9rem;">Pakistan</div>
-                            <div style="font-size: 0.75rem; opacity: 0.6;">8 Members</div>
-                        </div>
-                    </div>
-                    <div class="user-link">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #444; overflow: hidden;"><img src="https://via.placeholder.com/32" style="width:100%; height:100%;"></div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">fardeen uddin diddy x epstien ...</div>
-                            <div style="font-size: 0.75rem; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">The greatest thing a man can do is to f...</div>
-                        </div>
-                    </div>
-                    <div class="user-link">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center;">👤</div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; font-size: 0.9rem;">reaper ✨ JJK</div>
-                        </div>
-                    </div>
-                    <div class="user-link">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center;">👤</div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; font-size: 0.9rem;">AAHAN ✨ BOSS</div>
-                        </div>
-                    </div>
-                    <div class="user-link">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center;">👤</div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; font-size: 0.9rem;">Zohamoni ✨ KNY</div>
-                        </div>
-                    </div>
-                    <div class="user-link">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center;">⛽</div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; font-size: 0.9rem;">Gas Station</div>
-                            <div style="font-size: 0.75rem; opacity: 0.6;">8 Members</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Voice Connected Section -->
-                <div style="background: rgba(35, 165, 89, 0.1); border-top: 1px solid rgba(255,255,255,0.05); padding: 10px 15px;">
-                    <div style="display: flex; align-items: center; gap: 10px; color: var(--success); font-weight: 700; font-size: 0.85rem;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-                        Voice Connected
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Xusen Intelligence Technology</div>
-                    <div style="display: flex; gap: 10px; margin-top: 8px;">
-                        <button style="flex: 1; background: #222; border: none; padding: 5px; border-radius: 4px; color: #fff; cursor: pointer;">📺</button>
-                        <button style="flex: 1; background: #222; border: none; padding: 5px; border-radius: 4px; color: #fff; cursor: pointer;">🚀</button>
-                        <button style="flex: 1; background: #222; border: none; padding: 5px; border-radius: 4px; color: #fff; cursor: pointer;">⚙️</button>
-                    </div>
+                    <!-- Dynamically populated by initDMList() -->
                 </div>
 
                 <!-- User Profile Slot -->
@@ -2348,16 +2270,23 @@
             // Update sidebar active states
             document.querySelectorAll('.user-link').forEach(link => link.classList.remove('active'));
 
-            if (mode === 'friends') {
-                if (state.currentDMChannel) {
-                    state.currentDMChannel.unsubscribe();
-                    state.currentDMChannel = null;
-                }
-                document.getElementById('btn-friends').classList.add('active');
+                document.getElementById('btn-friends')?.classList.add('active');
                 document.getElementById('chat-title').innerHTML = `
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.4;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     <span>Friends</span>`;
                 showFriendsDashboard();
+            } else if (mode === 'nitro') {
+                document.getElementById('btn-nitro')?.classList.add('active');
+                document.getElementById('chat-title').textContent = 'Nitro';
+                showNitroDashboard();
+            } else if (mode === 'shop') {
+                document.getElementById('btn-shop')?.classList.add('active');
+                document.getElementById('chat-title').textContent = 'Shop';
+                showShopDashboard();
+            } else if (mode === 'quests') {
+                document.getElementById('btn-quests')?.classList.add('active');
+                document.getElementById('chat-title').textContent = 'Quests';
+                showQuestsDashboard();
             } else if (mode === 'global') {
                 if (state.currentDMChannel) {
                     state.currentDMChannel.unsubscribe();
@@ -2439,9 +2368,13 @@
             contactEl.onclick = () => {
                 state.unreadCounts[username] = 0;
                 localStorage.setItem('unread_counts', JSON.stringify(state.unreadCounts));
-                updateUnreadUI(username);
                 setMode('dm', username);
             };
+
+            document.querySelectorAll('.user-link').forEach(link => link.classList.remove('active'));
+            if (state.mode === 'dm' && state.target === username) contactEl.classList.add('active');
+            
+            // ... (rest of addDMContact logic)
 
             // Fetch real profile picture if available (with retry)
             if (!cachedPfp && window.supabaseClient) {
@@ -2555,21 +2488,38 @@
 
             container.innerHTML = `
                 <div class="friends-container">
-                    <div class="friends-nav">
-                        <div class="friend-tab ${tab === 'all' ? 'active' : ''}" onclick="showFriendsDashboard('all')">All</div>
-                        <div class="friend-tab ${tab === 'pending' ? 'active' : ''}" onclick="showFriendsDashboard('pending')">Pending</div>
-                        <div class="friend-tab add-friend" onclick="showFriendsDashboard('add')">Add Friend</div>
+                    <div class="friends-header">
+                        <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted); font-weight:700; font-size:0.9rem; padding-right:15px; border-right:1px solid rgba(255,255,255,0.1);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            Friends
+                        </div>
+                        <div class="friend-tab ${tab === 'online' ? 'active' : ''}" onclick="showFriendsDashboard('online')" style="text-transform:none; font-weight:600;">Online</div>
+                        <div class="friend-tab ${tab === 'all' ? 'active' : ''}" onclick="showFriendsDashboard('all')" style="text-transform:none; font-weight:600;">All</div>
+                        <div class="friend-tab ${tab === 'pending' ? 'active' : ''}" onclick="showFriendsDashboard('pending')" style="text-transform:none; font-weight:600;">Pending</div>
+                        <div class="friend-tab ${tab === 'add' ? 'active' : ''}" onclick="showFriendsDashboard('add')" style="text-transform:none; font-weight:600; background:${tab==='add'?'var(--success)':'rgba(35,165,89,0.2)'}; color:${tab==='add'?'#fff':'#23a559'}; bo-shadow:none;">Add Friend</div>
                     </div>
-                    <div class="friends-list" id="friends-view">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">🔄</div>
-                            <div class="empty-state-title">Synchronizing...</div>
-                            <div class="empty-state-text">Connecting to the network</div>
+                    <div class="friends-layout">
+                        <div class="friends-main">
+                            <div class="friends-search-wrapper">
+                                <input type="text" class="friends-search-input" placeholder="Search" oninput="filterFriends(this.value)">
+                            </div>
+                            <div id="friends-count-label" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:15px;">Online — 0</div>
+                            <div id="friends-view"></div>
+                        </div>
+                        <div class="active-now-sidebar">
+                            <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 20px;">Active Now</h3>
+                            <div id="active-now-list">
+                                <div style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:20px; opacity:0.5;">
+                                    <div style="font-size:0.9rem; font-weight:700; margin-bottom:5px;">It's quiet for now...</div>
+                                    <div style="font-size:0.8rem;">When a friend starts an activity—like playing a game or hanging out on voice—it'll show up here!</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>`;
 
             const view = document.getElementById('friends-view');
+            const countLabel = document.getElementById('friends-count-label');
 
             if (!window.supabaseClient) {
                 view.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">System Offline</div><div class="empty-state-text">Please log in to access friends.</div></div>';
@@ -2577,55 +2527,220 @@
             }
 
             if (tab === 'add') {
+                countLabel.style.display = 'none';
                 view.innerHTML = `
-                    <div style="padding:20px;">
-                        <h3 style="margin-bottom:10px; font-size:1.1rem;">Add Friend</h3>
-                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Enter a Nexus username to send a friend request.</p>
-                        <div style="background:#1e1f22; padding:15px; border-radius:8px; display:flex; gap:10px;">
-                            <input type="text" id="friend-search" placeholder="Enter username" style="flex:1; border:none; background:transparent; padding:0; color:var(--text-main); font-family:inherit; font-size:0.95rem;">
-                            <button onclick="sendFriendRequest(document.getElementById('friend-search').value)" style="padding:10px 20px; background:var(--accent); color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Send Request</button>
+                    <div style="padding:0;">
+                        <h3 style="margin-bottom:10px; font-size:1.1rem; text-transform:uppercase; font-weight:800;">Add Friend</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">You can add friends with their Nexus tag. It's Case SenSitiVe!</p>
+                        <div style="background:#1e1f22; padding:15px; border-radius:8px; display:flex; gap:10px; border:1px solid rgba(0,0,0,0.3);">
+                            <input type="text" id="friend-search-input-box" placeholder="Enter a Username#0000" style="flex:1; border:none; background:transparent; padding:0; color:var(--text-main); font-family:inherit; font-size:1rem; outline:none;">
+                            <button onclick="sendFriendRequest(document.getElementById('friend-search-input-box').value)" style="padding:10px 25px; background:var(--accent); color:#fff; border:none; border-radius:3px; font-weight:600; cursor:pointer;">Send Friend Request</button>
                         </div>
                     </div>`;
-            } else if (tab === 'all') {
-                const { data } = await window.supabaseClient
-                    .from('friend_requests')
-                    .select('*')
-                    .eq('status', 'accepted')
-                    .or(`from_user.eq.${state.me},to_user.eq.${state.me}`);
-
-                if (!data || data.length === 0) {
-                    view.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👻</div><div class="empty-state-title">No Friends Yet</div><div class="empty-state-text">Start connecting with others in the Nexus!</div></div>';
-                    return;
+            } else {
+                let friendsData = [];
+                if (tab === 'all' || tab === 'online') {
+                    const { data } = await window.supabaseClient
+                        .from('friend_requests')
+                        .select('*')
+                        .eq('status', 'accepted')
+                        .or(`from_user.eq.${state.me},to_user.eq.${state.me}`);
+                    friendsData = data || [];
+                    
+                    if (tab === 'online') {
+                        globalChannel.presence.get((err, members) => {
+                            const onlineUsers = members.map(m => m.data.user);
+                            friendsData = friendsData.filter(f => onlineUsers.includes(f.from_user === state.me ? f.to_user : f.from_user));
+                            renderFriendsList(friendsData, 'Online');
+                        });
+                        return;
+                    }
+                    renderFriendsList(friendsData, 'All Friends');
+                } else if (tab === 'pending') {
+                    const { data } = await window.supabaseClient
+                        .from('friend_requests')
+                        .select('*')
+                        .eq('status', 'pending')
+                        .or(`from_user.eq.${state.me},to_user.eq.${state.me}`);
+                    renderFriendsList(data || [], 'Pending', true);
                 }
+                
+                // Populate Active Now Sidebar with real online friends
+                globalChannel.presence.get(async (err, members) => {
+                    const activeNow = document.getElementById('active-now-list');
+                    activeNow.innerHTML = '';
+                    
+                    // Fetch accepted friends first to filter online list
+                    let friends = [];
+                    if (window.supabaseClient) {
+                        const { data } = await window.supabaseClient.from('friend_requests').select('*').eq('status', 'accepted').or(`from_user.eq.${state.me},to_user.eq.${state.me}`);
+                        friends = (data || []).map(f => f.from_user === state.me ? f.to_user : f.from_user);
+                    }
 
-                view.innerHTML = `<div style="padding:15px 0; font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">All Friends — ${data.length}</div>`;
+                    const onlineFriends = members.filter(m => m.data.user !== state.me && friends.includes(m.data.user));
+                    
+                    if (onlineFriends.length === 0) {
+                        activeNow.innerHTML = `
+                            <div style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:20px; opacity:0.5;">
+                                <div style="font-size:0.9rem; font-weight:700; margin-bottom:5px;">It's quiet for now...</div>
+                                <div style="font-size:0.8rem;">When a friend starts an activity, it'll show up here!</div>
+                            </div>`;
+                        return;
+                    }
 
-                for (const friend of data) {
-                    const otherUser = friend.from_user === state.me ? friend.to_user : friend.from_user;
-                    const item = createFriendItem(otherUser, friend.id);
-                    view.appendChild(item);
-                }
-            } else if (tab === 'pending') {
-                const { data } = await window.supabaseClient
-                    .from('friend_requests')
-                    .select('*')
-                    .eq('status', 'pending')
-                    .or(`from_user.eq.${state.me},to_user.eq.${state.me}`);
-
-                if (!data || data.length === 0) {
-                    view.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">No Pending Requests</div><div class="empty-state-text">When someone sends you a request, it will appear here.</div></div>';
-                    return;
-                }
-
-                view.innerHTML = `<div style="padding:15px 0; font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Pending — ${data.length}</div>`;
-
-                data.forEach(request => {
-                    const isIncoming = request.to_user === state.me;
-                    const otherUser = isIncoming ? request.from_user : request.to_user;
-                    const item = createFriendItem(otherUser, request.id, isIncoming);
-                    view.appendChild(item);
+                    for (const m of onlineFriends) {
+                        const user = m.data.user;
+                        const status = m.data.customStatus || m.data.statusMode || 'Online';
+                        const pic = m.data.pic || 'https://via.placeholder.com/32';
+                        
+                        const item = document.createElement('div');
+                        item.className = 'active-now-item';
+                        item.style.cssText = 'background:#1e1f22; padding:12px; border-radius:8px; display:flex; align-items:center; gap:12px; cursor:pointer; margin-bottom:10px; border:1px solid rgba(255,255,255,0.05); transition:0.2s;';
+                        item.onmouseover = () => item.style.background = '#2b2d31';
+                        item.onmouseout = () => item.style.background = '#1e1f22';
+                        item.onclick = () => showProfileSummary(user);
+                        
+                        item.innerHTML = `
+                            <div style="position:relative; width:36px; height:36px; flex-shrink:0;">
+                                <img src="${pic}" style="border-radius:50%; width:100%; height:100%; object-fit:cover;">
+                                <div class="status-dot status-${m.data.statusMode || 'online'}" style="width:12px; height:12px; border:3px solid #1e1f22; bottom:-2px; right:-2px;"></div>
+                            </div>
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-weight:700; font-size:0.85rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${user}</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${status}</div>
+                            </div>
+                        `;
+                        activeNow.appendChild(item);
+                    }
                 });
             }
+        }
+
+        // ============================================
+        // SERVER SYSTEM
+        // ============================================
+        function setServer(serverId) {
+            // Update UI
+            document.querySelectorAll('.server-icon').forEach(icon => icon.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const sidebarHeader = document.getElementById('sidebar-header');
+            const sidebarHome = document.getElementById('sidebar-home-content');
+            
+            // Remove existing server content if any
+            const existingServer = document.getElementById('sidebar-server-content');
+            if (existingServer) existingServer.remove();
+
+            if (serverId === 'home') {
+                sidebarHeader.style.display = 'block';
+                sidebarHome.style.display = 'block';
+                setMode('friends');
+            } else {
+                sidebarHeader.style.display = 'none';
+                sidebarHome.style.display = 'none';
+                
+                const serverNames = {
+                    'xusen': 'Xusen Intelligence Technology',
+                    'pakistan': 'Pakistan',
+                    'reaper': 'Reaper',
+                    'aahan': 'Aahan',
+                    'zohamoni': 'Zohamoni'
+                };
+                
+                const serverContent = document.createElement('div');
+                serverContent.id = 'sidebar-server-content';
+                serverContent.style.padding = '20px';
+                serverContent.innerHTML = `
+                    <h2 style="font-size:1rem; font-weight:800; margin-bottom:15px; color:#fff;">${serverNames[serverId] || 'Server'}</h2>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div class="user-link active" onclick="setMode('global')"># general</div>
+                        <div class="user-link" onclick="showNotification('Channel restricted')"># announcements</div>
+                        <div class="user-link" onclick="showNotification('Channel restricted')"># resources</div>
+                    </div>
+                `;
+                sidebarHome.parentNode.appendChild(serverContent);
+                setMode('global'); // Switch to global chat for now
+                document.getElementById('chat-title').textContent = '# general';
+            }
+        }
+
+        function filterFriends(q) {
+            const items = document.querySelectorAll('.friend-item');
+            items.forEach(item => {
+                const name = item.querySelector('.friend-info').innerText.toLowerCase();
+                item.style.display = name.includes(q.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        function showNitroDashboard() {
+            const container = document.getElementById('msgs');
+            document.querySelector('.input-area').style.display = 'none';
+            container.innerHTML = `
+                <div style="padding:40px; text-align:center; background:linear-gradient(180deg, #ff73fa 0%, #313338 100%); height:100%; color:#fff;">
+                    <h1 style="font-size:2.5rem; font-weight:900; margin-bottom:10px;">Unleash more fun with Nitro</h1>
+                    <p style="font-size:1.1rem; opacity:0.9; margin-bottom:30px;">Get amazing perks like custom emojis, larger file shares, and HD streaming.</p>
+                    <button onclick="showNotification('Nitro coming soon!')" style="padding:15px 40px; background:#fff; color:#ff73fa; border:none; border-radius:30px; font-weight:900; font-size:1rem; cursor:pointer;">Subscribe Now</button>
+                </div>
+            `;
+        }
+
+        function showShopDashboard() {
+            const container = document.getElementById('msgs');
+            document.querySelector('.input-area').style.display = 'none';
+            container.innerHTML = `
+                <div style="padding:30px;">
+                    <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:20px;">Shop</h2>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:20px;">
+                        <div style="background:#2b2d31; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="height:120px; background:#5865f2;"></div>
+                            <div style="padding:15px;">
+                                <div style="font-weight:700;">Cyber Frame</div>
+                                <div style="color:var(--text-muted); font-size:0.8rem;">Avatar decoration</div>
+                                <button style="width:100%; margin-top:10px; padding:8px; background:#5865f2; border:none; color:#fff; border-radius:4px;">$4.99</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showQuestsDashboard() {
+            const container = document.getElementById('msgs');
+            document.querySelector('.input-area').style.display = 'none';
+            container.innerHTML = `
+                <div style="padding:30px;">
+                    <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:10px;">Quests</h2>
+                    <p style="color:var(--text-muted); margin-bottom:20px;">Complete quests to earn rewards!</p>
+                    <div style="background:#2b2d31; padding:20px; border-radius:12px; display:flex; align-items:center; gap:20px; border:1px solid var(--accent);">
+                        <div style="font-size:2rem;">🎮</div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;">Play for 30 minutes</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted);">Reach the goal to earn a unique badge</div>
+                        </div>
+                        <div style="font-weight:800; color:var(--accent);">0%</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFriendsList(data, label, isPending = false) {
+            const view = document.getElementById('friends-view');
+            const countLabel = document.getElementById('friends-count-label');
+            
+            if (!data || data.length === 0) {
+                countLabel.textContent = `${label} — 0`;
+                view.innerHTML = '<div class="empty-state" style="padding-top:100px;"><div class="empty-state-icon">👻</div><div class="empty-state-title">No one here...</div></div>';
+                return;
+            }
+
+            countLabel.textContent = `${label} — ${data.length}`;
+            view.innerHTML = '';
+            data.forEach(friend => {
+                const isIncoming = friend.to_user === state.me;
+                const otherUser = friend.from_user === state.me ? friend.to_user : friend.from_user;
+                const item = createFriendItem(otherUser, friend.id, isPending && isIncoming);
+                view.appendChild(item);
+            });
         }
 
         function createFriendItem(username, requestId, isIncoming = false) {
@@ -2633,36 +2748,49 @@
             item.className = 'friend-item';
             item.innerHTML = `
                 <div class="friend-info">
-                    <img id="f-pfp-${username}" src="https://via.placeholder.com/40" alt="${username}">
-                    <div>
-                        <div class="friend-name">${username}</div>
-                        <div class="friend-subtitle">${isIncoming ? 'Incoming request' : 'Nexus Member'}</div>
+                    <div style="position:relative; width:32px; height:32px;">
+                        <img id="f-pfp-${username}" src="https://via.placeholder.com/32" alt="${username}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                        <div id="f-status-${username}" class="status-dot status-offline" style="width:10px; height:10px; border-width:2px; bottom:0; right:0;"></div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; min-width:0;">
+                        <div style="font-weight:700; font-size:0.95rem; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${username}</div>
+                        <div id="f-subtitle-${username}" style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Offline</div>
                     </div>
                 </div>
-                <div class="friend-actions">
-                    <button class="friend-action-btn" onclick="event.stopPropagation(); setMode('dm', '${username}')" title="Message">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                <div class="friend-actions" style="gap:8px;">
+                    <button class="friend-action-btn" onclick="event.stopPropagation(); setMode('dm', '${username}')" style="background:#2b2d31; border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); cursor:pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    </button>
+                    <button class="friend-action-btn" style="background:#2b2d31; border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); cursor:pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                     </button>
                     ${isIncoming ? `
-                        <button class="friend-action-btn accept" onclick="event.stopPropagation(); acceptFriend('${requestId}', '${username}')" title="Accept">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                        <button class="friend-action-btn accept" onclick="event.stopPropagation(); acceptFriend('${requestId}', '${username}')" style="background:var(--success); color:#fff; border:none; border-radius:50%; width:36px; height:36px; cursor:pointer;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
                         </button>
                     ` : ''}
-                    <button class="friend-action-btn decline" onclick="event.stopPropagation(); declineFriend('${requestId}')" title="Remove">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
                 </div>`;
 
             item.onclick = () => showProfileSummary(username);
 
-            // Fetch profile picture
+            // Fetch profile picture and status
             if (window.supabaseClient) {
-                window.supabaseClient.from('profiles').select('avatar_url').eq('username', username).maybeSingle().then(({ data }) => {
-                    if (data && data.avatar_url) {
-                        document.getElementById('f-pfp-' + username).src = data.avatar_url;
+                window.supabaseClient.from('profiles').select('avatar_url, status').eq('username', username).maybeSingle().then(({ data }) => {
+                    if (data) {
+                        if (data.avatar_url) document.getElementById('f-pfp-' + username).src = data.avatar_url;
+                        if (data.status) document.getElementById('f-subtitle-' + username).textContent = data.status;
                     }
                 });
             }
+
+            // Sync online status
+            globalChannel.presence.get((err, members) => {
+                const isOnline = members.some(m => m.data.user === username);
+                if (isOnline) {
+                    const dot = document.getElementById('f-status-' + username);
+                    if (dot) dot.className = 'status-dot status-online';
+                }
+            });
 
             return item;
         }
