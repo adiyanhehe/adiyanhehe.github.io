@@ -2212,8 +2212,76 @@
         }
 
         // ============================================
-        // SEND MESSAGES (Unified - handles global, DM, and group)
-        // The main send() function is defined later in the GROUP CHAT section
+        // MESSAGE STATUS SYSTEM (Sent, Delivered, Read)
+        // ============================================
+        async function updateMessageStatus(messageId, status, userId = null) {
+            if (!window.supabaseClient || !messageId) return;
+            
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('message_status')
+                    .upsert({
+                        message_id: messageId,
+                        user_id: userId || state.me,
+                        status: status,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'message_id,user_id' });
+                
+                if (error) console.error('Message status update failed:', error);
+            } catch (e) {
+                console.error('Message status error:', e);
+            }
+        }
+
+        async function getMessageStatus(messageId) {
+            if (!window.supabaseClient || !messageId) return null;
+            
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('message_status')
+                    .select('*')
+                    .eq('message_id', messageId)
+                    .eq('user_id', state.me)
+                    .maybeSingle();
+                
+                if (error) throw error;
+                return data;
+            } catch (e) {
+                console.error('Get message status error:', e);
+                return null;
+            }
+        }
+
+        function renderMessageStatus(messageId, status) {
+            const messageEl = document.getElementById(messageId);
+            if (!messageEl) return;
+            
+            const existingStatus = messageEl.querySelector('.message-status');
+            if (existingStatus) existingStatus.remove();
+            
+            const statusEl = document.createElement('span');
+            statusEl.className = 'message-status';
+            statusEl.style.cssText = 'font-size:0.7rem; color:var(--text-muted); margin-left:8px; opacity:0.6;';
+            
+            switch(status) {
+                case 'sent':
+                    statusEl.innerHTML = '✓';
+                    break;
+                case 'delivered':
+                    statusEl.innerHTML = '✓✓';
+                    break;
+                case 'read':
+                    statusEl.innerHTML = '✓✓';
+                    statusEl.style.color = '#43b581';
+                    break;
+            }
+            
+            const metaEl = messageEl.querySelector('.message-meta');
+            if (metaEl) metaEl.appendChild(statusEl);
+        }
+
+        // ============================================
+        // ENHANCED SEND WITH STATUS TRACKING
         // ============================================
 
         // ============================================
@@ -2304,6 +2372,8 @@
                     persistDM(target, m.data);
                     if (state.mode === 'dm' && state.target === target) {
                         renderMessage(m.data);
+                        // Mark as read immediately when receiving in active conversation
+                        if (m.data.id) renderMessageStatus(m.data.id, 'read');
                     }
                 });
 
@@ -2312,6 +2382,12 @@
                 });
 
                 loadDMHistory(target);
+                
+                // Mark all messages from this user as read
+                markMessagesAsRead(target);
+                
+                // Check Supabase for any undelivered messages
+                fetchUndeliveredMessages(target);
             } else if (mode === 'saved') {
                 document.getElementById('chat-title').textContent = '★ Bookmarks';
                 document.querySelector('.input-area').style.display = 'none';
@@ -3503,13 +3579,15 @@
         }
 
         // ============================================
-        // ENHANCED MESSAGE SENDING FOR GROUPS
+        // ENHANCED MESSAGE SENDING WITH STATUS TRACKING
         // ============================================
         function send() {
             const input = document.getElementById('mIn');
             if (!input.value.trim()) return;
 
+            const messageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
             const messageData = {
+                id: messageId,
                 user: state.me,
                 text: input.value,
                 pic: localStorage.getItem('rbx_pic'),
@@ -3518,20 +3596,31 @@
 
             if (state.mode === 'global') {
                 globalChannel.publish('msg', messageData);
+                // Show sent status for global messages
+                setTimeout(() => renderMessageStatus(messageId, 'delivered'), 1000);
             } else if (state.mode === 'dm' && state.target) {
+                // Mark as sent immediately
+                renderMessageStatus(messageId, 'sent');
+                
                 // Send to the shared DM room
                 if (state.currentDMChannel) {
                     state.currentDMChannel.publish('msg', messageData);
                 }
 
-                // Also send ping to recipient's personal channel
+                // Also send to recipient's personal channel for offline delivery
                 ably.channels.get('dm-' + state.target).publish('msg', messageData);
+
+                // Store in Supabase for offline delivery tracking
+                storeMessageInSupabase(state.target, messageData);
 
                 // Persist locally
                 persistDM(state.target, messageData);
 
                 // Render our own message
                 renderMessage(messageData);
+                
+                // Update to delivered after a short delay
+                setTimeout(() => renderMessageStatus(messageId, 'delivered'), 1500);
             } else if (state.mode === 'group' && state.target) {
                 // Save to group messages
                 const key = `group_${state.target}_messages`;
@@ -3539,11 +3628,106 @@
                 messages.push(messageData);
                 localStorage.setItem(key, JSON.stringify(messages));
 
+                // Show sent status
+                renderMessageStatus(messageId, 'sent');
+                setTimeout(() => renderMessageStatus(messageId, 'delivered'), 1000);
+
                 // Render message
                 renderMessage(messageData);
             }
 
             input.value = '';
+        }
+
+        // Store message in Supabase for offline delivery and status tracking
+        async function storeMessageInSupabase(recipient, messageData) {
+            if (!window.supabaseClient) return;
+            
+            try {
+                await window.supabaseClient.from('messages').insert([{
+                    id: messageData.id,
+                    sender_id: state.me,
+                    recipient_id: recipient,
+                    content: messageData.text,
+                    status: 'sent',
+                    created_at: new Date().toISOString()
+                }]);
+            } catch (e) {
+                console.error('Failed to store message in Supabase:', e);
+            }
+        }
+
+        // Fetch undelivered messages from Supabase (for offline delivery)
+        async function fetchUndeliveredMessages(recipient) {
+            if (!window.supabaseClient) return;
+            
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('messages')
+                    .select('*')
+                    .eq('sender_id', recipient)
+                    .eq('recipient_id', state.me)
+                    .in('status', ['sent', 'delivered'])
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                    // Convert Supabase messages to chat format and render
+                    data.forEach(msg => {
+                        const messageData = {
+                            id: msg.id,
+                            user: msg.sender_id,
+                            text: msg.content,
+                            pic: localStorage.getItem('rbx_pic'),
+                            time: new Date(msg.created_at).getTime()
+                        };
+                        
+                        // Only render if not already shown
+                        if (!document.getElementById(msg.id)) {
+                            renderMessage(messageData);
+                            // Mark as read in database
+                            updateMessageStatus(msg.id, 'read');
+                        }
+                    });
+                    
+                    // Update messages status to read in Supabase
+                    await window.supabaseClient
+                        .from('messages')
+                        .update({ status: 'read', read_at: new Date().toISOString() })
+                        .in('id', data.map(m => m.id));
+                }
+            } catch (e) {
+                console.error('Failed to fetch undelivered messages:', e);
+            }
+        }
+
+        // Mark messages as read when viewing a DM conversation
+        async function markMessagesAsRead(recipient) {
+            if (!window.supabaseClient) return;
+            
+            try {
+                await window.supabaseClient
+                    .from('messages')
+                    .update({ status: 'read', read_at: new Date().toISOString() })
+                    .eq('sender_id', recipient)
+                    .eq('recipient_id', state.me)
+                    .eq('status', 'delivered');
+                
+                // Update UI for all messages from this user
+                const messages = document.querySelectorAll('.message');
+                messages.forEach(msg => {
+                    if (msg.querySelector('.message-author')?.textContent === recipient) {
+                        const statusEl = msg.querySelector('.message-status');
+                        if (statusEl) {
+                            statusEl.innerHTML = '✓✓';
+                            statusEl.style.color = '#43b581';
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Failed to mark messages as read:', e);
+            }
         }
 
         // ============================================
