@@ -146,8 +146,9 @@ function injectUniversalHeader() {
                 <div id="auth-nav"></div>
             </nav>
         `;
-        header.style.height = '48px'; // Make it smaller for the chat app
-        header.style.padding = '0 20px';
+        header.style.setProperty('height', '48px', 'important'); // Enforce strict 48px height
+        header.style.setProperty('padding', '0 20px', 'important');
+        header.style.setProperty('background', '#111214', 'important');
     } else {
         header.innerHTML = `
             <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
