@@ -2021,7 +2021,7 @@
             }, 100);
             initPickers();
             initDMList();
-            initGroupList();
+            // initGroupList() will be called after syncSelf confirms identity
             // These listeners will be called inside syncSelf once state.me is ready
         
 
@@ -2623,10 +2623,23 @@
         // DM PERSISTENCE
         // ============================================
         function persistDM(username, data) {
+            // Store under the target user's key (for the sender's view)
             const key = `dm_history_${username}`;
             let history = JSON.parse(localStorage.getItem(key) || '[]');
-            history.push(data);
-            localStorage.setItem(key, JSON.stringify(history));
+            // Avoid duplicates
+            if (!history.find(h => h.id === data.id)) {
+                history.push(data);
+                localStorage.setItem(key, JSON.stringify(history));
+            }
+
+            // Also store under the other participant's key for proper history
+            // If current user is "me" and target is "username", store in dm_history_me_username
+            const sharedKey = `dm_history_${[state.me, username].sort().join('_')}`;
+            let sharedHistory = JSON.parse(localStorage.getItem(sharedKey) || '[]');
+            if (!sharedHistory.find(h => h.id === data.id)) {
+                sharedHistory.push(data);
+                localStorage.setItem(sharedKey, JSON.stringify(sharedHistory));
+            }
 
             // Track active DMs
             let dmUsers = JSON.parse(localStorage.getItem('nexus_dm_users') || '[]');
@@ -2640,13 +2653,27 @@
             // Only load DM history if we're actually in DM mode with this specific user
             if (state.mode !== 'dm' || state.target !== username) return;
 
-            // Verify this is a DM between current user and target
-            const expectedRoomName = ['dm_room', state.me, username].sort().join('_');
+            // Use shared key for consistent history between both users
+            const sharedKey = `dm_history_${[state.me, username].sort().join('_')}`;
+            const history = JSON.parse(localStorage.getItem(sharedKey) || '[]');
 
-            const history = JSON.parse(localStorage.getItem(`dm_history_${username}`) || '[]');
+            // Also check the old per-user key for backwards compatibility
+            const oldKey = `dm_history_${username}`;
+            const oldHistory = JSON.parse(localStorage.getItem(oldKey) || '[]');
+
+            // Merge and deduplicate histories
+            const mergedHistory = [...history];
+            oldHistory.forEach(msg => {
+                if (!mergedHistory.find(h => h.id === msg.id)) {
+                    mergedHistory.push(msg);
+                }
+            });
+
+            // Sort by timestamp
+            mergedHistory.sort((a, b) => (a.time || 0) - (b.time || 0));
 
             // Filter to only show messages where current user is participant
-            const filteredHistory = history.filter(msg =>
+            const filteredHistory = mergedHistory.filter(msg =>
                 msg.user === state.me || msg.user === username
             );
 
@@ -3215,6 +3242,9 @@
                 setupMessageListeners();
                 setupDMListeners();
                 state.listenersInitialized = true;
+                
+                // Initialize group list after identity is confirmed
+                initGroupList();
             }
             
             const currentStatus = localStorage.getItem('nexus_status_mode') || 'online';
@@ -4101,54 +4131,65 @@
         function createFriendItem(username, requestId, isIncoming = false) {
             const item = document.createElement('div');
             item.className = 'friend-item';
-
-            // Get user bio and status
-            let bio = '';
-            let status = 'Online';
-            let statusClass = 'status-online';
-
-            if (window.supabaseClient) {
-                window.supabaseClient.from('profiles').select('bio').eq('username', username).maybeSingle().then(({ data }) => {
-                    if (data && data.bio) {
-                        bio = data.bio;
-                        item.querySelector('.friend-bio').textContent = bio;
-                    }
-                });
-            }
-
             item.innerHTML = `
                 <div class="friend-info">
-                    <div class="friend-avatar-wrapper">
-                        <img id="f-pfp-${username}" src="https://via.placeholder.com/40" alt="${username}">
-                        <div class="friend-status-dot status-${statusClass}"></div>
+                    <div style="position:relative; width:32px; height:32px;">
+                        <img id="f-pfp-${username}" src="https://via.placeholder.com/32" alt="${username}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                        <div id="f-status-${username}" class="status-dot status-offline" style="width:10px; height:10px; border-width:2px; bottom:0; right:0;"></div>
                     </div>
-                    <div class="friend-details">
-                        <div class="friend-name">${username}</div>
-                        <div class="friend-bio">${bio || 'No bio available'}</div>
+                    <div style="display:flex; flex-direction:column; min-width:0;">
+                        <div style="font-weight:700; font-size:0.95rem; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${username}</div>
+                        <div id="f-subtitle-${username}" style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Offline</div>
                     </div>
                 </div>
-                <div class="friend-actions">
-                    <button class="friend-action-btn" onclick="event.stopPropagation(); setMode('dm', '${username}')" title="Message">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                <div class="friend-actions" style="gap:8px;">
+                    <button class="friend-action-btn" onclick="event.stopPropagation(); setMode('dm', '${username}')" style="background:#2b2d31; border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); cursor:pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    </button>
+                    <button class="friend-action-btn" style="background:#2b2d31; border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); cursor:pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                     </button>
                     ${isIncoming ? `
-                        <button class="friend-action-btn accept" onclick="event.stopPropagation(); acceptFriend('${requestId}', '${username}')" title="Accept">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                        <button class="friend-action-btn accept" onclick="event.stopPropagation(); acceptFriend('${requestId}', '${username}')" style="background:var(--success); color:#fff; border:none; border-radius:50%; width:36px; height:36px; cursor:pointer;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
                         </button>
                     ` : ''}
-                    <button class="friend-action-btn decline" onclick="event.stopPropagation(); declineFriend('${requestId}')" title="Remove">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
                 </div>`;
 
             item.onclick = () => showProfileSummary(username);
 
-            // Fetch profile picture
-            if (window.supabaseClient) {
-                window.supabaseClient.from('profiles').select('avatar_url').eq('username', username).maybeSingle().then(({ data }) => {
-                    if (data && data.avatar_url) {
-                        document.getElementById('f-pfp-' + username).src = data.avatar_url;
+            // Fetch profile picture - check localStorage cache first, then Supabase
+            const cachedPfp = localStorage.getItem('pfp_' + username);
+            if (cachedPfp) {
+                const pfpEl = document.getElementById('f-pfp-' + username);
+                if (pfpEl) pfpEl.src = cachedPfp;
+            } else if (window.supabaseClient) {
+                window.supabaseClient.from('profiles').select('avatar_url, status').eq('username', username).maybeSingle().then(({ data }) => {
+                    if (data) {
+                        if (data.avatar_url) {
+                            localStorage.setItem('pfp_' + username, data.avatar_url);
+                            const pfpEl = document.getElementById('f-pfp-' + username);
+                            if (pfpEl) pfpEl.src = data.avatar_url;
+                        }
+                        if (data.status) {
+                            const subtitleEl = document.getElementById('f-subtitle-' + username);
+                            if (subtitleEl) subtitleEl.textContent = data.status;
+                        }
                     }
+                }).catch(err => console.error('Failed to fetch profile for', username, err));
+            }
+
+            // Sync online status
+            globalChannel.presence.get((err, members) => {
+                const isOnline = members.some(m => m.data.user === username);
+                if (isOnline) {
+                    const dot = document.getElementById('f-status-' + username);
+                    if (dot) dot.className = 'status-dot status-online';
+                }
+            });
+
+            return item;
+        }
                 });
             }
 
