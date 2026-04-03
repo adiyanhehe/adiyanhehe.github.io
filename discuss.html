@@ -59,7 +59,7 @@
 
         /* Right Sidebar (Member/Profile) */
         .right-sidebar { width: var(--right-sidebar-width); background: var(--bg-sidebar); border-left: 1px solid rgba(255,255,255,0.05); overflow-y: auto; flex-shrink: 0; }
-        .profile-card { background: var(--bg-popout); border-radius: 8px; margin: 16px; overflow: hidden; position: relative; }
+        .sidebar-profile-card { background: var(--bg-popout); border-radius: 8px; margin: 16px; overflow: hidden; position: relative; }
         .profile-banner { height: 100px; background: linear-gradient(135deg, #222, #444); }
         .pfp-wrap { margin-top: -30px; padding: 0 16px; margin-bottom: 12px; }
         .pfp-wrap img { width: 120px; height: 120px; border-radius: 50%; border: 8px solid var(--bg-sidebar); }
@@ -195,7 +195,7 @@
             backdrop-filter: blur(10px);
         }
 
-        .profile-card {
+        .profile-modal-card {
             background: #1a1c20;
             width: 400px;
             border-radius: 16px;
@@ -1203,7 +1203,7 @@
                 const targetUser = state.target;
                 const pic = localStorage.getItem('pfp_' + targetUser) || 'jay.png';
                 sidebar.innerHTML = `
-                    <div class="profile-card" style="margin:0; border-radius:0; background: var(--bg-sidebar);">
+                    <div class="sidebar-profile-card" style="margin:0; border-radius:0; background: var(--bg-sidebar);">
                         <div class="profile-banner" style="height:120px; background:linear-gradient(45deg, #222, #444);"></div>
                         <div class="pfp-wrap" style="padding:0 16px;">
                             <img src="${pic}" style="width:120px; height:120px; border:8px solid var(--bg-sidebar);">
@@ -1477,10 +1477,10 @@
             // Check for duplicate message
             if (document.getElementById(messageId)) return;
 
-            // Skip very old messages (older than 24 hours for global, keep DMs)
+            // Skip old messages (longer than 30 days for global, keep DMs)
             if (state.mode === 'global' && data.time) {
                 const msgAge = Date.now() - data.time;
-                if (msgAge > 24 * 60 * 60 * 1000) return; // Skip messages older than 24 hours
+                if (msgAge > 30 * 24 * 60 * 60 * 1000) return; // Skip messages older than 30 days
             }
 
             // Process message text (mentions, images)
@@ -2551,7 +2551,7 @@
             modal.className = 'profile-modal';
             modal.id = 'profile-modal';
             modal.innerHTML = `
-                <div class="profile-card">
+                <div class="profile-modal-card">
                     <div class="profile-header">
                         <div class="profile-actions">
                             <button class="profile-action-btn" onclick="closeProfileModal()">Close</button>
@@ -2595,7 +2595,7 @@
 
             // Show modal with animation
             modal.style.display = 'flex';
-            gsap.from('.profile-card', { scale: 0.8, opacity: 0, duration: 0.4, ease: 'back.out(1.7)' });
+            gsap.from('.profile-modal-card', { scale: 0.8, opacity: 0, duration: 0.4, ease: 'back.out(1.7)' });
         }
 
         function closeProfileModal() {
