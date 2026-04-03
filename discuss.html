@@ -1740,6 +1740,20 @@
                     <!-- Dynamically populated by initDMList() -->
                 </div>
 
+                <div class="section-header">
+                    Group Chats
+                    <span class="add-btn" onclick="createGroup()" title="Create Group Chat" style="font-size:1.1rem;">👥</span>
+                </div>
+                <div id="group-list" style="padding-bottom: 10px;"></div>
+
+                <div class="section-header">
+                    Actions
+                </div>
+                <div class="user-link" onclick="promptNewDM()" style="padding:10px 15px; margin:2px 8px; border-radius:6px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; gap:12px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    New DM
+                </div>
+
                 <!-- User Profile Slot -->
                 <div class="user-slot" id="user-slot" style="background: #080808; padding: 8px 10px;">
                     <div class="user-slot-avatar" onclick="cycleStatus()" style="width: 32px; height: 32px;">
@@ -1871,6 +1885,7 @@
             }, 100);
             initPickers();
             initDMList();
+            initGroupList();
             setupPresence();
             setupMessageListeners();
             setupDMListeners();
@@ -2617,8 +2632,59 @@
         }
 
         // ============================================
-        // SERVER SYSTEM
+        // GROUP CHAT SYSTEM
         // ============================================
+        function initGroupList() {
+            const groupList = document.getElementById('group-list');
+            if(!groupList) return;
+            const groups = JSON.parse(localStorage.getItem('nexus_groups') || '[]');
+            
+            if (groups.length === 0) {
+                groupList.innerHTML = '<div style="padding:10px 15px; color:var(--text-muted); font-size:0.8rem;">No groups yet. Click 👥 to create one!</div>';
+            } else {
+                groupList.innerHTML = '';
+                groups.forEach(group => {
+                    const item = document.createElement('div');
+                    item.className = 'user-link';
+                    item.style.cssText = 'padding:10px 15px; margin:2px 8px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:12px;';
+                    item.innerHTML = `
+                        <div style="width:32px; height:32px; background:linear-gradient(135deg, var(--accent), #33b8ff); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem;">${group.name.charAt(0)}</div>
+                        <div style="flex:1; font-weight:600; font-size:0.9rem; color:var(--text-main);">${group.name}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">${group.members.length} members</div>
+                    `;
+                    item.onclick = () => joinGroup(group.id);
+                    groupList.appendChild(item);
+                });
+            }
+        }
+
+        function createGroup() {
+            const name = prompt('Enter group name:');
+            if (!name) return;
+            const groups = JSON.parse(localStorage.getItem('nexus_groups') || '[]');
+            const newGroup = {
+                id: 'group_' + Date.now(),
+                name: name,
+                members: [state.me],
+                created: Date.now()
+            };
+            groups.push(newGroup);
+            localStorage.setItem('nexus_groups', JSON.stringify(groups));
+            initGroupList();
+            showNotification(`Group "${name}" created!`);
+        }
+
+        function joinGroup(groupId) {
+            state.mode = 'group';
+            state.target = groupId;
+            const groups = JSON.parse(localStorage.getItem('nexus_groups') || '[]');
+            const group = groups.find(g => g.id === groupId);
+            if (group) {
+                document.getElementById('chat-title').textContent = '# ' + group.name;
+                document.querySelector('.input-area').style.display = 'block';
+                document.getElementById('msgs').innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">Welcome to the beginning of the # ${group.name} group chat.</div>`;
+            }
+        }
         function setServer(serverId) {
             // Update UI
             document.querySelectorAll('.server-icon').forEach(icon => icon.classList.remove('active'));
