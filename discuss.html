@@ -1962,7 +1962,7 @@
                                         and oh i know its hard to see you but i wish you...
                                     </div>
                                     <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; padding: 6px; background: #111214; z-index: 2; margin-top: 10px;">
-                                        <img src="\${localStorage.getItem('rbx_pic') || 'jay.png'}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                        <img src="${localStorage.getItem('rbx_pic') || 'jay.png'}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                                         <div style="position: absolute; bottom: 0px; right: 0px; width: 22px; height: 22px; background: #111214; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                                             <div style="width: 16px; height: 16px; background: #da373c; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;">
                                                 <div style="width: 8px; height: 2px; background: #111214; border-radius: 1px;"></div>
@@ -1983,7 +1983,7 @@
 
                             <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Nameplate</div>
                             <div style="background:#2b2d31; border-radius:8px; display:flex; align-items:center; padding:12px 16px; gap:12px;">
-                                <img src="\${localStorage.getItem('rbx_pic') || 'jay.png'}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+                                <img src="${localStorage.getItem('rbx_pic') || 'jay.png'}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
                                 <span style="font-size:0.9rem; font-weight:700; color:#f2f3f5;">Adiyan</span>
                                 <div style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; line-height: 1;">
                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22h20L12 2z"/></svg>
@@ -4481,6 +4481,7 @@
     </div>
 
     <!-- Settings Overlay -->
+    <div id="settings-overlay" class="settings-overlay">
         <div class="settings-sidebar">
             <div
                 style="width: 190px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase;">
