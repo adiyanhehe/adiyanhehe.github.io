@@ -139,17 +139,28 @@ function injectUniversalHeader() {
     }
     const path = window.location.pathname.split('/').pop() || 'index.html';
 
-    header.innerHTML = `
-        <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
-        <nav class="nav-links">
-            <a href="index.html" class="nav-item ${path === 'index.html' ? 'active' : ''}">Nexus</a>
-            <a href="threads.html" class="nav-item ${path === 'threads.html' ? 'active' : ''}">Threads</a>
-            <a href="discuss.html" class="nav-item ${path === 'discuss.html' ? 'active' : ''}">Discuss</a>
-            <a href="roblox.html" class="nav-item ${path === 'roblox.html' ? 'active' : ''}">Roblox</a>
-            <div id="auth-nav"></div>
-            <button class="nav-item interactable theme-toggle" onclick="toggleTheme(event)">${currentTheme === 'light' ? '🌙' : '☀️'}</button>
-        </nav>
-    `;
+    if (path === 'discuss.html') {
+        header.innerHTML = `
+            <a href="index.html" class="logo interactable" style="font-size: 1rem; opacity: 0.7;">&larr; EXIT CHAT</a>
+            <nav class="nav-links">
+                <div id="auth-nav"></div>
+            </nav>
+        `;
+        header.style.height = '48px'; // Make it smaller for the chat app
+        header.style.padding = '0 20px';
+    } else {
+        header.innerHTML = `
+            <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-item ${path === 'index.html' ? 'active' : ''}">Nexus</a>
+                <a href="threads.html" class="nav-item ${path === 'threads.html' ? 'active' : ''}">Threads</a>
+                <a href="discuss.html" class="nav-item ${path === 'discuss.html' ? 'active' : ''}">Discuss</a>
+                <a href="roblox.html" class="nav-item ${path === 'roblox.html' ? 'active' : ''}">Roblox</a>
+                <div id="auth-nav"></div>
+                <button class="nav-item interactable theme-toggle" onclick="toggleTheme(event)">${currentTheme === 'light' ? '🌙' : '☀️'}</button>
+            </nav>
+        `;
+    }
     if (window.gsap) {
         gsap.to(header, { y: 0, opacity: 1, duration: 1, ease: 'power4.out', startAt: { y: -100, opacity: 0 } });
     }
