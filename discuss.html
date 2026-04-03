@@ -154,6 +154,7 @@
 
         .messages-container {
             flex: 1;
+            min-height: 0;
             overflow-y: auto;
             padding: 20px;
         }
@@ -1684,6 +1685,8 @@
                     </button>
                 </div>
 
+                <div class="sidebar-content">
+
                 <div id="sidebar-home-content">
                     <div class="user-link active" id="btn-friends" onclick="setMode('friends')">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;">
@@ -1742,6 +1745,8 @@
                     </svg>
                     New DM
                 </div>
+                
+                </div> <!-- End sidebar-content -->
 
                 <!-- User Profile Slot -->
                 <div class="user-slot-new" id="user-slot" onclick="toggleProfilePopout()">
