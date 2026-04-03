@@ -1345,8 +1345,8 @@
         }
 
         .gif-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
         }
 
         .gif-item {
@@ -1731,7 +1731,10 @@
 
                 <div class="section-header" style="margin-top: 10px;">
                     Direct Messages
-                    <span class="add-btn" onclick="promptNewDM()">+</span>
+                    <div style="display:flex; gap:8px;">
+                        <span class="add-btn" onclick="promptNewDM()" title="New DM">+</span>
+                        <span class="add-btn" onclick="createGroup()" title="Create Group Chat" style="font-size:1.1rem;">👥</span>
+                    </div>
                 </div>
                 <div id="dm-list"></div>
 
