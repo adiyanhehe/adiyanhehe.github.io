@@ -8,6 +8,8 @@
     <!-- Load GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- hCaptcha -->
+    <script src="https://hcaptcha.com/1/api.js" async defer></script>
     <style>
         :root {
             --bg: #030303;
@@ -138,10 +140,17 @@
             <input type="password" id="password" placeholder="••••••••">
         </div>
 
+        <!-- hCaptcha Widget -->
+        <div class="h-captcha" data-sitekey="6ca453be-5444-4a32-8392-0ed2cf1ce944" style="margin-bottom: 20px;"></div>
+
         <button class="btn-submit interactable" onclick="handleSubmit()" id="submit-btn" style="opacity: 1 !important; visibility: visible !important;">
             <div id="btn-text">Authenticate</div>
             <div id="btn-loader" class="loader"></div>
         </button>
+
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="#" onclick="showForgotPassword(); return false;" style="color: var(--accent); text-decoration: none; font-size: 0.85rem;">Forgot Password?</a>
+        </div>
     </div>
 
     <!-- Scripts at end -->
@@ -182,6 +191,112 @@
             t.innerText = msg; t.classList.add('active');
             setTimeout(() => t.classList.remove('active'), 3000);
         }
+
+        // Forgot Password Modal
+        function showForgotPassword() {
+            const modal = document.createElement('div');
+            modal.id = 'forgot-modal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:999998;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);';
+            modal.innerHTML = `
+                <div style="background:rgba(10,10,10,0.95);border:1px solid var(--border);border-radius:24px;padding:50px;max-width:420px;width:90%;position:relative;">
+                    <button onclick="closeForgotPassword()" style="position:absolute;top:15px;right:20px;background:none;border:none;color:#888;font-size:1.5rem;cursor:pointer;">&times;</button>
+                    <h2 style="font-size:1.5rem;margin-bottom:10px;color:#fff;">Reset Password</h2>
+                    <p style="color:#888;font-size:0.85rem;margin-bottom:25px;">Enter your email to receive a password reset link.</p>
+                    
+                    <!-- hCaptcha for forgot password -->
+                    <div class="h-captcha" data-sitekey="6ca453be-5444-4a32-8392-0ed2cf1ce944" style="margin-bottom:20px;"></div>
+                    
+                    <div class="input-group">
+                        <span class="input-label">Email Address</span>
+                        <input type="email" id="reset-email" placeholder="agent@nexus.net">
+                    </div>
+                    <button class="btn-submit interactable" onclick="handleResetPassword()" style="margin-bottom:15px;">
+                        <div>Send Reset Link</div>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            gsap.from(modal.querySelector('div'), {scale: 0.8, opacity: 0, duration: 0.4, ease: 'back.out(1.7)'});
+        }
+
+        function closeForgotPassword() {
+            const modal = document.getElementById('forgot-modal');
+            if (modal) {
+                gsap.to(modal, {opacity: 0, duration: 0.3, onComplete: () => modal.remove()});
+            }
+        }
+
+        async function handleResetPassword() {
+            const email = document.getElementById('reset-email').value.trim();
+            if (!email) return alert('Please enter your email address.');
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) return alert('Please enter a valid email address.');
+
+            try {
+                const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/auth.html#reset-password'
+                });
+                if (error) throw error;
+                
+                showToast('Password reset link sent to your email!');
+                closeForgotPassword();
+            } catch (e) {
+                alert(e.message || 'Failed to send reset link. Please try again.');
+            }
+        }
+
+        // Email Verification on Sign Up
+        async function handleSignUp() {
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            if (!email || !pass) return alert('Credentials required.');
+
+            // Verify hCaptcha
+            const captchaResponse = hcaptcha.getResponse();
+            if (!captchaResponse) return alert('Please complete the captcha verification.');
+
+            document.getElementById('btn-text').style.display = 'none';
+            document.getElementById('btn-loader').style.display = 'block';
+
+            try {
+                const { data, error } = await window.supabaseClient.auth.signUp({
+                    email: email,
+                    password: pass,
+                    options: {
+                        emailRedirectTo: window.location.origin + '/auth.html#verify-email'
+                    }
+                });
+                if (error) throw error;
+
+                // Check if email confirmation is required
+                if (data && data.user && data.user.identities && data.user.identities.length === 0) {
+                    showToast('Please check your email to verify your account.');
+                } else {
+                    showToast('Account created! Please verify your email.');
+                }
+                setTimeout(() => location.href = 'index.html', 2000);
+            } catch (e) {
+                alert(e.message || 'Sign up failed.');
+            } finally {
+                document.getElementById('btn-text').style.display = 'block';
+                document.getElementById('btn-loader').style.display = 'none';
+                hcaptcha.reset();
+            }
+        }
+
+        // Check for hash-based auth states
+        window.addEventListener('load', () => {
+            const hash = window.location.hash;
+            if (hash === '#reset-password') {
+                showToast('Check your email for the password reset link.');
+                window.location.hash = '';
+            } else if (hash === '#verify-email') {
+                showToast('Please verify your email address to complete registration.');
+                window.location.hash = '';
+            }
+        });
     </script>
 </body>
 </html>
