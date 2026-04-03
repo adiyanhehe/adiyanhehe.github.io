@@ -1740,6 +1740,32 @@
                 </div>
                 <div id="group-list" style="padding-bottom: 10px;"></div>
                 
+                <script>
+                    // Initialize group list on page load
+                    (function() {
+                        const groupList = document.getElementById('group-list');
+                        const groups = JSON.parse(localStorage.getItem('nexus_groups') || '[]');
+                        
+                        if (groups.length === 0) {
+                            groupList.innerHTML = '<div style="padding:10px 15px; color:var(--text-muted); font-size:0.8rem;">No groups yet. Click 👥 to create one!</div>';
+                        } else {
+                            groupList.innerHTML = '';
+                            groups.forEach(group => {
+                                const item = document.createElement('div');
+                                item.className = 'user-link';
+                                item.style.cssText = 'padding:10px 15px; margin:2px 8px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:12px;';
+                                item.innerHTML = `
+                                    <div style="width:32px; height:32px; background:linear-gradient(135deg, var(--accent), #33b8ff); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem;">${group.name.charAt(0)}</div>
+                                    <div style="flex:1; font-weight:600; font-size:0.9rem; color:var(--text-main);">${group.name}</div>
+                                    <div style="font-size:0.7rem; color:var(--text-muted);">${group.members.length} members</div>
+                                `;
+                                item.onclick = () => joinGroup(group.id);
+                                groupList.appendChild(item);
+                            });
+                        }
+                    })();
+                </script>
+                
                 <div class="section-header">
                     Actions
                 </div>
