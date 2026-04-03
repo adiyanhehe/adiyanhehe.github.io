@@ -2212,41 +2212,9 @@
         }
 
         // ============================================
-        // SEND MESSAGES
+        // SEND MESSAGES (Unified - handles global, DM, and group)
+        // The main send() function is defined later in the GROUP CHAT section
         // ============================================
-        function send() {
-            const input = document.getElementById('mIn');
-            if (!input.value.trim()) return;
-
-            const messageData = {
-                user: state.me,
-                text: input.value,
-                pic: localStorage.getItem('rbx_pic'),
-                time: Date.now()
-            };
-
-            if (state.mode === 'global') {
-                globalChannel.publish('msg', messageData);
-                // Render our own global message immediately
-                renderMessage(messageData);
-            } else if (state.mode === 'dm' && state.target) {
-                // Send to the shared DM room
-                if (state.currentDMChannel) {
-                    state.currentDMChannel.publish('msg', messageData);
-                }
-                
-                // Also send to recipient's personal channel for notification
-                ably.channels.get('dm-' + state.target).publish('msg', messageData);
-                
-                // Persist locally
-                persistDM(state.target, messageData);
-                
-                // IMPORTANT: Render our own message immediately so we see it
-                renderMessage(messageData);
-            }
-
-            input.value = '';
-        }
 
         // ============================================
         // TYPING INDICATORS
@@ -2285,6 +2253,7 @@
             // Update sidebar active states
             document.querySelectorAll('.user-link').forEach(link => link.classList.remove('active'));
 
+            if (mode === 'friends') {
                 document.getElementById('btn-friends')?.classList.add('active');
                 document.getElementById('chat-title').innerHTML = `
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.4;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
