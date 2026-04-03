@@ -1,5 +1,6 @@
 const SUPABASE_URL = 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
+const ABLY_KEY = 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
 
 let supabaseClient = null;
 
@@ -58,7 +59,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Global DM Listener
     const userMe = localStorage.getItem('rbx_user');
     if (userMe && typeof Ably !== 'undefined') {
-        const ablyLink = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        const ablyLink = new Ably.Realtime(ABLY_KEY);
         ablyLink.channels.get('dm-' + userMe).subscribe('ping', (m) => {
             if (!window.location.pathname.includes('discuss.html')) {
                 if (window.showTopNotification) window.showTopNotification(`NEW DIRECT TRANSMISSION FROM @${m.data.user}`);
@@ -227,10 +228,25 @@ async function checkGlobalAuth() {
 }
 
 async function logoutNexus() {
-    if (window.supabaseClient) await window.supabaseClient.auth.signOut();
+    if (window.supabaseClient) {
+        try {
+            await window.supabaseClient.auth.signOut();
+        } catch (e) {
+            console.error('Logout error:', e);
+        }
+    }
+    
+    // Clear all auth-related localStorage
     localStorage.removeItem('rbx_user');
     localStorage.removeItem('rbx_pic');
-    location.reload();
+    localStorage.removeItem('rbx_email');
+    localStorage.removeItem('rbx_verified');
+    localStorage.removeItem('rbx_is_admin');
+    localStorage.removeItem('nexus_status_mode');
+    localStorage.removeItem('nexus_custom_status');
+    
+    // Redirect to home page
+    window.location.href = 'index.html';
 }
 
 // --- GLOBAL NOTIFICATIONS ---
@@ -386,7 +402,7 @@ window.showProfileSummary = async (username) => {
 
                 // Check Official Online Status via Ably (if on global hub)
                 if (typeof Ably !== 'undefined') {
-                    const hub = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+                    const hub = new Ably.Realtime(ABLY_KEY);
                     hub.channels.get('global-hub').presence.get((err, members) => {
                         if (!err && members.some(m => m.data.user === username)) {
                             document.getElementById('psm-status-dot').style.display = 'block';
@@ -405,24 +421,3 @@ window.closeProfileSummary = () => {
     if (modal) { modal.style.opacity = '0'; document.getElementById('psm-box').style.transform = 'translateY(20px)'; setTimeout(() => modal.style.display = 'none', 400); }
 };
 
-window.addEventListener('DOMContentLoaded', () => {
-    injectUniversalHeader();
-
-    // FORCED REVEAL: This kills any "cursor: none" from CSS
-    const cursorReset = document.createElement('style');
-    cursorReset.innerHTML = `
-        * { cursor: auto !important; } 
-        a, button, .interactable { cursor: pointer !important; }
-    `;
-    document.head.appendChild(cursorReset);
-
-    // Load Supabase SDK if missing
-    if (typeof window.supabase === 'undefined') {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-        document.head.appendChild(s);
-        s.onload = () => initializeSupabase();
-    } else {
-        initializeSupabase();
-    }
-});
