@@ -4,6 +4,64 @@ const ABLY_KEY = 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
 
 let supabaseClient = null;
 
+// --- GLOBAL INITIALIZATION ---
+window.initializeNexus = async () => {
+    console.log("Nexus Core initializing...");
+    if (window.supabaseClient) {
+        await syncIdentity();
+    }
+    
+    if (document.getElementById('side-pic')) updateGlobalSidebar();
+};
+
+async function syncIdentity() {
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if (!session) return;
+    
+    const userEmail = session.user.email;
+    const defaultUsername = userEmail.split('@')[0];
+    const storedUser = localStorage.getItem('rbx_user');
+    
+    const { data: profile } = await window.supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('username', storedUser || defaultUsername)
+        .maybeSingle();
+        
+    if (profile) {
+        localStorage.setItem('rbx_user', profile.username);
+        if (profile.avatar_url) localStorage.setItem('rbx_pic', profile.avatar_url);
+        if (profile.display_name) localStorage.setItem('rbx_display_name', profile.display_name);
+    } else {
+        const finalUsername = storedUser || defaultUsername;
+        await window.supabaseClient.from('profiles').upsert([{
+            username: finalUsername,
+            avatar_url: localStorage.getItem('rbx_pic') || 'jay.png',
+            display_name: finalUsername
+        }]);
+        localStorage.setItem('rbx_user', finalUsername);
+    }
+}
+
+async function updateGlobalSidebar() {
+    const username = localStorage.getItem('rbx_user');
+    const pic = localStorage.getItem('rbx_pic') || 'jay.png';
+    const display = localStorage.getItem('rbx_display_name') || username;
+    
+    const sidePic = document.getElementById('side-pic');
+    const sideName = document.getElementById('side-name');
+    if (sidePic) sidePic.src = pic;
+    if (sideName) sideName.innerText = display;
+    
+    if (document.getElementById('stat-followers')) {
+        const { count } = await window.supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following', username);
+        document.getElementById('stat-followers').innerText = count || 0;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', window.initializeNexus);
+
+
 // --- THEME ENGINE ---
 let currentTheme = localStorage.getItem('site-theme') || 'dark';
 
