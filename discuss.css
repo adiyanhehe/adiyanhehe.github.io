@@ -13,7 +13,7 @@
     --transition: 0.24s ease;
 }
 
-body[data-theme="dark"] {
+body:not(.light-mode) {
     --bg-main: #111318;
     --bg-layer: #181b22;
     --bg-panel: rgba(28, 31, 39, 0.92);
@@ -38,7 +38,7 @@ body[data-theme="dark"] {
     color-scheme: dark;
 }
 
-body[data-theme="light"] {
+body.light-mode {
     --bg-main: #eff2f8;
     --bg-layer: #ffffff;
     --bg-panel: rgba(255, 255, 255, 0.92);
