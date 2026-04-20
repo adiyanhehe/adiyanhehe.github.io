@@ -645,7 +645,7 @@ function handleSearchResultSelection(event) {
 }
 
 function renderApp() {
-    document.body.dataset.theme = state.theme;
+    applyAppTheme();
     elements.app.classList.toggle("sidebar-open", state.drawer === "sidebar");
     elements.app.classList.toggle("directory-open", state.drawer === "directory");
     elements.pageOverlay.classList.toggle("hidden", !shouldShowOverlay());
