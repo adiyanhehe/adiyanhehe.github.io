@@ -673,6 +673,11 @@ function renderSidebar() {
     elements.friendsViewButton.setAttribute("aria-pressed", state.nav === "friends");
     elements.requestsViewButton.setAttribute("aria-pressed", state.nav === "requests");
 
+    // Add visual 'active' class as well for styling redundancy
+    elements.homeViewButton.classList.toggle("active", state.nav === "home");
+    elements.friendsViewButton.classList.toggle("active", state.nav === "friends");
+    elements.requestsViewButton.classList.toggle("active", state.nav === "requests");
+
     elements.homeUnreadBadge.textContent = homeUnread;
     elements.homeUnreadBadge.classList.toggle("hidden", homeUnread === 0);
     
@@ -1174,6 +1179,7 @@ function handleDirectoryClick(event) {
     if (friendAction) {
         const friendId = friendAction.dataset.friendId;
         const chat = ensureDirectChat(friendId);
+        state.nav = "home"; // Ensure we jump to chats view
         selectChat(chat.id);
         return;
     }
@@ -1181,6 +1187,7 @@ function handleDirectoryClick(event) {
     const friendRow = event.target.closest("[data-friend-id]");
     if (friendRow) {
         const chat = ensureDirectChat(friendRow.dataset.friendId);
+        state.nav = "home"; // Ensure we jump to chats view
         selectChat(chat.id);
         return;
     }
@@ -1817,12 +1824,19 @@ function renderChatAvatar(chat) {
     `;
 }
 
-function renderPersonAvatar(person, className, withPresence) {
-    const presence = withPresence ? `<span class="presence-dot ${escapeHtml(person.presence)}"></span>` : "";
+function renderPersonAvatar(person, className = "avatar-token", withPresence = true) {
+    if (!person) return "";
+    const name = person.name || "User";
+    const initials = person.initials || getInitials(name);
+    const toneA = person.toneA || "#7b8cff";
+    const toneB = person.toneB || "#64d9ff";
+    
+    const presenceHtml = withPresence ? `<span class="presence-dot ${escapeHtml(person.presence || 'offline')}"></span>` : "";
+    
     return `
-        <div class="${className} avatar-token" style="--avatar-a:${person.toneA}; --avatar-b:${person.toneB};">
-            ${person.avatarUrl ? `<img src="${escapeHtml(person.avatarUrl)}" alt="${escapeHtml(person.name)}">` : `<span>${escapeHtml(person.initials)}</span>`}
-            ${presence}
+        <div class="${className} avatar-token" style="--avatar-a:${toneA}; --avatar-b:${toneB};">
+            ${person.avatarUrl ? `<img src="${escapeHtml(person.avatarUrl)}" alt="${escapeHtml(name)}">` : `<span>${escapeHtml(initials)}</span>`}
+            ${presenceHtml}
         </div>
     `;
 }
@@ -1883,13 +1897,19 @@ function createFallbackPerson(id) {
 // Helper pick logic removed.
 
 
-function renderAvatarContent(person, withPresence) {
-    const presence = withPresence ? `<span class="presence-dot ${escapeHtml(person.presence)}"></span>` : "";
+function renderAvatarContent(person, withPresence = true) {
+    if (!person) return "";
+    const name = person.name || "User";
+    const initials = person.initials || getInitials(name);
+    const toneA = person.toneA || "#7b8cff";
+    const toneB = person.toneB || "#64d9ff";
+    const presenceHtml = withPresence ? `<span class="presence-dot ${escapeHtml(person.presence || 'offline')}"></span>` : "";
+
     return `
-        <div class="avatar-token" style="--avatar-a:${person.toneA}; --avatar-b:${person.toneB}; width:100%; height:100%; border-radius:16px;">
-            ${person.avatarUrl ? `<img src="${escapeHtml(person.avatarUrl)}" alt="${escapeHtml(person.name)}">` : `<span>${escapeHtml(person.initials)}</span>`}
+        <div class="avatar-token" style="--avatar-a:${toneA}; --avatar-b:${toneB}; width:100%; height:100%; border-radius:16px;">
+            ${person.avatarUrl ? `<img src="${escapeHtml(person.avatarUrl)}" alt="${escapeHtml(name)}">` : `<span>${escapeHtml(initials)}</span>`}
         </div>
-        ${presence}
+        ${presenceHtml}
     `;
 }
 
