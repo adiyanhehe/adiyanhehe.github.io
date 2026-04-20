@@ -171,8 +171,10 @@ async function initializeState() {
         .eq('id', user.id)
         .maybeSingle();
 
-    const fallbackPic = user.user_metadata?.avatar_url || localStorage.getItem('rbx_pic') || 'jay.png';
     const fallbackName = profile?.username || user.user_metadata?.full_name || user.email.split('@')[0];
+    
+    // Also try checking the threads fallback right below
+    const fallbackPic = user.user_metadata?.avatar_url || localStorage.getItem('rbx_pic') || 'jay.png';
 
     state.currentUser = {
         id: profile?.username || user.email.split('@')[0],
@@ -191,6 +193,20 @@ async function initializeState() {
         .from('profiles')
         .select('*');
 
+    // Load recent post avatars as fallback from threads
+    const { data: latestPosts } = await window.supabaseClient
+        .from('posts')
+        .select('author, avatar_url')
+        .not('avatar_url', 'is', null)
+        .order('created_at', { ascending: false });
+
+    const threadAvatars = {};
+    if (latestPosts) {
+        latestPosts.forEach(post => {
+            if (!threadAvatars[post.author]) threadAvatars[post.author] = post.avatar_url;
+        });
+    }
+
     if (allProfiles) {
         allProfiles.forEach(p => {
             const id = p.username;
@@ -198,7 +214,7 @@ async function initializeState() {
             state.people[id] = {
                 id,
                 name: p.display_name || p.username,
-                avatarUrl: p.avatar_url || "",
+                avatarUrl: p.avatar_url || threadAvatars[id] || "",
                 presence: "online", // Simple for now
                 statusText: p.status || "Ready to chat",
                 initials: getInitials(p.display_name || p.username),
@@ -399,7 +415,7 @@ function handleIncomingMessage(msg) {
                         state.people[otherUser] = data ? {
                             id: data.username,
                             name: data.display_name || data.username,
-                            avatarUrl: data.avatar_url || '',
+                            avatarUrl: data.avatar_url || threadAvatars?.[otherUser] || '',
                             presence: 'online',
                             statusText: data.status || 'Ready to chat',
                             initials: getInitials(data.display_name || data.username),
