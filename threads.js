@@ -27,26 +27,35 @@ function cacheElements() {
     elements.trendList = document.getElementById("trend-list");
 }
 
+// Waiting for global layer
+setInterval(() => {
+    if (window.supabaseClient && !state.initialized) {
+        state.initialized = true;
+        initialize();
+    }
+}, 100);
+
 async function initialize() {
     cacheElements();
     
     // Auth Check
     const { data: { session } } = await window.supabaseClient.auth.getSession();
     if (!session) {
-        document.getElementById('login-gate').style.display = 'flex';
+        if (document.getElementById('login-gate')) document.getElementById('login-gate').style.display = 'flex';
         return;
     }
 
-    const user = session.user;
-    const username = localStorage.getItem('rbx_user') || user.email.split('@')[0];
+    // Sync with latest identity from global.js sync
+    const username = (localStorage.getItem('rbx_user') || session.user.email.split('@')[0]).toLowerCase();
     const avatar = localStorage.getItem('rbx_pic') || 'jay.png';
+    const displayName = localStorage.getItem('rbx_display_name') || username;
     
-    state.currentUser = { id: username, name: username, avatar: avatar };
+    state.currentUser = { id: username, name: displayName, avatar: avatar };
 
     // Update UI
     if (elements.sidePic) elements.sidePic.src = avatar;
-    if (elements.sideName) elements.sideName.innerText = username;
-    if (elements.sideHandle) elements.sideHandle.innerText = '@' + username.toLowerCase();
+    if (elements.sideName) elements.sideName.innerText = displayName;
+    
     const myPic = document.getElementById('my-pic');
     if (myPic) myPic.src = avatar;
 
@@ -348,4 +357,4 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-document.addEventListener("DOMContentLoaded", initialize);
+
