@@ -1,5 +1,5 @@
 const STORAGE_KEY = "pulse-messenger-ui-v1";
-const THEME_KEY = "pulse-messenger-theme";
+const THEME_KEY = "site-theme";
 const GIPHY_API_KEY = "GlVGYHqcVGW7OkyKUjbQTKxWHcpVkKQd";
 const MAX_MESSAGE_LENGTH = 400;
 const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉"];
@@ -1117,8 +1117,27 @@ function setNavView(view) {
 function toggleTheme() {
     state.theme = state.theme === "dark" ? "light" : "dark";
     persistState();
-    renderApp();
+    applyAppTheme();
 }
+
+function applyAppTheme() {
+    if (state.theme === "light") {
+        document.body.classList.add("light-mode");
+    } else {
+        document.body.classList.remove("light-mode");
+    }
+}
+
+// Bridge for global.js calls
+window.setMode = function(mode, target) {
+    if (mode === 'dm') {
+        openConversationModal('direct');
+        if (elements.directRecipientInput) {
+            elements.directRecipientInput.value = target;
+            handleUserSearch({ target: elements.directRecipientInput });
+        }
+    }
+};
 
 function toggleSettingsMenu() {
     state.settingsOpen = !state.settingsOpen;
