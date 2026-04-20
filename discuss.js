@@ -128,7 +128,6 @@ function cacheElements() {
     elements.newConversationButton = document.getElementById("newConversationButton");
     elements.workspaceIdentity = document.getElementById("workspaceIdentity");
     elements.workspace = document.getElementById("workspace");
-    elements.workspaceIdentity = document.getElementById("workspaceIdentity");
     elements.friendsStage = document.getElementById("friendsStage");
     elements.requestsStage = document.getElementById("requestsStage");
     elements.chatStage = document.getElementById("chatStage");
@@ -159,6 +158,25 @@ function cacheElements() {
     elements.userSearchResults = document.getElementById("userSearchResults");
     elements.requestsViewButton = document.getElementById("requestsViewButton");
     elements.requestsBadge = document.getElementById("requestsBadge");
+    
+    // Additional missing elements
+    elements.homeViewButton = document.getElementById("homeViewButton");
+    elements.friendsViewButton = document.getElementById("friendsViewButton");
+    elements.homeUnreadBadge = document.getElementById("homeUnreadBadge");
+    elements.friendsOnlineBadge = document.getElementById("friendsOnlineBadge");
+    elements.membersToggleButton = document.getElementById("membersToggleButton");
+    elements.jumpLatestButton = document.getElementById("jumpLatestButton");
+    elements.themeToggleButton = document.getElementById("themeToggleButton");
+    elements.settingsButton = document.getElementById("settingsButton");
+    elements.changeStatusButton = document.getElementById("changeStatusButton");
+    elements.clearUnreadButton = document.getElementById("clearUnreadButton");
+    elements.resetDemoButton = document.getElementById("resetDemoButton");
+    elements.closeSidebarButton = document.getElementById("closeSidebarButton");
+    elements.pageOverlay = document.getElementById("pageOverlay");
+    elements.currentUserAvatar = document.getElementById("currentUserAvatar");
+    elements.currentUserName = document.getElementById("currentUserName");
+    elements.currentUserStatus = document.getElementById("currentUserStatus");
+    elements.settingsMenu = document.getElementById("settingsMenu");
 }
 
 async function initializeState() {
@@ -785,8 +803,8 @@ function renderWorkspace() {
     elements.friendsStage.classList.add("hidden");
     elements.requestsStage.classList.add("hidden");
     elements.chatStage.classList.remove("hidden");
-    elements.composer.classList.add("hidden");
-    elements.membersToggleButton.classList.add("hidden");
+    elements.composer.classList.remove("hidden");
+    elements.membersToggleButton.classList.remove("hidden");
 
     if (!activeChat) {
         elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Select a chat", "Choose a conversation from the list to start messaging.");
