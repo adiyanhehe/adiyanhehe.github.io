@@ -15,31 +15,53 @@ window.initializeNexus = async () => {
 };
 
 async function syncIdentity() {
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
-    if (!session) return;
-    
-    const userEmail = session.user.email;
-    const defaultUsername = userEmail.split('@')[0];
-    const storedUser = localStorage.getItem('rbx_user');
-    
-    const { data: profile } = await window.supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('username', storedUser || defaultUsername)
-        .maybeSingle();
+    try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return;
         
-    if (profile) {
-        localStorage.setItem('rbx_user', profile.username);
-        if (profile.avatar_url) localStorage.setItem('rbx_pic', profile.avatar_url);
-        if (profile.display_name) localStorage.setItem('rbx_display_name', profile.display_name);
-    } else {
-        const finalUsername = storedUser || defaultUsername;
-        await window.supabaseClient.from('profiles').upsert([{
-            username: finalUsername,
-            avatar_url: localStorage.getItem('rbx_pic') || 'jay.png',
-            display_name: finalUsername
-        }]);
-        localStorage.setItem('rbx_user', finalUsername);
+        const userEmail = session.user.email;
+        const defaultUsername = userEmail.split('@')[0];
+        
+        // 1. Fetch profile by ID first (most reliable)
+        let { data: profile } = await window.supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+            
+        if (!profile) {
+            // 2. Try by username if ID failed (legacy)
+            const storedUser = localStorage.getItem('rbx_user') || defaultUsername;
+            const { data: profileByName } = await window.supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('username', storedUser)
+                .maybeSingle();
+            profile = profileByName;
+        }
+            
+        if (profile) {
+            localStorage.setItem('rbx_user', profile.username);
+            localStorage.setItem('rbx_email', session.user.email);
+            if (profile.avatar_url) localStorage.setItem('rbx_pic', profile.avatar_url);
+            if (profile.display_name) localStorage.setItem('rbx_display_name', profile.display_name);
+        } else {
+            // 3. Create fresh profile
+            const finalUsername = localStorage.getItem('rbx_user') || defaultUsername;
+            const { data: created } = await window.supabaseClient.from('profiles').upsert([{
+                id: session.user.id,
+                username: finalUsername,
+                avatar_url: localStorage.getItem('rbx_pic') || 'jay.png',
+                display_name: finalUsername
+            }]).select().single();
+            
+            if (created) {
+                localStorage.setItem('rbx_user', created.username);
+                localStorage.setItem('rbx_email', session.user.email);
+            }
+        }
+    } catch (e) {
+        console.error("Identity Sync Failed:", e);
     }
 }
 
