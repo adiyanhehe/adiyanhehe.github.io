@@ -1,4 +1,3 @@
-// Threads 2.0 - Powered by Supabase
 const GIPHY_API_KEY = "dc6zaTOxFJmzC";
 
 const state = {
@@ -17,13 +16,15 @@ function cacheElements() {
     elements.postBtn = document.getElementById("post-btn");
     elements.sidePic = document.getElementById("side-pic");
     elements.sideName = document.getElementById("side-name");
-    elements.sideHandle = document.getElementById("side-handle");
+    
+    // New Pulse-style Elements
     elements.mediaPreview = document.getElementById("media-preview");
     elements.mediaPreviewContent = document.getElementById("media-preview-content");
     elements.fileInput = document.getElementById("fileInput");
     elements.gifPicker = document.getElementById("gif-picker");
     elements.gifGrid = document.getElementById("gif-grid");
     elements.gifSearchInput = document.getElementById("gif-search-in");
+    elements.trendList = document.getElementById("trend-list");
 }
 
 async function initialize() {
@@ -92,8 +93,42 @@ function setupSubscriptions() {
 }
 
 function renderFeed() {
+    if (!elements.feed) return;
     elements.feed.innerHTML = state.threads.map(t => renderThread(t)).join('');
+    updateTrends();
 }
+
+function updateTrends() {
+    if (!elements.trendList) return;
+    const tags = {};
+    state.threads.forEach(t => {
+        const matches = t.content.match(/#\w+/g);
+        if (matches) matches.forEach(m => tags[m] = (tags[m] || 0) + 1);
+    });
+    
+    const sorted = Object.entries(tags).sort((a,b) => b[1] - a[1]).slice(0, 5);
+    if (sorted.length === 0) {
+        elements.trendList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-soft); font-size: 0.8rem;">Awaiting metadata...</div>';
+        return;
+    }
+
+    elements.trendList.innerHTML = sorted.map(([tag, count], idx) => `
+        <div class="trend-item" onclick="window.searchFor('${tag}')">
+            <div style="font-size: 0.75rem; color: var(--accent);">Trending #${idx + 1}</div>
+            <div style="font-weight: 700;">${tag}</div>
+            <div style="font-size: 0.7rem; color: var(--text-soft);">${count} transmission${count > 1 ? 's' : ''}</div>
+        </div>
+    `).join('');
+}
+
+window.searchFor = (q) => {
+    const query = q.replace('#', '').toLowerCase();
+    const items = document.querySelectorAll('.thread-item');
+    items.forEach(item => {
+        const text = item.innerText.toLowerCase();
+        item.style.display = text.includes(query) ? 'flex' : 'none';
+    });
+};
 
 function renderThread(t) {
     const time = formatTime(t.timestamp);
