@@ -161,6 +161,7 @@ function cacheElements() {
     
     // Additional missing elements
     elements.homeViewButton = document.getElementById("homeViewButton");
+    elements.globalViewButton = document.getElementById("globalViewButton");
     elements.friendsViewButton = document.getElementById("friendsViewButton");
     elements.homeUnreadBadge = document.getElementById("homeUnreadBadge");
     elements.friendsOnlineBadge = document.getElementById("friendsOnlineBadge");
@@ -545,6 +546,7 @@ function handleIncomingMessage(msg) {
 
 function bindEvents() {
     elements.homeViewButton.addEventListener("click", () => setNavView("home"));
+    elements.globalViewButton.addEventListener("click", () => setNavView("global"));
     elements.friendsViewButton.addEventListener("click", () => setNavView("friends"));
     elements.requestsViewButton.addEventListener("click", () => setNavView("requests"));
     elements.themeToggleButton.addEventListener("click", toggleTheme);
@@ -691,11 +693,13 @@ function renderSidebar() {
     const onlineFriends = state.friends.filter((friendId) => state.people[friendId]?.presence === "online").length;
 
     elements.homeViewButton.setAttribute("aria-pressed", state.nav === "home");
+    elements.globalViewButton.setAttribute("aria-pressed", state.nav === "global");
     elements.friendsViewButton.setAttribute("aria-pressed", state.nav === "friends");
     elements.requestsViewButton.setAttribute("aria-pressed", state.nav === "requests");
 
     // Add visual 'active' class as well for styling redundancy
     elements.homeViewButton.classList.toggle("active", state.nav === "home");
+    elements.globalViewButton.classList.toggle("active", state.nav === "global");
     elements.friendsViewButton.classList.toggle("active", state.nav === "friends");
     elements.requestsViewButton.classList.toggle("active", state.nav === "requests");
 
@@ -1155,6 +1159,9 @@ function renderEmojiPicker() {
 
 function setNavView(view) {
     state.nav = view;
+    if (view === 'global') {
+        state.activeChatId = 'global_chat';
+    }
     state.search = "";
     elements.searchInput.value = "";
     state.emojiOpen = false;
