@@ -113,10 +113,13 @@ svg {
 .messenger-app {
     display: grid;
     grid-template-columns: var(--sidebar-width) var(--directory-width) minmax(0, 1fr);
-    gap: 18px;
-    min-height: 100vh;
-    padding: 18px;
-    padding-top: calc(48px + 22px); /* offset for the 48px fixed header injected by global.js */
+    gap: 12px;
+    height: 100vh;
+    padding: 12px;
+    padding-top: 60px; /* Offset for global header + some breathing room */
+    overflow: hidden;
+    position: relative;
+    background: transparent;
 }
 
 .sidebar,
@@ -136,7 +139,7 @@ svg {
 .sidebar,
 .directory-panel,
 .workspace {
-    min-height: 0;
+    height: calc(100vh - 72px); /* 60px padding-top + 12px padding-bottom */
     border-radius: var(--radius-xl);
 }
 
