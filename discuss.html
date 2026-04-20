@@ -57,6 +57,22 @@
                         </span>
                         <span class="nav-badge hidden" id="friendsOnlineBadge">0</span>
                     </button>
+
+                    <button class="nav-button" id="requestsViewButton" type="button" data-view="requests" aria-pressed="false">
+                        <span class="nav-button-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M16 21v-2.5a3.5 3.5 0 0 0-3.5-3.5H7.5A3.5 3.5 0 0 0 4 18.5V21"></path>
+                                <circle cx="10" cy="8" r="4"></circle>
+                                <line x1="19" y1="8" x2="19" y2="14"></line>
+                                <line x1="16" y1="11" x2="22" y2="11"></line>
+                            </svg>
+                        </span>
+                        <span class="nav-button-copy">
+                            <strong>Requests</strong>
+                            <small>Pending invites</small>
+                        </span>
+                        <span class="nav-badge hidden" id="requestsBadge">0</span>
+                    </button>
                 </nav>
             </div>
 
@@ -245,7 +261,8 @@
             <div class="modal-body">
                 <label class="modal-field" id="directNameField">
                     <span>Recipient</span>
-                    <input id="directRecipientInput" type="text" placeholder="Type a teammate name">
+                    <input id="directRecipientInput" type="text" placeholder="Type a teammate name" autocomplete="off">
+                    <div id="userSearchResults" class="search-results-dropdown hidden"></div>
                 </label>
 
                 <div id="groupFields" class="hidden">
