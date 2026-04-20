@@ -51,6 +51,7 @@ async function initialize() {
 
     bindEvents();
     await loadThreads();
+    await updateStats();
     setupSubscriptions();
 }
 
@@ -96,12 +97,13 @@ function renderFeed() {
 
 function renderThread(t) {
     const time = formatTime(t.timestamp);
-    const hasMedia = t.image_url || t.gif_url;
+    const isLiked = localStorage.getItem(`liked_${t.id}`);
+    const isMe = state.currentUser && t.author === state.currentUser.id;
     
     // Parse text for hashtags/mentions
     let content = escapeHtml(t.content);
-    content = content.replace(/@(\w+)/g, '<span class="accent-text">@$1</span>');
-    content = content.replace(/#(\w+)/g, '<span class="accent-text">#$1</span>');
+    content = content.replace(/@(\w+)/g, '<span class="accent-text" style="color: var(--accent); cursor: pointer;">@$1</span>');
+    content = content.replace(/#(\w+)/g, '<span class="accent-text" style="color: var(--accent); cursor: pointer;">#$1</span>');
 
     return `
         <div class="glass-panel thread-item">
@@ -110,21 +112,31 @@ function renderThread(t) {
                 <div class="thread-line"></div>
             </div>
             <div class="thread-content">
-                <div class="thread-header">
-                    <h4 onclick="window.showProfileSummary('${t.author}')">${t.author}</h4>
-                    <span class="thread-handle">@${t.author.toLowerCase()}</span>
-                    <span class="thread-time">· ${time}</span>
+                <div class="thread-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <h4 onclick="window.showProfileSummary('${t.author}')">${t.author}</h4>
+                        ${t.author === 'adiyan' || t.author === 'Adigusi' ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="#1d9bf0" style="margin-top: 2px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' : ''}
+                        <span class="thread-handle">@${t.author.toLowerCase()}</span>
+                        <span class="thread-time">· ${time}</span>
+                    </div>
+                    ${!isMe ? `
+                        <button class="action-btn" onclick="window.toggleFollow('${t.author}')" style="background: var(--bg-panel-soft); padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; color: var(--text-main);">Follow</button>
+                    ` : ''}
                 </div>
                 <div class="thread-text">${content}</div>
-                ${t.media_url ? `<div class="thread-media"><img src="${t.media_url}" loading="lazy"></div>` : ''}
+                ${t.media_url ? `<div class="thread-media" style="margin-top: 12px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border);"><img src="${t.media_url}" loading="lazy" style="width: 100%; display: block;"></div>` : ''}
                 <div class="thread-actions">
-                    <button class="action-btn" onclick="toggleLike('${t.id}')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                        <span>${t.likes || 0}</span>
+                    <button class="action-btn" style="color: var(--text-soft); display: flex; align-items: center; gap: 6px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        <span>${t.replies || 0}</span>
                     </button>
-                    <button class="action-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                        <span>0</span>
+                    <button class="action-btn" style="color: var(--text-soft); display: flex; align-items: center; gap: 6px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M17 1l4 4-4 4m6 0l-4 4 4 4M2 13h15M2 5h19"/></svg>
+                        <span>${t.reposts || 0}</span>
+                    </button>
+                    <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${t.id}')" style="display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+                        <svg viewBox="0 0 24 24" fill="${isLiked ? '#f91880' : 'none'}" stroke="${isLiked ? '#f91880' : 'currentColor'}" width="20" height="20" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        <span>${t.likes || 0}</span>
                     </button>
                 </div>
             </div>
@@ -156,6 +168,7 @@ async function postThread() {
 
     elements.composerInput.value = '';
     removePreview();
+    updateStats();
 }
 
 async function handleFileUpload(event) {
@@ -222,28 +235,65 @@ window.selectGif = (url) => {
 };
 
 window.toggleLike = async (id) => {
+    // ... same as before but for brevity I'll just keep the existing block ...
+    // Wait, I should implement the REAL toggleLike with DB updates.
     const thread = state.threads.find(t => t.id === id);
     if (!thread) return;
 
     const likedKey = `liked_${id}`;
     const isLiked = localStorage.getItem(likedKey);
     
-    // Optimistic UI
     const delta = isLiked ? -1 : 1;
     thread.likes = (thread.likes || 0) + delta;
     if (isLiked) localStorage.removeItem(likedKey);
     else localStorage.setItem(likedKey, 'true');
     renderFeed();
 
-    // DB Update
-    await window.supabaseClient.rpc('increment_likes', { thread_id: id, delta: delta });
-    
-    // Fallback if RPC fails:
-    const { error } = await window.supabaseClient
+    await window.supabaseClient
         .from('threads')
         .update({ likes: thread.likes })
         .eq('id', id);
 };
+
+window.toggleFollow = async (username) => {
+    if (!state.currentUser || username === state.currentUser.id) return;
+
+    const { data: existing } = await window.supabaseClient
+        .from('follows')
+        .select('*')
+        .eq('follower', state.currentUser.id)
+        .eq('following', username)
+        .maybeSingle();
+
+    if (existing) {
+        await window.supabaseClient.from('follows').delete().eq('id', existing.id);
+        if (window.showTopNotification) window.showTopNotification(`Unfollowed @${username}`, 'info');
+    } else {
+        await window.supabaseClient.from('follows').insert([{
+            follower: state.currentUser.id,
+            following: username
+        }]);
+        if (window.showTopNotification) window.showTopNotification(`Following @${username}`, 'success');
+    }
+    await updateStats();
+};
+
+async function updateStats() {
+    if (!state.currentUser) return;
+    
+    const { count: followers } = await window.supabaseClient
+        .from('follows').select('*', { count: 'exact', head: true }).eq('following', state.currentUser.id);
+        
+    const { count: following } = await window.supabaseClient
+        .from('follows').select('*', { count: 'exact', head: true }).eq('follower', state.currentUser.id);
+
+    const { count: posts } = await window.supabaseClient
+        .from('threads').select('*', { count: 'exact', head: true }).eq('author', state.currentUser.id);
+
+    document.getElementById('stat-followers').innerText = followers || 0;
+    document.getElementById('stat-following').innerText = following || 0;
+    document.getElementById('stat-posts').innerText = posts || 0;
+}
 
 function formatTime(ts) {
     const date = new Date(ts);
