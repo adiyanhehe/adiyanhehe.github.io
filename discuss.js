@@ -569,7 +569,7 @@ function bindEvents() {
     window.addEventListener("resize", handleResize);
 }
 
-async function handleFriendRequestAction(id, action) {
+window.handleFriendRequestAction = async function(id, action) {
     const { error } = await window.supabaseClient
         .from('friend_requests')
         .update({ status: action === 'accept' ? 'accepted' : 'declined' })
@@ -583,7 +583,8 @@ async function handleFriendRequestAction(id, action) {
     }
 }
 
-async function sendFriendRequest(username) {
+window.sendFriendRequest = async function(username) {
+    if (!state.currentUser) return;
     const { error } = await window.supabaseClient
         .from('friend_requests')
         .insert({
