@@ -1171,6 +1171,95 @@ svg {
     margin-top: 18px;
 }
 
+/* User Search Results Dropdown */
+.search-results-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-panel-strong);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-top: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 60;
+    box-shadow: var(--shadow-md);
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    width: 100%;
+    text-align: left;
+    transition: background-color var(--transition);
+}
+
+.search-result-item:hover {
+    background: var(--bg-panel-hover);
+}
+
+.search-result-item img, .search-result-item .avatar-token {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+.search-result-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.search-result-info strong {
+    font-size: 0.9rem;
+}
+
+.search-result-info span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Friend Request Items */
+.request-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    background: var(--bg-panel-soft);
+    margin-bottom: 8px;
+}
+
+.request-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.request-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.request-btn.accept {
+    background: var(--success);
+    color: #fff;
+}
+
+.request-btn.decline {
+    background: var(--bg-panel-hover);
+    color: var(--text-main);
+}
+
+.modal-field {
+    position: relative; /* Ensure dropdown is positioned relative to field */
+}
+
 .mobile-only {
     display: none;
 }
