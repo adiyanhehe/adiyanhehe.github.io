@@ -187,6 +187,7 @@ async function initDatabaseSync() {
                     content: postData.text,
                     author: postData.user,
                     avatar: postData.pic,
+                    media_url: postData.media || null,
                     timestamp: new Date().toISOString()
                 }]);
             if (error) console.error("Archive Error:", error);
