@@ -75,6 +75,11 @@ body {
 
 body {
     font-family: var(--font-body);
+    background-color: var(--bg-main);
+    background:
+        radial-gradient(circle at top left, rgba(100, 217, 255, 0.15), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(123, 140, 255, 0.14), transparent 28%),
+        var(--bg-main);
     background:
         radial-gradient(circle at top left, rgba(100, 217, 255, 0.15), transparent 24%),
         radial-gradient(circle at bottom right, rgba(123, 140, 255, 0.14), transparent 28%),
