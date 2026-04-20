@@ -42,13 +42,16 @@ async function initializeThreads() {
     cacheElements();
 
     const { data: { session } } = await window.supabaseClient.auth.getSession();
-    if (!session) {
-        // Assume guest or redirect
-        return;
-    }
 
-    // 1. Resolve Current User
-    const username = (localStorage.getItem('rbx_user') || session.user.email.split('@')[0]).toLowerCase();
+    // 1. Resolve Current User gracefully
+    let username = 'Anonymous';
+    let emailPrefix = 'Guest';
+    
+    if (session) {
+        emailPrefix = session.user.email.split('@')[0];
+    }
+    
+    username = (localStorage.getItem('rbx_user') || emailPrefix).toLowerCase();
     const avatar = localStorage.getItem('rbx_pic') || 'jay.png';
     const displayName = localStorage.getItem('rbx_display_name') || username;
 
@@ -61,7 +64,7 @@ async function initializeThreads() {
     const myPic = document.getElementById('my-pic');
     if (myPic) myPic.src = avatar;
 
-    // 3. Boot Engines
+    // 3. Boot Engines unconditionally
     bindEvents();
     await fetchCloudThreads();
     await updateSideStats();
