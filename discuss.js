@@ -71,7 +71,8 @@ const state = {
     reactionMenu: null,
     typing: null,
     messageSubscription: null,
-    threadAvatars: {}
+    threadAvatars: {},
+    requests: []
 };
 
 const elements = {};
@@ -154,6 +155,9 @@ function cacheElements() {
     elements.groupNameInput = document.getElementById("groupNameInput");
     elements.groupParticipantsInput = document.getElementById("groupParticipantsInput");
     elements.conversationMessageInput = document.getElementById("conversationMessageInput");
+    elements.userSearchResults = document.getElementById("userSearchResults");
+    elements.requestsViewButton = document.getElementById("requestsViewButton");
+    elements.requestsBadge = document.getElementById("requestsBadge");
 }
 
 async function initializeState() {
@@ -297,6 +301,16 @@ async function syncChatsWithDatabase() {
     }
 
     // Fetch groups where the current user is a member
+    await fetchGroups();
+
+    // Fetch friend requests
+    await fetchFriendRequests();
+
+    // Build friends list from all known people except self
+    state.friends = Object.keys(state.people).filter(id => id !== state.currentUser.id);
+}
+
+async function fetchGroups() {
     const { data: memberRows } = await window.supabaseClient
         .from('group_members')
         .select('group_id')
@@ -310,7 +324,6 @@ async function syncChatsWithDatabase() {
             .select(`*, group_members(user_name)`)
             .in('id', myGroupIds);
 
-        // Also fetch group messages
         const { data: groupMsgs } = await window.supabaseClient
             .from('messages')
             .select('*')
@@ -346,29 +359,50 @@ async function syncChatsWithDatabase() {
             }
         });
     }
+}
 
-    // Build friends list from all known people except self
-    state.friends = Object.keys(state.people).filter(id => id !== state.currentUser.id);
+async function fetchFriendRequests() {
+    const { data: requests, error } = await window.supabaseClient
+        .from('friend_requests')
+        .select('*')
+        .eq('to_user', state.currentUser.id)
+        .eq('status', 'pending');
+
+    if (!error) {
+        state.requests = requests || [];
+        // Ensure request senders are in state.people
+        for (const req of state.requests) {
+            await ensurePersonInDB(req.from_user);
+        }
+    }
+}
+
+    renderApp();
+    if (chatId === state.activeChatId) {
+        scrollToLatest(true);
+    }
 }
 
 function setupRealtimeSubscriptions() {
     if (state.messageSubscription) state.messageSubscription.unsubscribe();
 
-    // Listen to all inserts; filter relevance in the handler
-    state.messageSubscription = window.supabaseClient
-        .channel('realtime-messages-' + state.currentUser.id)
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages'
-        }, payload => {
+    // Messages channel
+    window.supabaseClient
+        .channel('realtime-msgs')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
             handleIncomingMessage(payload.new);
         })
-        .subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-                console.log('[Pulse] Realtime connected for', state.currentUser.id);
+        .subscribe();
+
+    // Friend requests channel
+    window.supabaseClient
+        .channel('realtime-reqs')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, payload => {
+            if (payload.new && payload.new.to_user === state.currentUser.id) {
+                fetchFriendRequests().then(() => renderApp());
             }
-        });
+        })
+        .subscribe();
 }
 
 function handleIncomingMessage(msg) {
@@ -473,6 +507,7 @@ function handleIncomingMessage(msg) {
 function bindEvents() {
     elements.homeViewButton.addEventListener("click", () => setNavView("home"));
     elements.friendsViewButton.addEventListener("click", () => setNavView("friends"));
+    elements.requestsViewButton.addEventListener("click", () => setNavView("requests"));
     elements.themeToggleButton.addEventListener("click", toggleTheme);
     elements.settingsButton.addEventListener("click", toggleSettingsMenu);
     elements.changeStatusButton.addEventListener("click", handleCustomStatus);
@@ -513,9 +548,87 @@ function bindEvents() {
     elements.messageStream.addEventListener("click", handleMessageActions);
     elements.jumpLatestButton.addEventListener("click", () => scrollToLatest(true));
 
+    elements.directRecipientInput.addEventListener("input", handleUserSearch);
+    elements.userSearchResults.addEventListener("click", handleSearchResultSelection);
+
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleDocumentKeydown);
     window.addEventListener("resize", handleResize);
+}
+
+async function handleFriendRequestAction(id, action) {
+    const { error } = await window.supabaseClient
+        .from('friend_requests')
+        .update({ status: action === 'accept' ? 'accepted' : 'declined' })
+        .eq('id', id);
+
+    if (error) {
+        if (window.showTopNotification) window.showTopNotification('Failed to process request', 'error');
+    } else {
+        await fetchFriendRequests();
+        renderApp();
+    }
+}
+
+async function sendFriendRequest(username) {
+    const { error } = await window.supabaseClient
+        .from('friend_requests')
+        .insert({
+            from_user: state.currentUser.id,
+            to_user: username,
+            status: 'pending'
+        });
+
+    if (error) {
+        if (window.showTopNotification) window.showTopNotification('Request already sent or error occurred', 'error');
+    } else {
+        if (window.showTopNotification) window.showTopNotification('Friend request sent!', 'success');
+    }
+}
+
+async function handleUserSearch(event) {
+    const query = event.target.value.trim();
+    if (!query || query.length < 2) {
+        elements.userSearchResults.classList.add("hidden");
+        return;
+    }
+
+    const { data: users, error } = await window.supabaseClient
+        .from('profiles')
+        .select('*')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .limit(5);
+
+    if (error || !users || users.length === 0) {
+        elements.userSearchResults.innerHTML = '<div class="search-result-item">No users found</div>';
+        elements.userSearchResults.classList.remove("hidden");
+        return;
+    }
+
+    elements.userSearchResults.innerHTML = users.map(user => `
+        <button class="search-result-item" type="button" data-username="${user.username}" data-displayname="${user.display_name || user.username}">
+            ${renderPersonAvatar({
+                initials: getInitials(user.display_name || user.username),
+                toneA: pickTone(user.username)[0],
+                toneB: pickTone(user.username)[1],
+                avatarUrl: user.avatar_url,
+                name: user.display_name || user.username
+            }, "avatar-token", false)}
+            <div class="search-result-info">
+                <strong>${escapeHtml(user.display_name || user.username)}</strong>
+                <span>@${escapeHtml(user.username)}</span>
+            </div>
+        </button>
+    `).join("");
+    elements.userSearchResults.classList.remove("hidden");
+}
+
+function handleSearchResultSelection(event) {
+    const item = event.target.closest(".search-result-item");
+    if (!item || !item.dataset.username) return;
+
+    elements.directRecipientInput.value = item.dataset.username;
+    elements.userSearchResults.classList.add("hidden");
 }
 
 function renderApp() {
@@ -537,15 +650,17 @@ function renderSidebar() {
     const homeUnread = state.chats.reduce((total, chat) => total + (chat.unread || 0), 0);
     const onlineFriends = state.friends.filter((friendId) => state.people[friendId]?.presence === "online").length;
 
-    elements.homeViewButton.classList.toggle("active", state.nav === "home");
-    elements.homeViewButton.setAttribute("aria-pressed", String(state.nav === "home"));
-    elements.friendsViewButton.classList.toggle("active", state.nav === "friends");
-    elements.friendsViewButton.setAttribute("aria-pressed", String(state.nav === "friends"));
+    elements.homeViewButton.setAttribute("aria-pressed", state.nav === "home");
+    elements.friendsViewButton.setAttribute("aria-pressed", state.nav === "friends");
+    elements.requestsViewButton.setAttribute("aria-pressed", state.nav === "requests");
 
-    elements.homeUnreadBadge.textContent = String(homeUnread);
-    elements.homeUnreadBadge.classList.toggle("hidden", homeUnread === 0);
-    elements.friendsOnlineBadge.textContent = String(onlineFriends);
-    elements.friendsOnlineBadge.classList.toggle("hidden", onlineFriends === 0);
+    const onlineCount = Object.values(state.people).filter(p => p.presence === "online").length;
+    elements.friendsOnlineBadge.textContent = onlineCount;
+    elements.friendsOnlineBadge.classList.toggle("hidden", onlineCount === 0);
+
+    const requestCount = state.requests.length;
+    elements.requestsBadge.textContent = requestCount;
+    elements.requestsBadge.classList.toggle("hidden", requestCount === 0);
 
     elements.currentUserAvatar.innerHTML = renderAvatarContent(state.currentUser, true);
     elements.currentUserName.textContent = state.currentUser.name;
@@ -653,8 +768,8 @@ function renderWorkspace() {
     const activeChat = getActiveChat();
     elements.friendsStage.classList.add("hidden");
     elements.chatStage.classList.remove("hidden");
-    elements.composer.classList.remove("hidden");
-    elements.membersToggleButton.classList.remove("hidden");
+    elements.composer.classList.add("hidden");
+    elements.membersToggleButton.classList.add("hidden");
 
     if (!activeChat) {
         elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Select a chat", "Choose a conversation from the list to start messaging.");
@@ -1239,32 +1354,80 @@ async function createConversationFromModal() {
     selectChat(chatId);
 }
 
+function renderRequestsView() {
+    elements.workspace.innerHTML = `
+        <div class="chat-stage">
+            <header class="chat-header">
+                <div class="chat-header-info">
+                    <h2>Friend Requests</h2>
+                    <p>${state.requests.length} pending invitations</p>
+                </div>
+            </header>
+            <div class="message-stream">
+                <div class="stream-inner" style="padding: 20px;">
+                    ${state.requests.length === 0 ? `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">💌</div>
+                            <h3>No pending requests</h3>
+                            <p>When someone invites you to chat, it will appear here.</p>
+                        </div>
+                    ` : `
+                        <div class="requests-list">
+                            ${state.requests.map(req => {
+                                const user = state.people[req.from_user] || { name: req.from_user, initials: '?' };
+                                return `
+                                    <div class="request-item">
+                                        ${renderPersonAvatar(user, "avatar-token", false)}
+                                        <div class="request-info">
+                                            <strong>${escapeHtml(user.name)}</strong>
+                                            <p>wants to start a conversation</p>
+                                        </div>
+                                        <div class="request-actions">
+                                            <button class="request-btn accept" onclick="handleFriendRequestAction('${req.id}', 'accept')">Accept</button>
+                                            <button class="request-btn decline" onclick="handleFriendRequestAction('${req.id}', 'decline')">Decline</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join("")}
+                        </div>
+                    `}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 async function ensurePersonInDB(name) {
-    const { data } = await window.supabaseClient
+    const { data, error } = await window.supabaseClient
         .from('profiles')
         .select('*')
         .or(`username.eq.${name},display_name.eq.${name}`)
         .maybeSingle();
 
-    if (data) {
-        const id = data.username;
-        if (!state.people[id]) {
-            const [toneA, toneB] = pickTone(id);
-            state.people[id] = {
-                id,
-                name: data.display_name || data.username,
-                avatarUrl: data.avatar_url || "",
-                presence: "online",
-                statusText: data.status || "Ready to chat",
-                initials: getInitials(data.display_name || data.username),
-                toneA,
-                toneB,
-                role: "Member"
-            };
+    if (error || !data) {
+        console.warn(`[Pulse] Person not found: ${name}`);
+        if (window.showTopNotification) {
+            window.showTopNotification(`User "${name}" not found. You can send them a friend request!`, 'info');
         }
-        return state.people[id];
+        return null;
     }
-    return null;
+
+    const id = data.username;
+    if (!state.people[id]) {
+        const [toneA, toneB] = pickTone(id);
+        state.people[id] = {
+            id,
+            name: data.display_name || data.username,
+            avatarUrl: data.avatar_url || "",
+            presence: "online",
+            statusText: data.status || "Ready to chat",
+            initials: getInitials(data.display_name || data.username),
+            toneA,
+            toneB,
+            role: "Member"
+        };
+    }
+    return state.people[id];
 }
 
 function toggleMembersSheet() {
