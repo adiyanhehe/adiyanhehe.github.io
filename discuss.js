@@ -396,12 +396,6 @@ async function fetchFriendRequests() {
     }
 }
 
-    renderApp();
-    if (chatId === state.activeChatId) {
-        scrollToLatest(true);
-    }
-}
-
 function setupRealtimeSubscriptions() {
     if (state.messageSubscription) state.messageSubscription.unsubscribe();
 
