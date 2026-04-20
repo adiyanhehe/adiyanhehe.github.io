@@ -70,7 +70,8 @@ const state = {
     modalMode: "direct",
     reactionMenu: null,
     typing: null,
-    messageSubscription: null
+    messageSubscription: null,
+    threadAvatars: {}
 };
 
 const elements = {};
@@ -200,10 +201,10 @@ async function initializeState() {
         .not('avatar_url', 'is', null)
         .order('created_at', { ascending: false });
 
-    const threadAvatars = {};
+    state.threadAvatars = {};
     if (latestPosts) {
         latestPosts.forEach(post => {
-            if (!threadAvatars[post.author]) threadAvatars[post.author] = post.avatar_url;
+            if (!state.threadAvatars[post.author]) state.threadAvatars[post.author] = post.avatar_url;
         });
     }
 
@@ -214,7 +215,7 @@ async function initializeState() {
             state.people[id] = {
                 id,
                 name: p.display_name || p.username,
-                avatarUrl: p.avatar_url || threadAvatars[id] || "",
+                avatarUrl: p.avatar_url || state.threadAvatars[id] || "",
                 presence: "online", // Simple for now
                 statusText: p.status || "Ready to chat",
                 initials: getInitials(p.display_name || p.username),
@@ -415,7 +416,7 @@ function handleIncomingMessage(msg) {
                         state.people[otherUser] = data ? {
                             id: data.username,
                             name: data.display_name || data.username,
-                            avatarUrl: data.avatar_url || threadAvatars?.[otherUser] || '',
+                            avatarUrl: data.avatar_url || state.threadAvatars?.[otherUser] || '',
                             presence: 'online',
                             statusText: data.status || 'Ready to chat',
                             initials: getInitials(data.display_name || data.username),
