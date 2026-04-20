@@ -159,7 +159,9 @@ function renderThreadHTML(t) {
     const author = t.author || 'Anonymous';
     const avatar = t.avatar || t.avatar_url || 'jay.png';
     const isLiked = localStorage.getItem(`liked_${id}`);
-
+    const isReposted = localStorage.getItem(`reposted_${id}`);
+    const isReplied = localStorage.getItem(`replied_${id}`);
+    
     let content = escapeHtml(t.content || '');
     content = content.replace(/@(\w+)/g, '<span class="accent-text" style="color: var(--accent); cursor: pointer;">@$1</span>');
     content = content.replace(/#(\w+)/g, '<span class="accent-text" style="color: var(--accent); cursor: pointer;">#$1</span>');
@@ -182,15 +184,15 @@ function renderThreadHTML(t) {
                 <div class="thread-text">${content}</div>
                 ${t.media_url ? `<div class="thread-media" style="margin-top: 12px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border);"><img src="${t.media_url}" style="width: 100%; display: block;" loading="lazy"></div>` : ''}
                 <div class="thread-actions">
-                    <button class="action-btn" style="color: var(--text-soft); display: flex; align-items: center; gap: 6px;">
+                    <button class="action-btn ${isReplied ? 'liked' : ''}" onclick="window.toggleReply('${id}')" style="display: flex; align-items: center; gap: 6px; transition: 0.2s; color: ${isReplied ? '#1d9bf0' : 'var(--text-soft)'};">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                         <span>${t.replies || 0}</span>
                     </button>
-                    <button class="action-btn" style="color: var(--text-soft); display: flex; align-items: center; gap: 6px;">
+                    <button class="action-btn ${isReposted ? 'liked' : ''}" onclick="window.toggleRepost('${id}')" style="display: flex; align-items: center; gap: 6px; transition: 0.2s; color: ${isReposted ? '#00ba7c' : 'var(--text-soft)'};">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M17 1l4 4-4 4m6 0l-4 4 4 4M2 13h15M2 5h19"/></svg>
                         <span>${t.reposts || 0}</span>
                     </button>
-                    <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${id}')" style="display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+                    <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${id}')" style="color: ${isLiked ? '#f91880' : 'var(--text-soft)'}; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
                         <svg viewBox="0 0 24 24" fill="${isLiked ? '#f91880' : 'none'}" stroke="${isLiked ? '#f91880' : 'currentColor'}" width="20" height="20" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                         <span>${t.likes || 0}</span>
                     </button>
@@ -212,8 +214,7 @@ async function publishTransmission() {
         author: state.currentUser.id,
         content: content,
         avatar: state.currentUser.avatar,
-        media_url: state.mediaPreview,
-        timestamp: new Date().toISOString()
+        media_url: state.mediaPreview
     };
 
     const { error } = await window.supabaseClient.from('threads').insert([threadData]);
@@ -252,6 +253,46 @@ window.toggleLike = async (id) => {
         .from('threads')
         .update({ likes: newLikes })
         .eq('id', id);
+};
+
+window.toggleRepost = async (id) => {
+    if (!window.supabaseClient) return;
+    
+    const thread = state.threads.find(t => t.id === id);
+    if (!thread) return;
+
+    const repostedKey = `reposted_${id}`;
+    const isReposted = localStorage.getItem(repostedKey);
+    const newReposts = (thread.reposts || 0) + (isReposted ? -1 : 1);
+    
+    if (isReposted) localStorage.removeItem(repostedKey);
+    else localStorage.setItem(repostedKey, 'true');
+    
+    thread.reposts = newReposts;
+    const node = document.getElementById(`thread-${id}`);
+    if (node) node.outerHTML = renderThreadHTML(thread);
+
+    await window.supabaseClient.from('threads').update({ reposts: newReposts }).eq('id', id);
+};
+
+window.toggleReply = async (id) => {
+    if (!window.supabaseClient) return;
+    
+    const thread = state.threads.find(t => t.id === id);
+    if (!thread) return;
+
+    const repliedKey = `replied_${id}`;
+    const isReplied = localStorage.getItem(repliedKey);
+    const newReplies = (thread.replies || 0) + (isReplied ? -1 : 1);
+    
+    if (isReplied) localStorage.removeItem(repliedKey);
+    else localStorage.setItem(repliedKey, 'true');
+    
+    thread.replies = newReplies;
+    const node = document.getElementById(`thread-${id}`);
+    if (node) node.outerHTML = renderThreadHTML(thread);
+
+    await window.supabaseClient.from('threads').update({ replies: newReplies }).eq('id', id);
 };
 
 // --- MEDIA & EXTRAS ---
