@@ -41,7 +41,13 @@ const initInterval = setInterval(() => {
 async function initializeThreads() {
     cacheElements();
 
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    let session = null;
+    try {
+        const { data } = await window.supabaseClient.auth.getSession();
+        session = data.session;
+    } catch(e) {
+        console.warn("Auth check bypassed:", e);
+    }
 
     // 1. Resolve Current User gracefully
     let username = 'Anonymous';
@@ -213,17 +219,32 @@ async function publishTransmission() {
 
     elements.postBtn.disabled = true;
 
-    const threadData = {
-        author: state.currentUser.id,
-        content: content,
-        avatar: state.currentUser.avatar,
-        media_url: state.mediaPreview
-    };
+    try {
+        const threadData = {
+            author: state.currentUser.id,
+            content: content,
+            avatar: state.currentUser.avatar,
+            media_url: state.mediaPreview
+        };
 
-    const { error } = await window.supabaseClient.from('threads').insert([threadData]);
+        const { data, error } = await window.supabaseClient.from('threads').insert([threadData]).select().single();
 
-    if (error) {
-        alert("Transmission Failed: " + error.message);
+        if (error) {
+            alert("Broadcast Failed [Network Error]: " + error.message);
+            elements.postBtn.disabled = false;
+            return;
+        }
+
+        // Force optimistic render instantly in case Realtime API isn't catching it
+        if (data) {
+            const exists = state.threads.find(t => t.id === data.id);
+            if (!exists) {
+                state.threads.unshift(data);
+                renderFeed();
+            }
+        }
+    } catch(e) {
+        alert("Broadcast Failed [Runtime Exception]: " + e.message);
         elements.postBtn.disabled = false;
         return;
     }
@@ -231,6 +252,7 @@ async function publishTransmission() {
     // Clear Composer
     elements.composerInput.value = '';
     window.removePreview();
+    updateSideStats();
 }
 
 window.toggleLike = async (id) => {
