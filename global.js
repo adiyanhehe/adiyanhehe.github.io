@@ -41,13 +41,13 @@ async function syncIdentity() {
         }
             
         if (profile) {
-            localStorage.setItem('rbx_user', profile.username);
+            localStorage.setItem('rbx_user', profile.username.toLowerCase());
             localStorage.setItem('rbx_email', session.user.email);
             if (profile.avatar_url) localStorage.setItem('rbx_pic', profile.avatar_url);
             if (profile.display_name) localStorage.setItem('rbx_display_name', profile.display_name);
         } else {
             // 3. Create fresh profile
-            const finalUsername = localStorage.getItem('rbx_user') || defaultUsername;
+            const finalUsername = (localStorage.getItem('rbx_user') || defaultUsername).toLowerCase();
             const { data: created } = await window.supabaseClient.from('profiles').upsert([{
                 id: session.user.id,
                 username: finalUsername,
@@ -56,7 +56,7 @@ async function syncIdentity() {
             }]).select().single();
             
             if (created) {
-                localStorage.setItem('rbx_user', created.username);
+                localStorage.setItem('rbx_user', created.username.toLowerCase());
                 localStorage.setItem('rbx_email', session.user.email);
             }
         }
