@@ -398,13 +398,12 @@
             const pfp = document.getElementById('m-pfp').value;
             const bio = document.getElementById('m-bio').value;
 
-            const { error } = await window.supabaseClient.from('profiles').upsert([{
-                username: me,
+            const { error } = await window.supabaseClient.from('profiles').update({
                 display_name: dName,
                 avatar_url: pfp,
                 bio: bio,
                 updated_at: new Date().toISOString()
-            }]);
+            }).eq('username', me);
 
             if (error) alert("Sync failed: " + error.message);
             else location.reload();
