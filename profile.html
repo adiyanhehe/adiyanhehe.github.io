@@ -159,12 +159,39 @@
             border-color: var(--accent);
             box-shadow: 0 0 0 4px rgba(123, 140, 255, 0.15);
         }
+        
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .messenger-app.profile-layout {
+            grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+        }
+
+        @media (max-width: 1180px) {
+            .messenger-app.profile-layout {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                overflow-y: auto;
+            }
+            .profile-layout .sidebar {
+                display: none; /* Hide sidebar on mobile profile for now or create a mobile nav */
+            }
+        }
     </style>
     
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="messenger-app">
+<body class="messenger-app profile-layout">
     <script src="global.js"></script>
 
     <!-- Sidebar Injected from Pulse System -->
@@ -247,7 +274,7 @@
     </section>
 
     <!-- Unified Edit Modal -->
-    <div id="edit-modal" class="modal-backdrop hidden" style="display: none; align-items: center; justify-content: center; z-index: 10000;">
+    <div id="edit-modal" class="modal-backdrop hidden" style="display: none;">
         <div class="edit-modal-box">
             <h2 style="margin-top: 0; font-family: var(--font-display);">Edit Identity</h2>
             <p style="color: var(--text-soft); font-size: 0.9rem; margin-bottom: 24px;">Update your global profile metadata.</p>
