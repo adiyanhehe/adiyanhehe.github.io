@@ -127,9 +127,10 @@ function cacheElements() {
     elements.directoryContent = document.getElementById("directoryContent");
     elements.newConversationButton = document.getElementById("newConversationButton");
     elements.workspaceIdentity = document.getElementById("workspaceIdentity");
-    elements.membersToggleButton = document.getElementById("membersToggleButton");
-    elements.jumpLatestButton = document.getElementById("jumpLatestButton");
+    elements.workspace = document.getElementById("workspace");
+    elements.workspaceIdentity = document.getElementById("workspaceIdentity");
     elements.friendsStage = document.getElementById("friendsStage");
+    elements.requestsStage = document.getElementById("requestsStage");
     elements.chatStage = document.getElementById("chatStage");
     elements.messageStream = document.getElementById("messageStream");
     elements.typingIndicator = document.getElementById("typingIndicator");
@@ -654,9 +655,11 @@ function renderSidebar() {
     elements.friendsViewButton.setAttribute("aria-pressed", state.nav === "friends");
     elements.requestsViewButton.setAttribute("aria-pressed", state.nav === "requests");
 
-    const onlineCount = Object.values(state.people).filter(p => p.presence === "online").length;
-    elements.friendsOnlineBadge.textContent = onlineCount;
-    elements.friendsOnlineBadge.classList.toggle("hidden", onlineCount === 0);
+    elements.homeUnreadBadge.textContent = homeUnread;
+    elements.homeUnreadBadge.classList.toggle("hidden", homeUnread === 0);
+    
+    elements.friendsOnlineBadge.textContent = onlineFriends;
+    elements.friendsOnlineBadge.classList.toggle("hidden", onlineFriends === 0);
 
     const requestCount = state.requests.length;
     elements.requestsBadge.textContent = requestCount;
@@ -756,6 +759,7 @@ function renderFriendsDirectory() {
 function renderWorkspace() {
     if (state.nav === "friends") {
         elements.friendsStage.classList.remove("hidden");
+        elements.requestsStage.classList.add("hidden");
         elements.chatStage.classList.add("hidden");
         elements.composer.classList.add("hidden");
         elements.membersToggleButton.classList.add("hidden");
@@ -765,8 +769,21 @@ function renderWorkspace() {
         return;
     }
 
+    if (state.nav === "requests") {
+        elements.friendsStage.classList.add("hidden");
+        elements.requestsStage.classList.remove("hidden");
+        elements.chatStage.classList.add("hidden");
+        elements.composer.classList.add("hidden");
+        elements.membersToggleButton.classList.add("hidden");
+        elements.jumpLatestButton.classList.add("hidden");
+        elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Requests", "Manage your pending chat invitations.");
+        renderRequestsView();
+        return;
+    }
+
     const activeChat = getActiveChat();
     elements.friendsStage.classList.add("hidden");
+    elements.requestsStage.classList.add("hidden");
     elements.chatStage.classList.remove("hidden");
     elements.composer.classList.add("hidden");
     elements.membersToggleButton.classList.add("hidden");
@@ -1355,43 +1372,35 @@ async function createConversationFromModal() {
 }
 
 function renderRequestsView() {
-    elements.workspace.innerHTML = `
-        <div class="chat-stage">
-            <header class="chat-header">
-                <div class="chat-header-info">
-                    <h2>Friend Requests</h2>
-                    <p>${state.requests.length} pending invitations</p>
-                </div>
-            </header>
-            <div class="message-stream">
-                <div class="stream-inner" style="padding: 20px;">
-                    ${state.requests.length === 0 ? `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">💌</div>
-                            <h3>No pending requests</h3>
-                            <p>When someone invites you to chat, it will appear here.</p>
-                        </div>
-                    ` : `
-                        <div class="requests-list">
-                            ${state.requests.map(req => {
-                                const user = state.people[req.from_user] || { name: req.from_user, initials: '?' };
-                                return `
-                                    <div class="request-item">
-                                        ${renderPersonAvatar(user, "avatar-token", false)}
-                                        <div class="request-info">
-                                            <strong>${escapeHtml(user.name)}</strong>
-                                            <p>wants to start a conversation</p>
-                                        </div>
-                                        <div class="request-actions">
-                                            <button class="request-btn accept" onclick="handleFriendRequestAction('${req.id}', 'accept')">Accept</button>
-                                            <button class="request-btn decline" onclick="handleFriendRequestAction('${req.id}', 'decline')">Decline</button>
-                                        </div>
+    elements.requestsStage.innerHTML = `
+        <div class="message-stream">
+            <div class="stream-inner" style="padding: 20px;">
+                ${state.requests.length === 0 ? `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💌</div>
+                        <h3>No pending requests</h3>
+                        <p>When someone invites you to chat, it will appear here.</p>
+                    </div>
+                ` : `
+                    <div class="requests-list">
+                        ${state.requests.map(req => {
+                            const user = state.people[req.from_user] || { name: req.from_user, initials: '?' };
+                            return `
+                                <div class="request-item">
+                                    ${renderPersonAvatar(user, "avatar-token", false)}
+                                    <div class="request-info">
+                                        <strong>${escapeHtml(user.name)}</strong>
+                                        <p>wants to start a conversation</p>
                                     </div>
-                                `;
-                            }).join("")}
-                        </div>
-                    `}
-                </div>
+                                    <div class="request-actions">
+                                        <button class="request-btn accept" onclick="handleFriendRequestAction('${req.id}', 'accept')">Accept</button>
+                                        <button class="request-btn decline" onclick="handleFriendRequestAction('${req.id}', 'decline')">Decline</button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                `}
             </div>
         </div>
     `;
