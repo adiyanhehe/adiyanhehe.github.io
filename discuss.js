@@ -277,11 +277,14 @@ async function initializeState() {
 }
 
 async function syncChatsWithDatabase() {
-    // Fetch all messages where the current user is sender or receiver
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    const uuid = session?.user?.id;
+
+    // Fetch all messages where the current user is involved
     const { data: messages, error: msgError } = await window.supabaseClient
         .from('messages')
         .select('*')
-        .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id},receiver.eq.global_chat`)
+        .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id},sender.eq.${uuid},receiver.eq.${uuid},receiver.eq.global_chat`)
         .order('created_at', { ascending: true });
 
     if (msgError) {
@@ -337,6 +340,19 @@ async function syncChatsWithDatabase() {
         const chat = chatsMap.get(chatId);
         const ts = new Date(msg.created_at).getTime();
         if (ts > chat.lastTimestamp) chat.lastTimestamp = ts;
+
+        // CRITICAL: Actually store the message in state
+        if (!state.messages[chatId]) state.messages[chatId] = [];
+        if (!state.messages[chatId].some(m => String(m.id) === String(msg.id))) {
+            state.messages[chatId].push({
+                id: String(msg.id),
+                senderId: msg.sender,
+                text: msg.content,
+                gifUrl: msg.gif_url || null,
+                timestamp: ts,
+                reactions: []
+            });
+        }
     });
 
     state.chats = Array.from(chatsMap.values()).sort((a, b) => b.lastTimestamp - a.lastTimestamp);
