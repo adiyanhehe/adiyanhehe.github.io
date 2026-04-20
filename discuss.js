@@ -284,8 +284,23 @@ async function syncChatsWithDatabase() {
 
     if (msgError) {
         console.error('[Pulse] Failed to load messages:', msgError);
-        if (window.showTopNotification) window.showTopNotification('Could not load messages. Check your connection.', 'error');
         return;
+    }
+
+    // Collect all unique user IDs mentioned in messages
+    const mentionedUsers = new Set();
+    messages.forEach(m => {
+        mentionedUsers.add(m.sender);
+        if (m.receiver && m.receiver !== 'global_chat' && m.channel_type !== 'group') {
+            mentionedUsers.add(m.receiver);
+        }
+    });
+
+    // Ensure all mentioned users are in state.people
+    for (const userId of mentionedUsers) {
+        if (!state.people[userId]) {
+            await ensurePersonInDB(userId);
+        }
     }
 
     const chatsMap = new Map();
