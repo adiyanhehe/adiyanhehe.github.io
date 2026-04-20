@@ -95,6 +95,7 @@ function setupSubscriptions() {
 function renderFeed() {
     if (!elements.feed) return;
     elements.feed.innerHTML = state.threads.map(t => renderThread(t)).join('');
+    // Scroll to top on new posts if it was just posted
     updateTrends();
 }
 
@@ -230,17 +231,18 @@ async function handleFileUpload(event) {
     setPreview(publicUrl);
 }
 
-function setPreview(url) {
-    state.mediaPreview = url;
-    elements.mediaPreviewContent.innerHTML = `<img src="${url}">`;
-    elements.mediaPreview.classList.add('active');
-    elements.postBtn.disabled = false;
-}
-
-function removePreview() {
+window.removePreview = () => {
     state.mediaPreview = null;
     elements.mediaPreviewContent.innerHTML = '';
-    elements.mediaPreview.classList.remove('active');
+    elements.mediaPreview.classList.add('hidden');
+    elements.postBtn.disabled = !elements.composerInput.value.trim();
+};
+
+function setPreview(url) {
+    state.mediaPreview = url;
+    elements.mediaPreviewContent.innerHTML = `<img src="${url}" style="width: 100%; border-radius: 12px; display: block;">`;
+    elements.mediaPreview.classList.remove('hidden');
+    elements.postBtn.disabled = false;
 }
 
 // GIF PICKER logic
