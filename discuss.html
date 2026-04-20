@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse Messaging</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="discuss.css">
+    <link rel="stylesheet" href="global.css?v=3">
+    <!-- Supabase loaded first to guarantee it's available before global.js runs -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin></script>
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <script src="global.js?v=3" defer></script>
+    <script src="discuss.js" defer></script>
+</head>
+<body>
+    <div class="messenger-app" id="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <div class="brand-lockup">
+                    <div class="brand-mark">PX</div>
+                    <div>
+                        <p class="eyebrow">Private Messaging</p>
+                        <h1>Pulse</h1>
+                    </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <button class="nav-button active" id="homeViewButton" type="button" data-view="home" aria-pressed="true">
+                        <span class="nav-button-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 11.5L12 4l9 7.5"></path>
+                                <path d="M5 10.5V20h14v-9.5"></path>
+                            </svg>
+                        </span>
+                        <span class="nav-button-copy">
+                            <strong>Home</strong>
+                            <small>DMs and groups</small>
+                        </span>
+                        <span class="nav-badge hidden" id="homeUnreadBadge">0</span>
+                    </button>
+
+                    <button class="nav-button" id="friendsViewButton" type="button" data-view="friends" aria-pressed="false">
+                        <span class="nav-button-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M16 21v-2.5a3.5 3.5 0 0 0-3.5-3.5H7.5A3.5 3.5 0 0 0 4 18.5V21"></path>
+                                <circle cx="10" cy="8" r="4"></circle>
+                                <path d="M20 21v-2a3 3 0 0 0-2.2-2.9"></path>
+                                <path d="M16.5 4.2a3.8 3.8 0 0 1 0 7.2"></path>
+                            </svg>
+                        </span>
+                        <span class="nav-button-copy">
+                            <strong>Friends</strong>
+                            <small>Online teammates</small>
+                        </span>
+                        <span class="nav-badge hidden" id="friendsOnlineBadge">0</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="utility-row">
+                    <button class="utility-button" id="themeToggleButton" type="button" aria-label="Toggle theme">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3v2.5"></path>
+                            <path d="M12 18.5V21"></path>
+                            <path d="M4.6 4.6l1.8 1.8"></path>
+                            <path d="M17.6 17.6l1.8 1.8"></path>
+                            <path d="M3 12h2.5"></path>
+                            <path d="M18.5 12H21"></path>
+                            <path d="M4.6 19.4l1.8-1.8"></path>
+                            <path d="M17.6 6.4l1.8-1.8"></path>
+                            <circle cx="12" cy="12" r="4.5"></circle>
+                        </svg>
+                    </button>
+
+                    <button class="utility-button mobile-only" id="closeSidebarButton" type="button" aria-label="Close sidebar">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M18 6L6 18"></path>
+                            <path d="M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="current-user-card">
+                    <div class="current-user-avatar" id="currentUserAvatar"></div>
+                    <div class="current-user-meta">
+                        <strong id="currentUserName">Pulse User</strong>
+                        <span id="currentUserStatus">Ready to chat</span>
+                    </div>
+                    <button class="utility-button" id="settingsButton" type="button" aria-label="Open settings">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1 0 2.8l-.8.8a2 2 0 0 1-2.8 0l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V22a2 2 0 0 1-2 2h-1.2a2 2 0 0 1-2-2v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 0 1-2.8 0l-.8-.8a2 2 0 0 1 0-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H2a2 2 0 0 1-2-2v-1.2a2 2 0 0 1 2-2h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 0 1 0-2.8l.8-.8a2 2 0 0 1 2.8 0l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 9 2.2V2a2 2 0 0 1 2-2h1.2a2 2 0 0 1 2 2v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 0 1 2.8 0l.8.8a2 2 0 0 1 0 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1H22a2 2 0 0 1 2 2v1.2a2 2 0 0 1-2 2h-.2a1.7 1.7 0 0 0-1.5 1Z"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="settings-menu hidden" id="settingsMenu">
+                    <button class="settings-menu-item" id="changeStatusButton" type="button">Change custom status</button>
+                    <button class="settings-menu-item" id="clearUnreadButton" type="button">Clear unread badges</button>
+                    <button class="settings-menu-item danger" id="resetDemoButton" type="button">Reset demo data</button>
+                </div>
+            </div>
+        </aside>
+
+        <section class="directory-panel" id="directoryPanel">
+            <div class="directory-header">
+                <div class="directory-heading">
+                    <div class="mobile-heading-row">
+                        <button class="utility-button mobile-only" id="openSidebarButton" type="button" aria-label="Open navigation">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 7h16"></path>
+                                <path d="M4 12h16"></path>
+                                <path d="M4 17h16"></path>
+                            </svg>
+                        </button>
+                        <span class="eyebrow" id="directoryEyebrow">Inbox</span>
+                    </div>
+                    <h2 id="directoryTitle">Direct messages</h2>
+                    <p id="directorySubtitle">Keep up with the people building alongside you.</p>
+                </div>
+
+                <button class="create-button" id="newConversationButton" type="button">New chat</button>
+
+                <label class="search-field">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="6.5"></circle>
+                        <path d="M16 16l5 5"></path>
+                    </svg>
+                    <input id="searchInput" type="search" placeholder="Search conversations">
+                </label>
+
+                <div class="filter-bar" id="filterBar"></div>
+            </div>
+
+            <div class="directory-content" id="directoryContent"></div>
+        </section>
+
+        <main class="workspace">
+            <header class="workspace-header">
+                <div class="workspace-header-main">
+                    <button class="utility-button mobile-only" id="openDirectoryButton" type="button" aria-label="Open chat list">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 7h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 17h16"></path>
+                        </svg>
+                    </button>
+                    <div id="workspaceIdentity"></div>
+                </div>
+
+                <div class="workspace-actions">
+                    <button class="ghost-button" id="membersToggleButton" type="button">Members</button>
+                    <button class="ghost-button hidden" id="jumpLatestButton" type="button">Jump to latest</button>
+                </div>
+            </header>
+
+            <section class="workspace-body">
+                <section class="friends-stage hidden" id="friendsStage"></section>
+
+                <section class="chat-stage" id="chatStage">
+                    <div class="message-stream" id="messageStream"></div>
+
+                    <div class="typing-indicator hidden" id="typingIndicator">
+                        <div class="typing-dots" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <span id="typingLabel">Someone is typing...</span>
+                    </div>
+
+                    <aside class="members-sheet hidden" id="membersSheet"></aside>
+                </section>
+            </section>
+
+        <footer class="composer" id="composer">
+            <div class="emoji-picker hidden" id="emojiPicker"></div>
+            
+            <div class="gif-picker hidden" id="gifPicker">
+                <div class="gif-picker-header">
+                    <input type="text" id="gifSearchInput" placeholder="Search Giphy...">
+                </div>
+                <div class="gif-grid" id="gifGrid"></div>
+            </div>
+
+            <div class="composer-shell">
+                <button class="utility-button" id="emojiToggleButton" type="button" aria-label="Open emoji picker">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="8.5"></circle>
+                        <path d="M8.5 10.5h.01"></path>
+                        <path d="M15.5 10.5h.01"></path>
+                        <path d="M8.5 14.5c.8 1.1 2 1.7 3.5 1.7s2.7-.6 3.5-1.7"></path>
+                    </svg>
+                </button>
+
+                <button class="utility-button" id="gifToggleButton" type="button" aria-label="Open GIF picker">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </button>
+
+                    <textarea id="messageInput" rows="1" maxlength="400" placeholder="Write a message"></textarea>
+
+                    <button class="send-button" id="sendButton" type="button">Send</button>
+                </div>
+
+                <div class="composer-meta">
+                    <span id="composerHint">Press Enter to send. Use Shift + Enter for a new line.</span>
+                    <span id="characterCount">0 / 400</span>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <div class="page-overlay hidden" id="pageOverlay"></div>
+
+    <div class="modal-backdrop hidden" id="conversationModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow">Start Conversation</p>
+                    <h3>Create a new direct message or group chat</h3>
+                </div>
+                <button class="utility-button" id="closeModalButton" type="button" aria-label="Close modal">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6L6 18"></path>
+                        <path d="M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-mode-switch">
+                <button class="mode-button active" type="button" data-mode="direct">Direct message</button>
+                <button class="mode-button" type="button" data-mode="group">Group chat</button>
+            </div>
+
+            <div class="modal-body">
+                <label class="modal-field" id="directNameField">
+                    <span>Recipient</span>
+                    <input id="directRecipientInput" type="text" placeholder="Type a teammate name">
+                </label>
+
+                <div id="groupFields" class="hidden">
+                    <label class="modal-field">
+                        <span>Group name</span>
+                        <input id="groupNameInput" type="text" placeholder="Product launch room">
+                    </label>
+
+                    <label class="modal-field">
+                        <span>Participants</span>
+                        <input id="groupParticipantsInput" type="text" placeholder="Comma-separated names">
+                    </label>
+                </div>
+
+                <label class="modal-field">
+                    <span>First message</span>
+                    <textarea id="conversationMessageInput" rows="4" placeholder="Start the conversation with context"></textarea>
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button class="ghost-button" id="cancelModalButton" type="button">Cancel</button>
+                <button class="create-button" id="createConversationButton" type="button">Create conversation</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

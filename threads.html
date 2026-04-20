@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus // Threads</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-dim: #71767b;
+            --accent: #1d9bf0;
+            --nexus-blue: #1d9bf0;
+            --glass: rgba(255, 255, 255, 0.03);
+            --error: #f4212e;
+            --success: #00ba7c;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { 
+            background: var(--bg); color: var(--text-main); font-family: 'Outfit', sans-serif;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- LAYOUT GRID --- */
+        .page-wrap {
+            display: grid; grid-template-columns: 300px 600px 300px; gap: 40px;
+            width: 100%; max-width: 1300px; padding-top: 100px; padding-bottom: 50px;
+        }
+
+        /* --- LEFT SIDEBAR (Profile) --- */
+        .sidebar-left { padding: 20px; position: sticky; top: 100px; height: fit-content; }
+        .user-card { 
+            background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+            padding: 30px; display: flex; flex-direction: column; align-items: center; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .user-card .name { font-weight: 900; font-size: 1.5rem; margin-top: 15px; }
+        .user-card .handle { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px; gap: 10px; }
+        .stat-item span { display: block; font-weight: 900; font-size: 1.1rem; }
+        .stat-item p { color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- MAIN FEED --- */
+        .feed-container { width: 100%; border-left: 1px solid var(--border); border-right: 1px solid var(--border); position: relative; }
+
+        .compose-area { border-bottom: 2px solid var(--border); padding: 30px; display: flex; gap: 20px; background: rgba(255,255,255,0.01); }
+        .user-pic { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #111; border: 2px solid var(--border); cursor: pointer; transition: 0.3s; }
+        .user-pic:hover { transform: scale(1.1); border-color: var(--nexus-blue); }
+        .input-wrap { flex: 1; }
+        .input-wrap textarea {
+            width: 100%; background: transparent; border: none; color: #fff; font-size: 1.25rem;
+            outline: none; resize: none; min-height: 50px; padding-top: 10px; line-height: 1.4;
+        }
+        .compose-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
+        .media-actions { display: flex; gap: 15px; }
+        .media-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text-dim); padding: 8px; border-radius: 10px; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
+        .media-btn:hover { color: var(--nexus-blue); border-color: var(--nexus-blue); background: rgba(0, 162, 255, 0.05); }
+        .media-btn input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        
+        /* Preview area for uploaded media */
+        .media-preview { margin-top: 12px; position: relative; display: none; }
+        .media-preview.active { display: block; }
+        .media-preview img, .media-preview video { max-width: 100%; border-radius: 12px; border: 1px solid var(--border); }
+        .media-preview .remove-media { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(0,0,0,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; border: none; font-size: 1rem; }
+        
+        /* GIF Picker */
+        .gif-picker-panel {
+            display: none; position: absolute; bottom: 100%; right: 0; width: 320px; height: 400px;
+            background: #15171a; border: 1px solid var(--border); border-radius: 16px;
+            z-index: 1000; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .gif-picker-panel.active { display: flex; flex-direction: column; }
+        .gif-picker-header { padding: 12px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+        .gif-picker-header input { flex: 1; background: #202327; border: none; border-radius: 20px; padding: 8px 15px; color: #fff; font-size: 0.85rem; outline: none; }
+        .gif-picker-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
+        .gif-picker-grid img { width: 100%; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .gif-picker-grid img:hover { transform: scale(1.05); }
+        .btn-post { 
+            background: var(--nexus-blue); 
+            color: #fff; 
+            border: none; 
+            padding: 10px 24px; 
+            border-radius: 50px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .btn-post.active { opacity: 1; pointer-events: auto; }
+        .btn-post:hover { background: #1a8cd8; }
+
+        .char-count { font-size: 0.8rem; color: var(--text-dim); margin-right: 15px; }
+        .char-count.warn { color: #ffd700; }
+        .char-count.limit { color: var(--error); }
+
+        /* --- POSTS --- */
+        .post { border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; gap: 12px; transition: 0.2s; cursor: pointer; }
+        .post:hover { background: rgba(255, 255, 255, 0.02); }
+        .username { font-weight: 700; font-size: 1rem; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .username:hover { text-decoration: underline; }
+        .post-text { font-size: 1rem; line-height: 1.5; color: #e7e9ea; margin: 4px 0 12px 0; white-space: pre-wrap; word-break: break-word; }
+        .post-actions { display: flex; justify-content: space-between; max-width: 425px; color: var(--text-dim); margin-top: 12px; }
+        .action-icon { display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+        .action-icon:hover { color: var(--nexus-blue); }
+        .action-icon:hover .icon-bg { background: rgba(29, 155, 240, 0.1); }
+        .action-icon.liked { color: #f91880; }
+        .action-icon.liked .icon-bg { background: rgba(249, 24, 128, 0.1); }
+        .action-icon.liked svg { fill: #f91880; stroke: #f91880; }
+        .action-icon.reposted { color: var(--success); }
+        .action-icon.reposted .icon-bg { background: rgba(0, 186, 124, 0.1); }
+        
+        .icon-bg { 
+            width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .action-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+        .search-area { padding: 12px 20px; position: sticky; top: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid var(--border); }
+        .search-bar { background: #202327; border: 1px solid transparent; border-radius: 50px; padding: 10px 20px; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .search-bar:focus-within { background: transparent; border-color: var(--nexus-blue); }
+        .search-bar input { background: transparent; border: none; color: #fff; outline: none; flex: 1; font-size: 0.95rem; }
+        
+        .mention { color: var(--nexus-blue); text-decoration: none; font-weight: 500; }
+        .mention:hover { text-decoration: underline; }
+        .hashtag { color: var(--nexus-blue); text-decoration: none; }
+        .hashtag:hover { text-decoration: underline; }
+
+        /* Report Modal */
+        .report-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 5000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .report-modal-content {
+            background: #0a0a0a;
+            width: 450px;
+            padding: 35px;
+            border-radius: 24px;
+            border: 1px solid #222;
+        }
+        .report-modal-content h3 {
+            color: var(--error);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        .report-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .report-option {
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .report-option:hover {
+            background: rgba(244, 33, 46, 0.1);
+            border-color: var(--error);
+        }
+        .report-textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 20px;
+            outline: none;
+        }
+        .report-textarea:focus {
+            border-color: var(--error);
+        }
+
+        /* Profile Pic Upload */
+        .profile-upload-btn {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .profile-upload-btn input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* --- TRENDS --- */
+        .sidebar-right { padding: 20px; position: sticky; top: 100px; height: fit-content; }
+        .trend-card { background: var(--surface); border: 1px solid var(--border); padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .trend-card h3 { font-size: 0.75rem; font-weight: 900; color: var(--nexus-blue); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        .trend-item { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px; border-radius: 12px; transition: 0.3s; }
+        .trend-item:hover { background: var(--glass); transform: translateX(5px); }
+        .trend-name { font-weight: 900; font-size: 1rem; color: #fff; }
+        .trend-count { font-size: 0.8rem; color: var(--text-dim); font-weight: 800; }
+
+        #login-gate { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000001; 
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(20px);
+            flex-direction: column; text-align: center;
+        }
+        
+        @media (max-width: 1200px) {
+            .page-wrap { grid-template-columns: 1fr; max-width: 600px; padding: 100px 20px; }
+            .sidebar-left, .sidebar-right { display: none; }
+        }
+    </style>
+    <link rel="stylesheet" href="global.css">
+    <script src="global.js" defer></script>
+</head>
+<body>
+    <div id="login-gate">
+        <div style="font-size:5rem; font-weight:900; letter-spacing:-4px; margin-bottom:10px; background: linear-gradient(to bottom, #fff, #444); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">THREADS</div>
+        <p style="color:#666; margin-bottom:40px; font-size:1.2rem; max-width:400px; font-weight:500;">Access the encrypted global feed.</p>
+        <div style="display:flex; gap:15px;">
+            <a href="auth.html?mode=register&redirect=threads.html" style="background:var(--nexus-blue); color:#fff; padding:20px 50px; border-radius:100px; font-weight:900; text-decoration:none; box-shadow:0 15px 40px rgba(0, 162, 255, 0.3);" class="interactable">Initialize Link</a>
+            <a href="auth.html?mode=login&redirect=threads.html" style="background:transparent; border:2px solid #222; color:#fff; padding:20px 50px; border-radius:100px; font-weight:900; text-decoration:none;" class="interactable">Identify</a>
+        </div>
+    </div>
+    
+    <div id="reply-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+        <div style="background:#0a0a0a; width:500px; padding:35px; border-radius:24px; border:1px solid #222;">
+            <div style="font-size:0.75rem; color:var(--nexus-blue); font-weight:900; text-transform:uppercase; margin-bottom:10px;">Replying to @<span id="reply-target"></span></div>
+            <div id="reply-orig-text" style="color:#444; font-size:1rem; margin-bottom:25px; font-style:italic;"></div>
+            <textarea id="reply-in" style="width:100%; background:transparent; border:none; color:#fff; font-size:1.2rem; resize:none; min-height:100px; outline:none;" placeholder="Your transmission..."></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:20px;">
+                <button onclick="closeReply()" style="background:transparent; border:none; color:#444; font-weight:900; cursor:pointer;">Cancel</button>
+                <button onclick="sendReply()" style="background:#fff; color:#000; padding:12px 30px; border-radius:50px; font-weight:900; border:none; cursor:pointer;">REPLY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="report-modal">
+        <div class="report-modal-content">
+            <h3>⚠️ Report Content</h3>
+            <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:20px;">Reported content will be sent to Nexus administrators for review.</p>
+            <div class="report-options">
+                <div class="report-option" onclick="selectReportReason('spam')">🤖 Spam or misleading content</div>
+                <div class="report-option" onclick="selectReportReason('harassment')">😠 Harassment or hate speech</div>
+                <div class="report-option" onclick="selectReportReason('nsfw')">🔞 NSFW or inappropriate content</div>
+                <div class="report-option" onclick="selectReportReason('violence')">💀 Violence or dangerous content</div>
+                <div class="report-option" onclick="selectReportReason('other')">📋 Other reason</div>
+            </div>
+            <textarea id="report-details" class="report-textarea" placeholder="Additional details (optional)..."></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:15px;">
+                <button onclick="closeReportModal()" style="background:transparent; border:none; color:#444; font-weight:900; cursor:pointer;">CANCEL</button>
+                <button onclick="submitReport()" style="background:var(--error); color:#fff; padding:12px 30px; border-radius:50px; font-weight:900; border:none; cursor:pointer;">SUBMIT REPORT</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="header">
+        <a href="index.html" class="logo interactable">ADIYAN<span>.</span>NEXUS</a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-item">Home</a>
+            <a href="discuss.html" class="nav-item">Discuss</a>
+            <div id="auth-nav"></div>
+        </nav>
+    </header>
+
+    <div class="page-wrap">
+        <div class="sidebar-left">
+            <div class="user-card interactable" onclick="goMyProfile()">
+                <img id="side-pic" class="user-pic" style="width:100px; height:100px; border-width:3px; border-color:var(--nexus-blue);">
+                <div class="name" id="side-name">...</div>
+                <div class="handle" id="side-handle">@identifying</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span id="stat-posts">0</span>
+                        <p>Posts</p>
+                    </div>
+                    <div class="stat-item">
+                        <span id="stat-reputation">100</span>
+                        <p>Rep</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main class="feed-container">
+            <div class="search-area">
+                <div class="search-bar">
+                    <svg width="18" height="18" fill="none" stroke="var(--text-dim)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="search-in" placeholder="Search Global Feed..." oninput="filterFeed()">
+                </div>
+            </div>
+            <div class="compose-area">
+                <img id="my-pic" class="user-pic">
+                <div class="input-wrap">
+                    <textarea id="post-in" placeholder="Identify yourself to the network..."></textarea>
+                    <div class="compose-footer">
+                        <div class="media-actions">
+                            <button class="media-btn interactable" onclick="addMedia('image')"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></button>
+                            <button class="media-btn interactable" onclick="addMedia('video')"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            <span id="char-count" class="char-count">280</span>
+                            <button id="post-btn" class="btn-post interactable" onclick="post()">Post</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="feed"></div>
+        </main>
+
+        <div class="sidebar-right">
+            <div class="trend-card">
+                <h3>Global Metadata</h3>
+                <div id="trend-list">
+                    <div style="color:var(--text-dim); font-size:0.75rem;">Awaiting signal...</div>
+                </div>
+            </div>
+
+            <div class="trend-card" style="margin-top:20px;">
+                <h3 style="color:#f91880;">Notifications</h3>
+                <div id="notify-list" style="font-size:0.8rem; color:#444; font-weight:700;">No recent alerts.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Preview Area -->
+    <div id="media-preview" class="media-preview">
+        <button class="remove-media" onclick="removeMedia()">✕</button>
+        <div id="media-preview-content"></div>
+    </div>
+
+    <!-- GIF Picker Panel -->
+    <div id="gif-picker" class="gif-picker-panel">
+        <div class="gif-picker-header">
+            <input type="text" placeholder="Search GIFs..." oninput="searchGifs(this.value)">
+        </div>
+        <div class="gif-picker-grid" id="gif-grid"></div>
+    </div>
+
+    <script>
+        const ably = new Ably.Realtime('I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc');
+        const postChan = ably.channels.get('nexus-posts');
+        const me = localStorage.getItem('rbx_user');
+        
+        // State for media upload
+        let currentMediaFile = null;
+        let currentMediaBase64 = null;
+
+        window.onload = async () => {
+            if(!me) {
+                document.getElementById('login-gate').style.display='flex';
+                gsap.from('#login-gate > *', { y: 50, opacity: 0, duration: 1, stagger: 0.2, ease: "power4.out" });
+            } else {
+                const pic = localStorage.getItem('rbx_pic') || 'https://via.placeholder.com/100';
+                document.getElementById('my-pic').src = pic;
+                document.getElementById('side-pic').src = pic;
+                document.getElementById('side-name').innerText = me;
+                document.getElementById('side-handle').innerText = '@' + me.toLowerCase().replace(' ', '');
+
+                // 1. LISTEN FOR REAL-TIME (New transmissions)
+                postChan.subscribe('new', (m) => {
+                    // Avoid duplicating real-time messages that we just posted
+                    if(document.getElementById(`p-${m.data.time}`)) return;
+                    render(m.data, true);
+                });
+
+                postChan.subscribe('delete', (m) => {
+                    const el = document.getElementById(`p-${m.data.id}`);
+                    if(el) {
+                        gsap.to(el, { opacity: 0, x: 200, duration: 0.8, onComplete: () => el.remove() });
+                    }
+                });
+
+                // 2. LOAD PERMANENT HISTORY FROM CLOUD
+                const f = document.getElementById('feed');
+                f.innerHTML = '<div style="text-align:center; padding:40px; color:#444; font-weight:900; letter-spacing:2px; font-size:0.75rem; text-transform:uppercase;">Refining Global Feed...</div>';
+
+                if(window.loadCloudThreads) {
+                    const cloudPosts = await window.loadCloudThreads();
+                    f.innerHTML = ''; // Clear loader
+                    if(cloudPosts.length > 0) {
+                        cloudPosts.forEach(p => {
+                            const postObj = {
+                                user: p.author,
+                                pic: p.avatar || 'https://via.placeholder.com/100',
+                                text: p.content,
+                                time: new Date(p.timestamp).getTime()
+                            };
+                            if(!document.getElementById(`p-${postObj.time}`)) {
+                                render(postObj, false);
+                            }
+                        });
+                        updateTrends();
+                    } else {
+                        f.innerHTML = '<div style="text-align:center; padding:100px; color:#222; font-weight:900;">NO TRANSMISSIONS DETECTED IN CLOUD</div>';
+                    }
+                } else {
+                    f.innerHTML = '';
+                    postChan.history({limit: 50}, (err, page) => {
+                        if(!err) {
+                            page.items.reverse().forEach(m => render(m.data, false));
+                            updateTrends();
+                        }
+                    });
+                }
+            }
+
+            const tx = document.getElementById('post-in');
+            tx.addEventListener("input", function() {
+                this.style.height = "auto";
+                this.style.height = (this.scrollHeight) + "px";
+                updateCharCount(this.value);
+            });
+        };
+
+        function updateCharCount(val) {
+            const count = 280 - val.length;
+            const el = document.getElementById('char-count');
+            const btn = document.getElementById('post-btn');
+            el.innerText = count;
+            
+            if(count < 0) { el.classList.add('limit'); el.classList.remove('warn'); btn.classList.remove('active'); }
+            else if(count < 20) { el.classList.add('warn'); el.classList.remove('limit'); btn.classList.add('active'); }
+            else { el.classList.remove('warn', 'limit'); if(val.trim()) btn.classList.add('active'); else btn.classList.remove('active'); }
+        }
+
+        function filterFeed() {
+            const q = document.getElementById('search-in').value.toLowerCase();
+            document.querySelectorAll('.post').forEach(p => {
+                const txt = p.innerText.toLowerCase();
+                p.style.display = txt.includes(q) ? 'flex' : 'none';
+            });
+        }
+
+        // File upload with file picker
+        function addMedia(type) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = type === 'image' ? 'image/*' : 'video/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                currentMediaFile = file;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    currentMediaBase64 = ev.target.result;
+                    const preview = document.getElementById('media-preview');
+                    const content = document.getElementById('media-preview-content');
+                    if (type === 'image') {
+                        content.innerHTML = `<img src="${currentMediaBase64}" style="max-width:100%; border-radius:12px;">`;
+                    } else {
+                        content.innerHTML = `<video src="${currentMediaBase64}" controls style="max-width:100%; border-radius:12px;"></video>`;
+                    }
+                    preview.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
+        function removeMedia() {
+            currentMediaFile = null;
+            currentMediaBase64 = null;
+            document.getElementById('media-preview').classList.remove('active');
+            document.getElementById('media-preview-content').innerHTML = '';
+        }
+
+        // GIF Picker
+        async function searchGifs(query) {
+            const grid = document.getElementById('gif-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '<div style="grid-column:1/-1; color:var(--text-dim); font-size:0.8rem; text-align:center; padding:20px;">Loading...</div>';
+            
+            try {
+                const apiKey = 'mXATbjqF4qWGc5LMZS9ZDNDnEvV2uB9p';
+                const url = query
+                    ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=12&rating=g`
+                    : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=12&rating=g`;
+                
+                const response = await fetch(url);
+                const json = await response.json();
+                
+                if (!json.data || json.data.length === 0) {
+                    grid.innerHTML = '<div style="grid-column:1/-1; color:var(--text-dim); font-size:0.8rem; text-align:center; padding:20px;">No GIFs found.</div>';
+                    return;
+                }
+                
+                grid.innerHTML = '';
+                json.data.forEach(gif => {
+                    const img = document.createElement('img');
+                    img.src = gif.images.fixed_height_small.url;
+                    img.onclick = () => {
+                        currentMediaBase64 = gif.images.downsized.url;
+                        const preview = document.getElementById('media-preview');
+                        const content = document.getElementById('media-preview-content');
+                        content.innerHTML = `<img src="${currentMediaBase64}" style="max-width:100%; border-radius:12px;">`;
+                        preview.classList.add('active');
+                        document.getElementById('gif-picker').classList.remove('active');
+                    };
+                    grid.appendChild(img);
+                });
+            } catch (e) {
+                console.error('GIF search error:', e);
+                grid.innerHTML = '<div style="grid-column:1/-1; color:var(--danger); font-size:0.8rem; text-align:center; padding:20px;">Failed to load GIFs.</div>';
+            }
+        }
+
+        // Toggle GIF picker
+        function toggleGifPicker() {
+            const picker = document.getElementById('gif-picker');
+            picker.classList.toggle('active');
+            if (picker.classList.contains('active')) {
+                searchGifs('');
+            }
+        }
+
+        async function post() {
+            const i = document.getElementById('post-in'); 
+            if (!i.value.trim() && !currentMediaBase64) return;
+            
+            let text = i.value.trim();
+            // Append media URL if uploaded
+            if (currentMediaBase64) {
+                text += (text ? ' ' : '') + currentMediaBase64;
+            }
+            
+            const postData = { 
+                user: me, 
+                pic: localStorage.getItem('rbx_pic'), 
+                text: text,
+                time: Date.now(),
+                likes: 0,
+                replies: 0,
+                reposts: 0
+            };
+
+            // 1. TRANSMIT REAL-TIME
+            postChan.publish('new', postData);
+
+            // 2. ARCHIVE TO CLOUD PERMANENTLY
+            if(window.saveThreadToCloud) {
+                window.saveThreadToCloud(postData);
+            }
+
+            i.value = ''; 
+            i.style.height = "60px";
+            removeMedia();
+            const currentPosts = parseInt(document.getElementById('stat-posts').innerText);
+            document.getElementById('stat-posts').innerText = currentPosts + 1;
+        }
+        function render(d, isNew) {
+            const f = document.getElementById('feed');
+            const postId = `p-${d.time || Math.random()}`;
+            const isLiked = localStorage.getItem(`like_${postId}`);
+            const isReposted = localStorage.getItem(`repost_${postId}`);
+            const isVerifiedUser = window.isVerified && window.isVerified(d.user);
+            const isAdminUser = window.isAdmin && window.isAdmin(me);
+            const isMe = d.user === me;
+            
+            // Format text: Mentions, Hashtags, Links
+            let textMod = d.text;
+            textMod = textMod.replace(/@(\w+)/g, '<a href="profile.html?user=$1" class="mention">@$1</a>');
+            textMod = textMod.replace(/#(\w+)/g, '<a href="#" class="hashtag" onclick="searchFor(\'$1\')">#$1</a>');
+            
+            // Auto-embed Images
+            const imgRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))/gi;
+            const images = textMod.match(imgRegex) || [];
+            textMod = textMod.replace(imgRegex, ''); // Remove links and embed instead
+
+            const div = document.createElement('div'); div.className = 'post'; div.id = postId;
+            div.onclick = (e) => { if(!e.target.closest('.interactable')) showProfileSummary(d.user); };
+            
+            div.innerHTML = `
+                <img src="${d.pic}" class="user-pic interactable" onclick="showProfileSummary('${d.user}')">
+                <div style="flex:1; min-width:0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <span class="username interactable" onclick="showProfileSummary('${d.user}')">
+                                ${d.user}
+                                ${isVerifiedUser ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#1d9bf0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
+                            </span>
+                            <span style="color:var(--text-dim); font-size:0.9rem;">· ${formatTime(d.time)}</span>
+                        </div>
+                        ${(isMe || isAdminUser) ? `
+                            <div class="interactable" onclick="deletePost('${postId}')" style="cursor:pointer; opacity:0.4; padding:5px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                        ` : ''}
+                    </div>
+                    <div class="post-text">${textMod}</div>
+                    ${images.map(img => `<div style="margin-top:12px; border-radius:16px; overflow:hidden; border:1px solid var(--border); max-width:100%;"><img src="${img}" style="width:100%; display:block;" onerror="this.style.display='none'"></div>`).join('')}
+                    <div class="post-actions">
+                        <div class="action-icon interactable" onclick="openReplyModal('${postId}', '${d.user}', '${encodeURIComponent(d.text)}')">
+                            <div class="icon-bg"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+                            <span>${d.replies || 0}</span>
+                        </div>
+                        <div class="action-icon interactable ${isReposted ? 'reposted' : ''}" onclick="repost('${postId}', '${encodeURIComponent(JSON.stringify(d))}')">
+                            <div class="icon-bg"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4m6 0l-4 4 4 4M2 13h15M2 5h19"/></svg></div>
+                            <span>${d.reposts || 0}</span>
+                        </div>
+                        <div class="action-icon interactable ${isLiked ? 'liked' : ''}" onclick="toggleLike('${postId}')">
+                            <div class="icon-bg"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+                            <span>${d.likes || 0}</span>
+                        </div>
+                        <div class="action-icon interactable" onclick="toggleSavePost('${postId}', '${encodeURIComponent(JSON.stringify(d))}')">
+                            <div class="icon-bg"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor"/></svg></div>
+                        </div>
+                        <div class="action-icon interactable" onclick="openReportModal('${postId}', '${d.user}', '${encodeURIComponent(d.text)}')" style="color: var(--text-dim);">
+                            <div class="icon-bg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
+                        </div>
+                    </div>
+                </div>`;
+            
+            if(isNew) { 
+                f.prepend(div); 
+                gsap.from(div, { y: 20, opacity: 0, duration: 0.6, ease: "power4.out" }); 
+            } else {
+                f.appendChild(div);
+            }
+        }
+
+        function searchFor(tag) {
+            document.getElementById('search-in').value = tag.replace('#','');
+            filterFeed();
+        }
+
+        function updateTrends() {
+            const tags = {};
+            document.querySelectorAll('.post-text').forEach(t => {
+                const matches = t.innerText.match(/#\w+/g);
+                if(matches) matches.forEach(m => tags[m] = (tags[m] || 0) + 1);
+            });
+            const sorted = Object.entries(tags).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const trendList = document.getElementById('trend-list');
+            if(!trendList) return;
+            trendList.innerHTML = '';
+            sorted.forEach(([tag, count]) => {
+                const item = document.createElement('div');
+                item.className = 'trend-item';
+                item.onclick = () => searchFor(tag);
+                item.innerHTML = `
+                    <div>
+                        <div class="trend-name">${tag}</div>
+                        <div class="trend-count">${count} transmission${count > 1 ? 's' : ''}</div>
+                    </div>
+                `;
+                trendList.appendChild(item);
+            });
+            
+            // Also update total post count in sidebar
+            document.getElementById('stat-posts').innerText = document.querySelectorAll('.post').length;
+        }
+
+        function deletePost(id) {
+            if(confirm("Erase this transmission from the global feed?")) {
+                gsap.to(`#${id}`, { x: 100, opacity: 0, duration: 0.5, onComplete: () => document.getElementById(id).remove() });
+            }
+        }
+        function editPost(id, dataRaw) {
+            const d = JSON.parse(decodeURIComponent(dataRaw));
+            const txt = prompt("Revise transmission data:", d.text);
+            if(txt && txt !== d.text) {
+                document.getElementById(id + '-text').innerText = txt + " (revised)";
+            }
+        }
+
+        function toggleLike(id) {
+            const post = document.getElementById(id);
+            if (!post) return;
+            // Target the like action icon (3rd action-icon, index 2)
+            const likeActions = post.querySelectorAll('.action-icon');
+            const el = likeActions[2]; // Like is the 3rd action (after reply, repost)
+            if (!el) return;
+            
+            const countSpan = el.querySelector('span');
+            let currentCount = parseInt(countSpan ? countSpan.innerText : 0);
+            
+            if (el.classList.contains('liked')) {
+                localStorage.removeItem(`like_${id}`);
+                el.classList.remove('liked');
+                if (countSpan) countSpan.innerText = Math.max(0, currentCount - 1);
+            } else {
+                localStorage.setItem(`like_${id}`, 'true');
+                el.classList.add('liked');
+                if (countSpan) countSpan.innerText = currentCount + 1;
+                gsap.from(el.querySelector('svg'), { scale: 1.5, duration: 0.4, ease: "back.out(3)" });
+            }
+        }
+
+        function formatTime(ms) {
+            if(!ms) return 'Now';
+            const now = Date.now();
+            const diff = now - ms;
+            if(diff < 5000) return 'Just now';
+            if(diff < 60000) return Math.floor(diff/1000) + 's';
+            if(diff < 3600000) return Math.floor(diff/60000) + 'm';
+            if(diff < 86400000) return Math.floor(diff/3600000) + 'h';
+            return Math.floor(diff/86400000) + 'd';
+        }
+
+        function goMyProfile() { location.href=`profile.html?user=${me}`; }
+
+        function toggleSavePost(id, dataRaw) {
+            const post = document.getElementById(id);
+            if (!post) return;
+            // Target the save action icon (4th action-icon, index 3)
+            const likeActions = post.querySelectorAll('.action-icon');
+            const el = likeActions[3]; // Save is the 4th action
+            if (!el) return;
+            
+            const svg = el.querySelector('svg');
+            if (localStorage.getItem('save_' + id)) {
+                localStorage.removeItem('save_' + id);
+                el.classList.remove('saved');
+                svg.setAttribute('fill', 'none');
+            } else {
+                localStorage.setItem('save_' + id, decodeURIComponent(dataRaw));
+                el.classList.add('saved');
+                svg.setAttribute('fill', 'var(--nexus-blue)');
+                gsap.from(el, { scale: 1.5, duration: 0.4, ease: "back.out(2)" });
+            }
+        }
+        let currentReplyId = null;
+        function openReplyModal(id, user, text) {
+            currentReplyId = id;
+            document.getElementById('reply-target').innerText = user;
+            document.getElementById('reply-orig-text').innerText = `"${decodeURIComponent(text).substring(0, 100)}..."`;
+            document.getElementById('reply-modal').style.display = 'flex';
+            gsap.from('#reply-modal div', { scale: 0.8, opacity: 0, duration: 0.4 });
+        }
+        function closeReply() { document.getElementById('reply-modal').style.display='none'; }
+        
+        async function sendReply() {
+            const txt = document.getElementById('reply-in').value; 
+            if (!txt.trim()) return;
+            
+            // Update reply count on the original post
+            if (currentReplyId) {
+                const originalPost = document.getElementById(currentReplyId);
+                if (originalPost) {
+                    const replyAction = originalPost.querySelectorAll('.action-icon')[0]; // First action is reply
+                    if (replyAction) {
+                        const countSpan = replyAction.querySelector('span');
+                        if (countSpan) {
+                            let currentCount = parseInt(countSpan.innerText || 0);
+                            countSpan.innerText = currentCount + 1;
+                        }
+                    }
+                }
+            }
+            
+            const replyData = { 
+                user: me, 
+                text: `Replying to @${document.getElementById('reply-target').innerText}: ${txt}`, 
+                pic: localStorage.getItem('rbx_pic'), 
+                time: Date.now(),
+                likes: 0,
+                replies: 0,
+                reposts: 0
+            };
+            postChan.publish('new', replyData);
+            if(window.saveThreadToCloud) window.saveThreadToCloud(replyData);
+            closeReply();
+            document.getElementById('reply-in').value = '';
+        }
+
+        async function repost(id, dataRaw) {
+            const d = JSON.parse(decodeURIComponent(dataRaw));
+            const repostData = { user: me, text: `Reposted Transmission from @${d.user}: ${d.text}`, pic: localStorage.getItem('rbx_pic'), time: Date.now() };
+            postChan.publish('new', repostData);
+            if(window.saveThreadToCloud) window.saveThreadToCloud(repostData);
+            gsap.from(`#${id}`, { scale: 1.1, duration: 0.3, yoyo: true, repeat: 1 });
+        }
+
+        // ============================================
+        // REPORT SYSTEM - Reports go to Super Admin
+        // ============================================
+        let currentReportPostId = null;
+        let currentReportUser = null;
+        let currentReportReason = 'other';
+
+        function openReportModal(postId, user, text) {
+            currentReportPostId = postId;
+            currentReportUser = user;
+            document.getElementById('report-modal').style.display = 'flex';
+            gsap.from('.report-modal-content', { scale: 0.8, opacity: 0, duration: 0.4 });
+        }
+
+        function closeReportModal() {
+            document.getElementById('report-modal').style.display = 'none';
+            currentReportPostId = null;
+            currentReportUser = null;
+            document.getElementById('report-details').value = '';
+        }
+
+        function selectReportReason(reason) {
+            currentReportReason = reason;
+            // Visual feedback
+            document.querySelectorAll('.report-option').forEach(opt => {
+                opt.style.background = 'rgba(255,255,255,0.03)';
+                opt.style.borderColor = 'var(--border)';
+            });
+            event.target.style.background = 'rgba(244, 33, 46, 0.15)';
+            event.target.style.borderColor = 'var(--error)';
+        }
+
+        async function submitReport() {
+            if (!currentReportPostId || !currentReportUser) {
+                closeReportModal();
+                return;
+            }
+
+            const details = document.getElementById('report-details').value.trim();
+            
+            const reportData = {
+                postId: currentReportPostId,
+                offender: currentReportUser,
+                reason: currentReportReason,
+                details: details,
+                reporter: me,
+                timestamp: Date.now()
+            };
+
+            try {
+                // Save report to Supabase (goes to super-admin panel)
+                if (window.supabaseClient) {
+                    await window.supabaseClient.from('reports').insert([{
+                        content_type: 'post',
+                        content_id: currentReportPostId,
+                        content_data: JSON.stringify({
+                            offender: currentReportUser,
+                            reason: currentReportReason,
+                            details: details
+                        }),
+                        reason: currentReportReason,
+                        reporter: me,
+                        status: 'pending'
+                    }]);
+                }
+
+                // Also send real-time notification to admin
+                if (ably) {
+                    ably.channels.get('admin-reports').publish('new_report', reportData);
+                }
+
+                closeReportModal();
+                
+                // Show success notification
+                if (window.showTopNotification) {
+                    window.showTopNotification('Report submitted to administrators', 'info');
+                } else {
+                    showToast('Report submitted successfully');
+                }
+
+            } catch (e) {
+                console.error('Report failed:', e);
+                // Fallback to localStorage
+                let reports = JSON.parse(localStorage.getItem('nexus_reports') || '[]');
+                reports.push(reportData);
+                localStorage.setItem('nexus_reports', JSON.stringify(reports));
+                
+                closeReportModal();
+                if (window.showTopNotification) {
+                    window.showTopNotification('Report saved locally (offline mode)', 'info');
+                }
+            }
+        }
+
+        function showToast(msg) {
+            // Simple toast for threads page
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:var(--nexus-blue); color:#fff; padding:15px 30px; border-radius:100px; font-weight:900; z-index:9999;';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
