@@ -742,14 +742,7 @@ svg {
     background: var(--border);
 }
 
-.message-i.chat-layout {
-    display: flex;
-    gap: 12px;
-    height: calc(100vh - 72px);
-    height: calc(100dvh - 72px);
-    position: relative;
-    z-index: 10;
-}
+
 
 .message-item {
     display: flex;
