@@ -1555,9 +1555,14 @@ async function sendGif(gifUrl) {
     const activeChat = getActiveChat();
     if (!activeChat) return;
 
-    const receiver = activeChat.type === 'group'
-        ? activeChat.id
-        : activeChat.participantIds.find(id => id !== state.currentUser.id);
+    let receiver;
+    if (activeChat.type === 'global') {
+        receiver = 'global_chat';
+    } else if (activeChat.type === 'group') {
+        receiver = activeChat.id;
+    } else {
+        receiver = activeChat.participantIds.find(id => id !== state.currentUser.id);
+    }
 
     const optimisticId = `opt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     if (!state.messages[activeChat.id]) state.messages[activeChat.id] = [];
@@ -1630,9 +1635,14 @@ async function sendMessage() {
     const text = elements.messageInput.value.trim();
     if (!activeChat || !text) return;
 
-    const receiver = activeChat.type === 'group'
-        ? activeChat.id
-        : activeChat.participantIds.find(id => id !== state.currentUser.id);
+    let receiver;
+    if (activeChat.type === 'global') {
+        receiver = 'global_chat';
+    } else if (activeChat.type === 'group') {
+        receiver = activeChat.id;
+    } else {
+        receiver = activeChat.participantIds.find(id => id !== state.currentUser.id);
+    }
 
     // Optimistic UI: show message immediately before DB confirms
     const optimisticId = `opt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
