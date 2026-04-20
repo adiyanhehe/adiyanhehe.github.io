@@ -196,17 +196,34 @@ async function initializeState() {
         .maybeSingle();
 
     const fallbackName = profile?.username || user.user_metadata?.full_name || user.email.split('@')[0];
-    
-    // Also try checking the threads fallback right below
     const fallbackPic = user.user_metadata?.avatar_url || localStorage.getItem('rbx_pic') || 'jay.png';
 
+    let activeProfile = profile;
+    if (!activeProfile) {
+        // Create initial profile if missing
+        const newProfile = {
+            id: user.id,
+            username: user.email.split('@')[0], // Default to email prefix
+            display_name: user.user_metadata?.full_name || user.email.split('@')[0],
+            avatar_url: user.user_metadata?.avatar_url || 'jay.png',
+            status: 'Ready to chat'
+        };
+        const { data: created, error: createError } = await window.supabaseClient
+            .from('profiles')
+            .upsert(newProfile, { onConflict: 'id' })
+            .select()
+            .single();
+        
+        if (!createError) activeProfile = created;
+    }
+
     state.currentUser = {
-        id: profile?.username || user.email.split('@')[0],
-        name: profile?.display_name || fallbackName,
-        avatarUrl: profile?.avatar_url || fallbackPic,
+        id: activeProfile?.username || user.email.split('@')[0],
+        name: activeProfile?.display_name || fallbackName,
+        avatarUrl: activeProfile?.avatar_url || fallbackPic,
         presence: "online",
-        statusText: profile?.status || "Shipping polished interfaces",
-        initials: getInitials(profile?.display_name || fallbackName),
+        statusText: activeProfile?.status || "Shipping polished interfaces",
+        initials: getInitials(activeProfile?.display_name || fallbackName),
         toneA: "#7b8cff",
         toneB: "#64d9ff",
         role: "You"
