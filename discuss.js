@@ -278,7 +278,7 @@ async function syncChatsWithDatabase() {
     const { data: messages, error: msgError } = await window.supabaseClient
         .from('messages')
         .select('*')
-        .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id}`)
+        .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id},receiver.eq.global_chat`)
         .order('created_at', { ascending: true });
 
     if (msgError) {
@@ -289,43 +289,51 @@ async function syncChatsWithDatabase() {
 
     const chatsMap = new Map();
 
-    // Process DM messages to build chat list
-    messages?.forEach(msg => {
-        if (msg.channel_type === 'group') return; // Groups handled separately below
-
-        const otherUser = msg.sender === state.currentUser.id ? msg.receiver : msg.sender;
-        const chatId = `dm-${otherUser}`;
+    // Build chat objects from the mapped messages
+    messages.forEach(msg => {
+        let chatId, chatType, chatName;
+        if (msg.receiver === 'global_chat') {
+            chatId = 'global_chat';
+            chatType = 'global';
+            chatName = 'Global Chat';
+        } else if (msg.channel_type === 'group') {
+            return; // Groups handled in fetchGroups
+        } else {
+            const otherUser = msg.sender === state.currentUser.id ? msg.receiver : msg.sender;
+            chatId = `dm-${otherUser}`;
+            chatType = 'direct';
+            chatName = state.people[otherUser]?.name || otherUser;
+        }
 
         if (!chatsMap.has(chatId)) {
             chatsMap.set(chatId, {
                 id: chatId,
-                type: 'direct',
-                participantIds: [state.currentUser.id, otherUser],
-                name: state.people[otherUser]?.name || otherUser,
+                type: chatType,
+                participantIds: chatType === 'direct' ? [state.currentUser.id, chatId.replace('dm-', '')] : [],
+                name: chatName,
                 unread: 0,
-                lastTimestamp: new Date(msg.created_at).getTime()
+                lastTimestamp: 0
             });
-            state.messages[chatId] = [];
         }
 
         const chat = chatsMap.get(chatId);
         const ts = new Date(msg.created_at).getTime();
         if (ts > chat.lastTimestamp) chat.lastTimestamp = ts;
-
-        // Prevent duplicates on re-sync
-        if (!state.messages[chatId].some(m => String(m.id) === String(msg.id))) {
-            state.messages[chatId].push({
-                id: String(msg.id),
-                senderId: msg.sender,
-                text: msg.content,
-                gifUrl: msg.gif_url || null,
-                timestamp: ts,
-                reactions: []
-            });
-        }
     });
 
     state.chats = Array.from(chatsMap.values()).sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+
+    // Ensure Global Chat exists even with no messages
+    if (!state.chats.some(c => c.id === 'global_chat')) {
+        state.chats.unshift({
+            id: 'global_chat',
+            type: 'global',
+            name: 'Global Chat',
+            participantIds: [],
+            unread: 0,
+            lastTimestamp: 0
+        });
+    }
 
     // Restore activeChatId from localStorage if still valid
     const savedState = readStorage(STORAGE_KEY);
@@ -441,13 +449,14 @@ function handleIncomingMessage(msg) {
     // Determine if this message is relevant to the current user
     const knownGroupIds = state.chats.filter(c => c.type === 'group').map(c => c.id);
     const isDM = msg.channel_type === 'direct' || !msg.channel_type;
+    const isGlobal = msg.receiver === 'global_chat';
     const isGroupForMe = msg.channel_type === 'group' && knownGroupIds.includes(msg.receiver);
     const isDMForMe = isDM && (msg.sender === state.currentUser.id || msg.receiver === state.currentUser.id);
 
-    if (!isDMForMe && !isGroupForMe) return;
+    if (!isDMForMe && !isGroupForMe && !isGlobal) return;
 
     let chatId;
-    if (msg.channel_type === 'group') {
+    if (msg.channel_type === 'group' || isGlobal) {
         chatId = msg.receiver;
     } else {
         const otherUser = msg.sender === state.currentUser.id ? msg.receiver : msg.sender;
@@ -855,6 +864,26 @@ function renderWorkspaceSectionIdentity(title, copy) {
 }
 
 function renderWorkspaceChatIdentity(chat) {
+    if (chat.type === "global") {
+        const globalInfo = {
+            id: 'global_chat',
+            name: 'Global Chat',
+            avatarUrl: 'px-logo.png',
+            initials: 'PX',
+            toneA: '#7b8cff',
+            toneB: '#64d9ff'
+        };
+        return `
+            <div class="workspace-identity">
+                ${renderPersonAvatar(globalInfo, "workspace-avatar", false)}
+                <div class="workspace-avatar-copy">
+                    <h2>Global Chat</h2>
+                    <p>Connecting everyone across the Pulse network</p>
+                </div>
+            </div>
+        `;
+    }
+
     if (chat.type === "group") {
         const participants = getChatParticipants(chat).filter((person) => person.id !== state.currentUser.id);
         const onlineCount = participants.filter((person) => person.presence === "online").length;
@@ -872,6 +901,11 @@ function renderWorkspaceChatIdentity(chat) {
     }
 
     const person = getDirectPeer(chat);
+    const avatarHtml = `
+        <div class="message-avatar" onclick="window.showProfileSummary('${person.id}')" style="cursor: pointer;">
+            ${renderPersonAvatar(person, "message-avatar-token", false)}
+        </div>
+    `;
     return `
         <div class="workspace-identity">
             ${renderPersonAvatar(person, "workspace-avatar", true)}
@@ -955,9 +989,9 @@ function renderMessages(chat) {
                 ${isOwn ? "" : renderPersonAvatar(sender, "member-avatar", true)}
                 <div class="message-shell">
                     <div class="message-meta">
-                        <strong>${escapeHtml(sender.name)}</strong>
-                        <span>${escapeHtml(formatMessageTimestamp(message.timestamp))}</span>
-                    </div>
+                    <strong class="message-sender" onclick="window.showProfileSummary('${message.senderId}')" style="cursor: pointer;">${escapeHtml(sender.name)}</strong>
+                    <span class="message-time">${escapeHtml(formatMessageTimestamp(message.timestamp))}</span>
+                </div>
                     ${message.gifUrl ? `<div class="message-attachment"><img src="${escapeHtml(message.gifUrl)}" alt="GIF attachment" loading="lazy"></div>` : ""}
                     ${message.text ? `<div class="message-bubble">${formatMessageText(message.text)}</div>` : ""}
                     ${reactionMenu}
