@@ -171,13 +171,16 @@ async function initializeState() {
         .eq('id', user.id)
         .maybeSingle();
 
+    const fallbackPic = user.user_metadata?.avatar_url || localStorage.getItem('rbx_pic') || 'jay.png';
+    const fallbackName = profile?.username || user.user_metadata?.full_name || user.email.split('@')[0];
+
     state.currentUser = {
         id: profile?.username || user.email.split('@')[0],
-        name: profile?.display_name || profile?.username || user.email.split('@')[0],
-        avatarUrl: profile?.avatar_url || 'jay.png',
+        name: profile?.display_name || fallbackName,
+        avatarUrl: profile?.avatar_url || fallbackPic,
         presence: "online",
         statusText: profile?.status || "Shipping polished interfaces",
-        initials: getInitials(profile?.display_name || user.email.split('@')[0]),
+        initials: getInitials(profile?.display_name || fallbackName),
         toneA: "#7b8cff",
         toneB: "#64d9ff",
         role: "You"
