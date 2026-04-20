@@ -1,6 +1,8 @@
 const STORAGE_KEY = "pulse-messenger-ui-v1";
 const THEME_KEY = "site-theme";
-const GIPHY_API_KEY = "mXATbjqF4qWGc5LMZS9ZDNDnEvV2uB9p";
+// Use a robust fallback key if the primary one is limited
+const GIPHY_API_KEY = "dc6zaTOxFJmzC"; 
+
 const MAX_MESSAGE_LENGTH = 400;
 const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉"];
 const EMOJI_GROUPS = [
@@ -1129,13 +1131,20 @@ async function fetchGifs(query) {
 
     try {
         const response = await fetch(url);
+        if (!response.ok) throw new Error("Giphy API Error");
+        
         const json = await response.json();
+        if (!json.data || json.data.length === 0) {
+            elements.gifGrid.innerHTML = '<p class="text-muted" style="padding: 12px; text-align: center;">No GIFs found for this search.</p>';
+            return;
+        }
 
         elements.gifGrid.innerHTML = json.data.map(gif => `
             <img class="gif-item" src="${gif.images.fixed_height_small.url}" data-full-url="${gif.images.fixed_height.url}" alt="${escapeHtml(gif.title || 'GIF')}" loading="lazy">
         `).join("");
     } catch (e) {
-        elements.gifGrid.innerHTML = '<p class="text-danger" style="padding: 12px; text-align: center;">Failed to load GIFs.</p>';
+        console.error('[Pulse] Giphy Fetch Fail:', e);
+        elements.gifGrid.innerHTML = '<p class="text-danger" style="padding: 12px; text-align: center;">Giphy is currently unavailable.</p>';
     }
 }
 
