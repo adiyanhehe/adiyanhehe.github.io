@@ -421,3 +421,9 @@ window.closeProfileSummary = () => {
     if (modal) { modal.style.opacity = '0'; document.getElementById('psm-box').style.transform = 'translateY(20px)'; setTimeout(() => modal.style.display = 'none', 400); }
 };
 
+window.goToMyProfile = () => {
+    const user = localStorage.getItem('rbx_user');
+    if (user) location.href = `profile.html?user=${encodeURIComponent(user)}`;
+    else location.href = 'index.html';
+};
+
