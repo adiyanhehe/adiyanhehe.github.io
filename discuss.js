@@ -1,6 +1,6 @@
 const STORAGE_KEY = "pulse-messenger-ui-v1";
 const THEME_KEY = "site-theme";
-const GIPHY_API_KEY = "GlVGYHqcVGW7OkyKUjbQTKxWHcpVkKQd";
+const GIPHY_API_KEY = "mXATbjqF4qWGc5LMZS9ZDNDnEvV2uB9p";
 const MAX_MESSAGE_LENGTH = 400;
 const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉"];
 const EMOJI_GROUPS = [
