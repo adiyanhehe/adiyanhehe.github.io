@@ -116,6 +116,7 @@ svg {
     gap: 18px;
     min-height: 100vh;
     padding: 18px;
+    padding-top: calc(48px + 22px); /* offset for the 48px fixed header injected by global.js */
 }
 
 .sidebar,
@@ -124,6 +125,7 @@ svg {
 .modal-card,
 .members-sheet,
 .emoji-picker,
+.gif-picker,
 .settings-menu {
     background: var(--bg-panel);
     border: 1px solid var(--border);
@@ -1035,6 +1037,13 @@ svg {
     border: 1px solid var(--border);
 }
 
+/* Group emoji + gif toggle buttons so they occupy a single grid column */
+.composer-icon-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .composer-shell textarea {
     min-height: 48px;
     max-height: 140px;
@@ -1418,4 +1427,58 @@ textarea:focus-visible {
     border-radius: 12px;
     max-width: 240px;
     display: block;
+}
+
+/* ============================================================
+   INJECTED GLOBAL HEADER (added by global.js on discuss.html)
+   Scoped here since global.css is excluded from this page.
+   ============================================================ */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 9999;
+    pointer-events: auto;
+    font-family: var(--font-body);
+}
+
+.header .logo {
+    font-weight: 900;
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    transition: color var(--transition);
+}
+
+.header .logo:hover {
+    color: var(--text-main);
+}
+
+.header .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.header #auth-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header .nav-item {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text-muted);
+    transition: color var(--transition);
+}
+
+.header .nav-item:hover {
+    color: var(--text-main);
 }
