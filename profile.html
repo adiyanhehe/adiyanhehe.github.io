@@ -271,23 +271,43 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         let user = params.get('user');
-        const me = localStorage.getItem('rbx_user');
+        if (user) user = user.toLowerCase();
+        const me_raw = localStorage.getItem('rbx_user');
+        const me = me_raw ? me_raw.toLowerCase() : null;
 
         async function initProfile() {
+            // 1. Wait for Supabase
+            let attempts = 0;
+            while (!window.supabaseClient && attempts < 20) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
+
+            // 2. Resolve 'me' identifier
+            let currentMe = localStorage.getItem('rbx_user');
+            if (!currentMe && window.supabaseClient) {
+                const { data: { session } } = await window.supabaseClient.auth.getSession();
+                if (session) currentMe = session.user.email.split('@')[0];
+            }
+            if (currentMe) currentMe = currentMe.toLowerCase();
+
             if (!user) {
-                user = me;
+                user = currentMe;
                 if (!user) { location.href = 'index.html'; return; }
                 location.href = `profile.html?user=${encodeURIComponent(user)}`;
                 return;
             }
 
-            document.getElementById('name-ui').innerText = user;
-            document.getElementById('handle-ui').innerText = '@' + user.toLowerCase();
-
-            setupActions();
+            renderIdentity();
             await fetchCloudData();
             await fetchSocialStats();
             await loadUserPosts();
+        }
+
+        function renderIdentity() {
+            document.getElementById('name-ui').innerText = user;
+            document.getElementById('handle-ui').innerText = '@' + user.toLowerCase();
+            setupActions();
         }
 
         function setupActions() {
