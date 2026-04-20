@@ -180,6 +180,8 @@ function cacheElements() {
     elements.currentUserName = document.getElementById("currentUserName");
     elements.currentUserStatus = document.getElementById("currentUserStatus");
     elements.settingsMenu = document.getElementById("settingsMenu");
+    elements.uploadButton = document.getElementById("uploadButton");
+    elements.fileInput = document.getElementById("fileInput");
 }
 
 async function initializeState() {
@@ -277,6 +279,7 @@ async function initializeState() {
 }
 
 async function syncChatsWithDatabase() {
+    console.log('[Pulse] Starting deep sync with Supabase...');
     const { data: { session } } = await window.supabaseClient.auth.getSession();
     const uuid = session?.user?.id;
 
@@ -291,23 +294,11 @@ async function syncChatsWithDatabase() {
         console.error('[Pulse] Failed to load messages:', msgError);
         return;
     }
+    
+    console.log(`[Pulse] Found ${messages?.length || 0} messages in cloud history.`);
 
-    // Collect all unique user IDs mentioned in messages
-    const mentionedUsers = new Set();
-    messages.forEach(m => {
-        mentionedUsers.add(m.sender);
-        if (m.receiver && m.receiver !== 'global_chat' && m.channel_type !== 'group') {
-            mentionedUsers.add(m.receiver);
-        }
-    });
-
-    // Ensure all mentioned users are in state.people
-    for (const userId of mentionedUsers) {
-        if (!state.people[userId]) {
-            await ensurePersonInDB(userId);
-        }
-    }
-
+    // Clear local buffers to avoid stale data
+    state.messages = {};
     const chatsMap = new Map();
 
     // Build chat objects from the mapped messages
@@ -628,6 +619,40 @@ function bindEvents() {
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleDocumentKeydown);
     window.addEventListener("resize", handleResize);
+    elements.uploadButton.addEventListener("click", () => elements.fileInput.click());
+    elements.fileInput.addEventListener("change", handleFileUpload);
+}
+
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !state.currentUser) return;
+
+    const activeChat = getActiveChat();
+    if (!activeChat) return;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `chat-assets/${fileName}`;
+
+    if (window.showTopNotification) window.showTopNotification('Uploading image...', 'info');
+
+    const { error: uploadError } = await window.supabaseClient.storage
+        .from('attachments')
+        .upload(filePath, file);
+
+    if (uploadError) {
+        console.error('Upload failed:', uploadError);
+        if (window.showTopNotification) window.showTopNotification('Upload failed. Check your storage bucket.', 'error');
+        return;
+    }
+
+    const { data: { publicUrl } } = window.supabaseClient.storage
+        .from('attachments')
+        .getPublicUrl(filePath);
+
+    // Send as a message with the image URL
+    sendGif(publicUrl); // Reusing sendGif logic since it handles image URLs perfectly
+    elements.fileInput.value = '';
 }
 
 window.handleFriendRequestAction = async function(id, action) {
