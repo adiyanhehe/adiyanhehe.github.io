@@ -139,6 +139,7 @@ svg {
 .sidebar,
 .directory-panel,
 .workspace {
+    height: calc(100vh - 72px);
     height: calc(100dvh - 72px);
     border-radius: var(--radius-xl);
     display: flex;
@@ -739,6 +740,15 @@ svg {
     flex: 1;
     height: 1px;
     background: var(--border);
+}
+
+.message-i.chat-layout {
+    display: flex;
+    gap: 12px;
+    height: calc(100vh - 72px);
+    height: calc(100dvh - 72px);
+    position: relative;
+    z-index: 10;
 }
 
 .message-item {
