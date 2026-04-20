@@ -215,11 +215,17 @@ async function initializeState() {
 
 async function syncChatsWithDatabase() {
     // Fetch all messages where the current user is sender or receiver
-    const { data: messages } = await window.supabaseClient
+    const { data: messages, error: msgError } = await window.supabaseClient
         .from('messages')
         .select('*')
         .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id}`)
         .order('created_at', { ascending: true });
+
+    if (msgError) {
+        console.error('[Pulse] Failed to load messages:', msgError);
+        if (window.showTopNotification) window.showTopNotification('Could not load messages. Check your connection.', 'error');
+        return;
+    }
 
     const chatsMap = new Map();
 
@@ -865,15 +871,14 @@ function toggleGifPicker() {
         renderEmojiPicker();
         elements.gifSearchInput.value = "";
         fetchGifs("");
+        // Focus the search field only when newly opening
+        setTimeout(() => elements.gifSearchInput?.focus(), 50);
     }
     renderGifPicker();
 }
 
 function renderGifPicker() {
     elements.gifPicker.classList.toggle("hidden", !state.gifOpen);
-    if (state.gifOpen && elements.gifSearchInput) {
-        elements.gifSearchInput.focus();
-    }
 }
 
 async function fetchGifs(query) {
@@ -1116,6 +1121,7 @@ function closeTransientUi() {
     state.drawer = null;
     state.modalOpen = false;
     state.emojiOpen = false;
+    state.gifOpen = false;
     state.settingsOpen = false;
     state.membersOpen = false;
     state.reactionMenu = null;
@@ -1254,7 +1260,8 @@ function toggleEmojiPicker() {
 function updateComposerMetrics() {
     const length = elements.messageInput.value.length;
     elements.characterCount.textContent = `${length} / ${MAX_MESSAGE_LENGTH}`;
-    elements.sendButton.disabled = length === 0 || state.nav !== "home";
+    // Disable send when: no text, wrong nav view, or no chat selected
+    elements.sendButton.disabled = length === 0 || state.nav !== "home" || !state.activeChatId;
 }
 
 function autoResizeComposer() {
@@ -1295,7 +1302,7 @@ async function sendGif(gifUrl) {
         .insert([{
             sender: state.currentUser.id,
             receiver,
-            content: '',
+            content: '[GIF]',
             gif_url: gifUrl,
             channel_type: activeChat.type
         }])
@@ -1393,6 +1400,7 @@ async function sendMessage() {
         id: String(data.id),
         senderId: data.sender,
         text: data.content,
+        gifUrl: data.gif_url || null,
         timestamp: new Date(data.created_at).getTime(),
         reactions: []
     };
