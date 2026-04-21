@@ -776,6 +776,35 @@ function renderDirectory() {
         return;
     }
 
+    if (state.nav === "global") {
+        // Show the full chat list in the directory while workspace shows Global Chat
+        elements.directoryEyebrow.textContent = "Inbox";
+        elements.directoryTitle.textContent = "All conversations";
+        elements.directorySubtitle.textContent = "Return to any direct or group chat from here.";
+        elements.searchInput.placeholder = "Search conversations";
+        elements.newConversationButton.textContent = "New chat";
+        renderFilterBar([
+            { id: "all", label: "All" },
+            { id: "direct", label: "Direct" },
+            { id: "group", label: "Groups" }
+        ], state.chatFilter);
+        elements.directoryContent.innerHTML = renderChatDirectory();
+        return;
+    }
+
+    if (state.nav === "requests") {
+        // No list to show in directory when viewing requests
+        elements.directoryEyebrow.textContent = "Invites";
+        elements.directoryTitle.textContent = "Friend requests";
+        elements.directorySubtitle.textContent = "Manage pending requests in the panel on the right.";
+        elements.searchInput.placeholder = "";
+        elements.newConversationButton.textContent = "New chat";
+        elements.filterBar.innerHTML = "";
+        elements.directoryContent.innerHTML = "";
+        return;
+    }
+
+    // nav === "friends"
     elements.directoryEyebrow.textContent = "People";
     elements.directoryTitle.textContent = "Friends";
     elements.directorySubtitle.textContent = "Start a conversation with someone available right now.";
@@ -1291,11 +1320,12 @@ function handleFilterClick(event) {
     const button = event.target.closest("[data-filter]");
     if (!button) return;
 
-    if (state.nav === "home") {
+    if (state.nav === "home" || state.nav === "global") {
         state.chatFilter = button.dataset.filter;
-    } else {
+    } else if (state.nav === "friends") {
         state.friendFilter = button.dataset.filter;
     }
+    // requests nav has no filter bar — do nothing
 
     renderDirectory();
 }
@@ -2100,7 +2130,9 @@ function scrollToLatest(smooth) {
 
 function updateJumpButton() {
     const hidden = isNearBottom(elements.messageStream);
-    elements.jumpLatestButton.classList.toggle("hidden", hidden || state.nav !== "home");
+    // Show jump button in both 'home' and 'global' — Global Chat is a valid chat view
+    const inChatView = state.nav === "home" || state.nav === "global";
+    elements.jumpLatestButton.classList.toggle("hidden", hidden || !inChatView);
 }
 
 function isNearBottom(container) {
