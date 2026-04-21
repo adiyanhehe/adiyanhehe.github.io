@@ -234,49 +234,42 @@ async function publishTransmission() {
             author: state.currentUser.id,
             content: content,
             avatar: state.currentUser.avatar,
-            avatar_url: state.currentUser.avatar  // write both so renderThreadHTML works on realtime & re-render
+            avatar_url: state.currentUser.avatar
         };
 
-        // Only include media_url if it's actually present to avoid schema errors
         if (state.mediaPreview) {
             threadData.media_url = state.mediaPreview;
         }
 
-        const { data, error } = await window.supabaseClient.from('threads').insert([threadData]).select().single();
+        const performInsert = async (payload) => {
+            return await window.supabaseClient.from('threads').insert([payload]).select().single();
+        };
+
+        let { data, error } = await performInsert(threadData);
+
+        // Retry logic for missing columns
+        if (error && (error.message.includes('media_url') || error.message.includes('avatar_url'))) {
+            const secondaryPayload = { ...threadData };
+            if (error.message.includes('media_url')) delete secondaryPayload.media_url;
+            if (error.message.includes('avatar_url')) delete secondaryPayload.avatar_url;
+            
+            const retry = await performInsert(secondaryPayload);
+            data = retry.data;
+            error = retry.error;
+        }
 
         if (error) {
-            // Check for common schema errors and provide a helpful message
-            if (error.message.includes('media_url')) {
-                alert("Database Update Required: Please add the 'media_url' column to your 'threads' table in Supabase.");
-            } else if (error.message.includes('avatar_url')) {
-                // Retry without avatar_url if column doesn't exist yet
-                delete threadData.avatar_url;
-                const { data: retryData, error: retryError } = await window.supabaseClient.from('threads').insert([threadData]).select().single();
-                if (retryError) {
-                    alert("Broadcast Failed [Network Error]: " + retryError.message);
-                    elements.postBtn.disabled = false;
-                    elements.postBtn.innerText = "Broadcast";
-                    return;
-                }
-                // Optimistic push on retry success
-                if (retryData) {
-                    const exists = state.threads.find(t => t.id === retryData.id);
-                    if (!exists) { state.threads.unshift(retryData); renderFeed(); }
-                }
-            } else {
-                alert("Broadcast Failed [Network Error]: " + error.message);
-                elements.postBtn.disabled = false;
-                elements.postBtn.innerText = "Broadcast";
-                return;
-            }
-        } else {
-            // Force optimistic render instantly in case Realtime API isn't catching it
-            if (data) {
-                const exists = state.threads.find(t => t.id === data.id);
-                if (!exists) { state.threads.unshift(data); renderFeed(); }
-            }
+            alert("Broadcast Failed [Network Error]: " + error.message);
+            elements.postBtn.disabled = false;
+            elements.postBtn.innerText = "Broadcast";
+            return;
         }
-    } catch(e) {
+
+        if (data) {
+            const exists = state.threads.find(t => t.id === data.id);
+            if (!exists) { state.threads.unshift(data); renderFeed(); }
+        }
+    } catch (e) {
         alert("Broadcast Failed [Runtime Exception]: " + e.message);
         elements.postBtn.disabled = false;
         elements.postBtn.innerText = "Broadcast";
