@@ -1,4 +1,4 @@
-const GIPHY_API_KEY = "dc6zaTOxFJmzC";
+const KLIPY_API_KEY = "4o9v8SiiAWDJy8Dq2Q4mHfV35hQtFswJpH3NTRckha7dG5MmGzXdgfk94XEE8gUQ";
 
 const state = {
     currentUser: null,
@@ -82,7 +82,9 @@ function bindEvents() {
 
     if (elements.composerInput) {
         elements.composerInput.addEventListener("input", () => {
-            elements.postBtn.disabled = !elements.composerInput.value.trim() && !state.mediaPreview;
+            const hasText = !!elements.composerInput.value.trim();
+            const hasMedia = !!state.mediaPreview;
+            elements.postBtn.disabled = !hasText && !hasMedia;
         });
     }
 
@@ -218,39 +220,66 @@ async function publishTransmission() {
     if (!content && !state.mediaPreview) return;
 
     elements.postBtn.disabled = true;
+    elements.postBtn.innerText = "Broadcasting...";
 
     try {
         const threadData = {
             author: state.currentUser.id,
             content: content,
             avatar: state.currentUser.avatar,
-            media_url: state.mediaPreview
+            avatar_url: state.currentUser.avatar  // write both so renderThreadHTML works on realtime & re-render
         };
+
+        // Only include media_url if it's actually present to avoid schema errors
+        if (state.mediaPreview) {
+            threadData.media_url = state.mediaPreview;
+        }
 
         const { data, error } = await window.supabaseClient.from('threads').insert([threadData]).select().single();
 
         if (error) {
-            alert("Broadcast Failed [Network Error]: " + error.message);
-            elements.postBtn.disabled = false;
-            return;
-        }
-
-        // Force optimistic render instantly in case Realtime API isn't catching it
-        if (data) {
-            const exists = state.threads.find(t => t.id === data.id);
-            if (!exists) {
-                state.threads.unshift(data);
-                renderFeed();
+            // Check for common schema errors and provide a helpful message
+            if (error.message.includes('media_url')) {
+                alert("Database Update Required: Please add the 'media_url' column to your 'threads' table in Supabase.");
+            } else if (error.message.includes('avatar_url')) {
+                // Retry without avatar_url if column doesn't exist yet
+                delete threadData.avatar_url;
+                const { data: retryData, error: retryError } = await window.supabaseClient.from('threads').insert([threadData]).select().single();
+                if (retryError) {
+                    alert("Broadcast Failed [Network Error]: " + retryError.message);
+                    elements.postBtn.disabled = false;
+                    elements.postBtn.innerText = "Broadcast";
+                    return;
+                }
+                // Optimistic push on retry success
+                if (retryData) {
+                    const exists = state.threads.find(t => t.id === retryData.id);
+                    if (!exists) { state.threads.unshift(retryData); renderFeed(); }
+                }
+            } else {
+                alert("Broadcast Failed [Network Error]: " + error.message);
+                elements.postBtn.disabled = false;
+                elements.postBtn.innerText = "Broadcast";
+                return;
+            }
+        } else {
+            // Force optimistic render instantly in case Realtime API isn't catching it
+            if (data) {
+                const exists = state.threads.find(t => t.id === data.id);
+                if (!exists) { state.threads.unshift(data); renderFeed(); }
             }
         }
     } catch(e) {
         alert("Broadcast Failed [Runtime Exception]: " + e.message);
         elements.postBtn.disabled = false;
+        elements.postBtn.innerText = "Broadcast";
         return;
     }
 
-    // Clear Composer
+    // Clear Composer and re-enable button
     elements.composerInput.value = '';
+    elements.postBtn.disabled = true;  // stays disabled until user types
+    elements.postBtn.innerText = "Broadcast";
     window.removePreview();
     updateSideStats();
 }
@@ -372,17 +401,34 @@ window.toggleGifPicker = () => {
 };
 
 async function searchGifs(query) {
+    if (!elements.gifGrid) return;
+    elements.gifGrid.innerHTML = '<p style="padding: 12px; text-align: center; color: var(--text-soft);">Loading GIFs...</p>';
+
     const url = query
-        ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=16`
-        : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=16`;
+        ? `https://api.klipy.com/api/v1/${KLIPY_API_KEY}/search?q=${encodeURIComponent(query.trim())}&limit=20`
+        : `https://api.klipy.com/api/v1/${KLIPY_API_KEY}/trending?limit=20`;
 
     try {
         const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`Klipy API responded with status ${resp.status}`);
+
         const json = await resp.json();
-        elements.gifGrid.innerHTML = json.data.map(g => `
-            <img src="${g.images.fixed_height_small.url}" style="width:100%; border-radius:8px; cursor:pointer;" onclick="selectGif('${g.images.fixed_height.url}')">
-        `).join('');
-    } catch (e) { }
+        const results = (json.data && Array.isArray(json.data.data)) ? json.data.data : [];
+
+        if (results.length === 0) {
+            elements.gifGrid.innerHTML = '<p style="padding: 12px; text-align: center; color: var(--text-soft);">No GIFs found.</p>';
+            return;
+        }
+
+        elements.gifGrid.innerHTML = results.map(g => {
+            const gifUrl = g?.file?.gif || '';
+            if (!gifUrl) return '';
+            return `<img src="${gifUrl}" style="width:100%; border-radius:8px; cursor:pointer;" onclick="selectGif('${gifUrl}')">`;
+        }).join('');
+    } catch (e) {
+        console.error('[Threads] Klipy Fetch Fail:', e);
+        elements.gifGrid.innerHTML = '<p style="padding: 12px; text-align: center; color: #f91880;">GIF service is currently unavailable.</p>';
+    }
 }
 
 window.selectGif = (url) => {
