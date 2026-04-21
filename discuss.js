@@ -1049,24 +1049,67 @@ function renderChatDirectory() {
     `;
 }
 
-function renderFriendsDirectory() {
-    const visibleFriends = getVisibleFriends();
-    if (!visibleFriends.length) return renderEmptyStateCard("Nobody matches that search", "Try another teammate name or switch the filter.");
+function getVisibleFriends() {
+    let filtered = state.friends
+        .map(id => state.people[id])
+        .filter(Boolean);
 
+    if (state.friendFilter === "online") {
+        filtered = filtered.filter(p => (p.presence || 'offline') === "online");
+    }
+
+    if (state.search) {
+        const query = state.search.toLowerCase();
+        filtered = filtered.filter(p => 
+            p.name.toLowerCase().includes(query) || 
+            p.id.toLowerCase().includes(query)
+        );
+    }
+
+    return filtered;
+}
+
+function renderPersonAvatar(person, className = "avatar", withPresence = true) {
+    if (!person) return `<div class="${className} avatar-token"></div>`;
     return `
-        <div class="friend-list">
-            ${visibleFriends.map((person) => `
-                <button class="friend-row" type="button" data-friend-id="${person.id}">
-                    ${renderPersonAvatar(person, "friend-avatar", true)}
-                    <div class="friend-row-meta">
-                        <strong>${escapeHtml(person.name)}</strong>
-                        <span>${escapeHtml(person.statusText)}</span>
-                    </div>
-                    <span class="friend-row-action">Message</span>
-                </button>
-            `).join("")}
+        <div class="${className}">
+            ${renderAvatarContent(person, withPresence)}
         </div>
     `;
+}
+
+function renderChatAvatar(chat) {
+    if (chat.type === "direct") {
+        const peerId = chat.participantIds.find(id => id !== state.currentUser.id);
+        const peer = state.people[peerId] || createFallbackPerson(peerId);
+        return renderPersonAvatar(peer, "chat-avatar", true);
+    }
+    const initials = chat.name.split(" ").slice(0,2).map(n => n[0]).join("").toUpperCase();
+    return `
+        <div class="chat-avatar avatar-token" style="--avatar-a:#444; --avatar-b:#666;">
+            <span>${escapeHtml(initials)}</span>
+        </div>
+    `;
+}
+
+function renderFriendsDirectory() {
+    const visible = getVisibleFriends();
+    if (visible.length === 0) {
+        return `<div class="directory-empty">No friends found</div>`;
+    }
+
+    return visible.map(person => `
+        <button class="directory-item ${state.activeChatId === `dm-${person.id}` ? "active" : ""}" 
+                onclick="window.openDirectMessage('${person.id}')" type="button">
+            ${renderPersonAvatar(person, "directory-avatar", true)}
+            <div class="directory-info">
+                <div class="directory-info-top">
+                    <strong>${escapeHtml(person.name)}</strong>
+                </div>
+                <p>${escapeHtml(person.statusText)}</p>
+            </div>
+        </button>
+    `).join("");
 }
 
 function renderFriendsStage() {
