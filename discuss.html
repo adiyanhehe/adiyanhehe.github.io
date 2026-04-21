@@ -89,6 +89,17 @@
                         </span>
                         <span class="nav-badge hidden" id="requestsBadge">0</span>
                     </button>
+
+                    <button class="nav-button" id="activityViewButton" type="button" data-view="activity" aria-pressed="false">
+                        <span class="nav-button-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V10c0-3.07-1.63-5.64-4.5-6.32V3a1.5 1.5 0 0 0-3 0v.68C7.64 4.36 6 6.92 6 10v6l-2 2v1h16v-1l-2-2z"/></svg>
+                        </span>
+                        <span class="nav-button-copy">
+                            <strong>Activity</strong>
+                            <small>Mentions & Alerts</small>
+                        </span>
+                        <span class="nav-badge hidden" id="activityBadge">0</span>
+                    </button>
                 </nav>
             </div>
 
@@ -187,7 +198,12 @@
 
                 <div class="workspace-actions">
                     <div class="workspace-search-field hidden" id="workspaceSearchField">
-                        <input id="workspaceSearchInput" type="text" placeholder="Search messages...">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px; height:16px; margin-left:12px; opacity:0.5;"><path d="M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35"/></svg>
+                        <input id="workspaceSearchInput" type="text" placeholder="Search this chat...">
+                        <div class="search-scope-toggle" id="searchScopeToggle">
+                            <button class="scope-btn active" data-scope="local">Chat</button>
+                            <button class="scope-btn" data-scope="all">All</button>
+                        </div>
                         <button class="utility-button" id="closeWorkspaceSearch" type="button" aria-label="Close search">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M18 6L6 18"></path>
@@ -209,6 +225,7 @@
             <section class="workspace-body">
                 <section class="friends-stage hidden" id="friendsStage"></section>
                 <div class="workspace-stage hidden" id="requestsStage"></div>
+                <div class="workspace-stage hidden" id="activityStage"></div>
 
                 <section class="chat-stage" id="chatStage">
                     <div class="pinned-messages-bar hidden" id="pinnedMessagesBar">
@@ -315,6 +332,72 @@
             </div>
         </footer>
         </main>
+    </div>
+
+    <!-- Features Modals -->
+    <div class="modal-backdrop hidden" id="profileModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow">User Settings</p>
+                    <h3>Edit My Profile</h3>
+                </div>
+                <button class="utility-button" onclick="window.closeProfileModal()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label class="modal-field">
+                    <span>Display Name</span>
+                    <input id="profileDisplayName" type="text" placeholder="Enter your name">
+                </label>
+                <label class="modal-field">
+                    <span>Avatar URL</span>
+                    <input id="profileAvatarUrl" type="text" placeholder="https://example.com/image.png">
+                </label>
+                <label class="modal-field">
+                    <span>Bio</span>
+                    <textarea id="profileBio" rows="3" placeholder="Tell us about yourself..."></textarea>
+                </label>
+                <div style="margin-top: 12px; display: flex; gap: 12px;">
+                    <button class="primary-button" id="saveProfileBtn" style="flex: 1;">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="pollModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow">Interactive Poll</p>
+                    <h3>Create a Question</h3>
+                </div>
+                <button class="utility-button" onclick="window.closePollModal()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label class="modal-field">
+                    <span>Question</span>
+                    <input id="pollQuestion" type="text" placeholder="e.g. Where should we eat?">
+                </label>
+                <div id="pollOptionsContainer">
+                    <label class="modal-field">
+                        <span>Option 1</span>
+                        <input type="text" class="poll-option-input" placeholder="e.g. Pizza">
+                    </label>
+                    <label class="modal-field">
+                        <span>Option 2</span>
+                        <input type="text" class="poll-option-input" placeholder="e.g. Tacos">
+                    </label>
+                </div>
+                <button class="ghost-button" onclick="window.addPollOption()" style="margin-top: 8px;">+ Add another option</button>
+                <div style="margin-top: 20px; display: flex; gap: 12px;">
+                    <button class="primary-button" id="publishPollBtn" style="flex: 1;">Publish Poll</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="page-overlay hidden" id="pageOverlay"></div>
