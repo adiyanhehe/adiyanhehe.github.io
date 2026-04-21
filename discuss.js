@@ -480,15 +480,26 @@ async function fetchFriendRequests() {
 function setupRealtimeSubscriptions() {
     if (state.messageSubscription) state.messageSubscription.unsubscribe();
 
-    // Messages channel
+    // 1. Messages channel (Global)
     window.supabaseClient
         .channel('realtime-msgs')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
             handleIncomingMessage(payload.new);
         })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+            const msg = payload.new;
+            for (const chatId in state.messages) {
+                const existing = state.messages[chatId].find(m => String(m.id) === String(msg.id));
+                if (existing) {
+                    existing.reactions = msg.reactions || [];
+                    if (state.activeChatId === chatId) renderWorkspace();
+                    break;
+                }
+            }
+        })
         .subscribe();
 
-    // Friend requests channel
+    // 2. Friend requests channel (Global)
     window.supabaseClient
         .channel('realtime-reqs')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, payload => {
@@ -498,19 +509,31 @@ function setupRealtimeSubscriptions() {
         })
         .subscribe();
 
-    // Listen for reaction updates
-    window.supabaseClient
-        .channel('realtime-reactions')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
-            const msg = payload.new;
-            // Find message in all chats
-            for (const chatId in state.messages) {
-                const existing = state.messages[chatId].find(m => String(m.id) === String(msg.id));
-                if (existing) {
-                    existing.reactions = msg.reactions || [];
-                    if (state.activeChatId === chatId) renderWorkspace();
-                    break;
+    // 3. Per-Channel Listeners (Typing)
+    updatePerChannelSubscriptions();
+}
+
+function updatePerChannelSubscriptions() {
+    const activeChat = getActiveChat();
+    
+    // Clear existing typing channel if any
+    if (state.typingChannel) {
+        state.typingChannel.unsubscribe();
+        state.typingChannel = null;
+    }
+    
+    if (!activeChat) return;
+
+    state.typingChannel = window.supabaseClient
+        .channel(`chat-typing-${activeChat.id}`)
+        .on('broadcast', { event: 'typing' }, ({ payload }) => {
+            if (payload.senderId !== state.currentUser.id) {
+                if (payload.isTyping) {
+                    state.typing = { chatId: activeChat.id, senderName: payload.senderName };
+                } else {
+                    state.typing = null;
                 }
+                renderTypingIndicator();
             }
         })
         .subscribe();
@@ -1612,12 +1635,9 @@ function renderFormattedText(text) {
 let typingTimeout = null;
 async function broadcastTyping(isTyping) {
     const activeChat = getActiveChat();
-    if (!activeChat || !state.currentUser) return;
+    if (!activeChat || !state.currentUser || !state.typingChannel) return;
 
-    // Use Supabase presence/broadcast for real-time typing
-    const channel = window.supabaseClient.channel(`chat-typing-${activeChat.id}`);
-    
-    await channel.send({
+    await state.typingChannel.send({
         type: 'broadcast',
         event: 'typing',
         payload: { 
@@ -1632,29 +1652,6 @@ async function broadcastTyping(isTyping) {
         typingTimeout = setTimeout(() => broadcastTyping(false), 3000);
     }
 }
-
-// Update setupRealtimeSubscriptions to handle custom typing events
-const originalSetup = setupRealtimeSubscriptions;
-setupRealtimeSubscriptions = function() {
-    originalSetup();
-    
-    const activeChat = getActiveChat();
-    if (!activeChat) return;
-
-    window.supabaseClient
-        .channel(`chat-typing-${activeChat.id}`)
-        .on('broadcast', { event: 'typing' }, ({ payload }) => {
-            if (payload.senderId !== state.currentUser.id) {
-                if (payload.isTyping) {
-                    state.typing = { chatId: activeChat.id, senderName: payload.senderName };
-                } else {
-                    state.typing = null;
-                }
-                renderTypingIndicator();
-            }
-        })
-        .subscribe();
-};
 
 function handleComposerKeydown(event) {
     if (state.mentionQuery !== null && state.mentionPeople.length > 0) {
@@ -2247,6 +2244,9 @@ async function markChannelAsRead(chatId) {
     } catch (e) {
         console.warn('[Pulse] Read receipt sync failed. Did you run feature_updates.sql?', e);
     }
+    
+    // Update typing subscriptions for the new channel
+    updatePerChannelSubscriptions();
 }
 
 // Mock simulation removed as requested.
