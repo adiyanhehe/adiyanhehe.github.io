@@ -30,7 +30,10 @@ function cacheElements() {
 }
 
 // Ensure Supabase is fully loaded from global.js before running app logic
+let bootTicks = 0;
 const initInterval = setInterval(async () => {
+    bootTicks++;
+
     if (window.supabaseClient && !state.initialized) {
         state.initialized = true;
         clearInterval(initInterval);
@@ -41,6 +44,30 @@ const initInterval = setInterval(async () => {
             // Still attempt a basic render so the page isn't dead
             cacheElements();
             bindEvents();
+        }
+        return;
+    }
+
+    // Safety: if Supabase never initializes, don't leave the page stuck forever.
+    if (!state.initialized && bootTicks > 60) { // ~6s
+        clearInterval(initInterval);
+        cacheElements();
+        bindEvents();
+        if (elements.feed) {
+            elements.feed.innerHTML = `
+                <div style="padding: 60px; text-align: center; color: var(--text-soft);">
+                    <div style="font-weight: 900; color: var(--text-main); margin-bottom: 10px;">Offline mode</div>
+                    <div style="max-width: 520px; margin: 0 auto; line-height: 1.6;">
+                        Threads couldn’t connect to the network right now. Refresh the page or try again later.
+                    </div>
+                </div>`;
+        }
+        if (elements.postBtn) {
+            elements.postBtn.disabled = true;
+            elements.postBtn.innerText = 'Offline';
+        }
+        if (window.showTopNotification) {
+            window.showTopNotification('Threads is offline (Supabase not ready).', 'error');
         }
     }
 }, 100);
