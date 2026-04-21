@@ -150,6 +150,7 @@
         <h2>⬡ COMMAND</h2>
         <button class="nav-btn active" onclick="showSection('threads', this)">📜 Threads</button>
         <button class="nav-btn" onclick="showSection('users', this)">👥 Users</button>
+        <button class="nav-btn" onclick="showSection('messages', this)">💬 Messages</button>
         <button class="nav-btn" onclick="showSection('reports', this)">🚨 Reports</button>
         <button class="nav-btn" onclick="showSection('staff', this)">🛡️ Staff</button>
         <button class="nav-btn" onclick="showSection('config', this)">⚙️ Config</button>
@@ -201,11 +202,50 @@
             </div>
             <div class="card">
                 <h3>User Registry</h3>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom: 10px;">
+                    <input id="user-search" type="text" placeholder="Search users (@username, display name, email)" style="flex:1; min-width: 220px;">
+                    <input id="user-role-filter" type="text" placeholder="Role filter (admin/mod/user)" style="width: 220px;">
+                    <input id="user-status-filter" type="text" placeholder="Status filter (banned/active)" style="width: 220px;">
+                    <button class="btn" onclick="fetchUsers()">Search</button>
+                </div>
                 <table id="t-users">
                     <thead>
                         <tr><th>User</th><th>Status</th><th>Role</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="l-users"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Messages Section -->
+        <div id="v-messages" class="section-view">
+            <h2 style="font-size:2rem; font-weight:900; margin-bottom:30px;">MESSAGES.</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="value" id="stat-total-messages">0</div>
+                    <div class="label">Recent Loaded</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-global-messages">0</div>
+                    <div class="label">Global</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-direct-messages">0</div>
+                    <div class="label">Direct</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Message Control</h3>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom: 10px;">
+                    <input id="msg-search" type="text" placeholder="Search content / sender / receiver" style="flex:1; min-width: 260px;">
+                    <input id="msg-type" type="text" placeholder="Type (direct/group/global)" style="width: 240px;">
+                    <button class="btn" onclick="fetchMessages()">Search</button>
+                </div>
+                <table id="t-messages">
+                    <thead>
+                        <tr><th>Sender</th><th>Receiver</th><th>Content</th><th>Time</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="l-messages"></tbody>
                 </table>
             </div>
         </div>
@@ -225,6 +265,11 @@
             </div>
             <div class="card">
                 <h3>Active Incidents</h3>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom: 10px;">
+                    <input id="report-search" type="text" placeholder="Search reports (reporter, offender, reason)" style="flex:1; min-width: 260px;">
+                    <input id="report-status" type="text" placeholder="Status (pending/reviewed/resolved)" style="width: 260px;">
+                    <button class="btn" onclick="fetchReports()">Search</button>
+                </div>
                 <table id="t-reports">
                     <thead>
                         <tr><th>Target</th><th>Reporter</th><th>Reason</th><th>Status</th><th>Action</th></tr>
@@ -406,6 +451,7 @@
             await Promise.all([
                 fetchThreads(),
                 fetchUsers(),
+                fetchMessages(),
                 fetchReports(),
                 fetchStaff()
             ]);
@@ -450,6 +496,10 @@
 
         async function fetchUsers() {
             try {
+                const q = (document.getElementById('user-search')?.value || '').trim().toLowerCase();
+                const roleFilter = (document.getElementById('user-role-filter')?.value || '').trim().toLowerCase();
+                const statusFilter = (document.getElementById('user-status-filter')?.value || '').trim().toLowerCase();
+
                 const { data, error } = await supabaseClient
                     .from('profiles')
                     .select('*')
@@ -460,18 +510,36 @@
                 list.innerHTML = '';
 
                 if (data && data.length > 0) {
-                    document.getElementById('stat-total-users').textContent = data.length;
-                    document.getElementById('stat-verified-users').textContent = data.filter(u => u.is_verified).length;
-                    document.getElementById('stat-admins').textContent = data.filter(u => u.is_admin).length;
+                    let filtered = [...data];
+                    if (q) {
+                        filtered = filtered.filter(u => {
+                            const hay = `${u.username || ''} ${u.display_name || ''} ${u.email || ''}`.toLowerCase();
+                            return hay.includes(q.replace(/^@/, ''));
+                        });
+                    }
+                    if (roleFilter) {
+                        filtered = filtered.filter(u => (u.role || (u.is_admin ? 'admin' : 'user')).toLowerCase().includes(roleFilter));
+                    }
+                    if (statusFilter) {
+                        const wantBanned = statusFilter.includes('ban');
+                        filtered = filtered.filter(u => wantBanned ? String(u.status || '').toUpperCase() === 'BANNED' : String(u.status || '').toUpperCase() !== 'BANNED');
+                    }
 
-                    data.forEach(u => {
+                    document.getElementById('stat-total-users').textContent = filtered.length;
+                    document.getElementById('stat-verified-users').textContent = filtered.filter(u => u.is_verified).length;
+                    document.getElementById('stat-admins').textContent = filtered.filter(u => (u.role === 'admin') || u.is_admin).length;
+
+                    filtered.forEach(u => {
                         const tr = document.createElement('tr');
                         const verifiedBadge = u.is_verified 
                             ? '<span class="status-badge verified">Verified</span>' 
                             : '<span class="status-badge unverified">Pending</span>';
-                        const adminBadge = u.is_admin 
-                            ? '<span class="status-badge admin">CORE</span>' 
-                            : '<span style="color: var(--text-muted);">Entity</span>';
+                        const role = (u.role || (u.is_admin ? 'admin' : 'user'));
+                        const roleBadge = role === 'admin'
+                            ? '<span class="status-badge admin">ADMIN</span>'
+                            : (role === 'moderator' ? '<span class="status-badge admin" style="background: rgba(0, 162, 255, 0.12); color: #00A2FF;">MOD</span>' : '<span style="color: var(--text-muted);">USER</span>');
+                        const isBanned = String(u.status || '').toUpperCase() === 'BANNED';
+                        const bannedBadge = isBanned ? '<span class="status-badge banned">BANNED</span>' : '';
 
                         tr.innerHTML = `
                             <td>
@@ -480,14 +548,24 @@
                                     @${u.username || 'Unknown'}
                                 </div>
                             </td>
-                            <td>${verifiedBadge}</td>
-                            <td>${adminBadge}</td>
+                            <td>${verifiedBadge} ${bannedBadge}</td>
                             <td>
-                                <button class="btn ${u.is_admin ? 'danger' : 'success'}" style="padding:5px 10px; font-size:0.7rem;" onclick="toggleAdmin('${u.id}', ${!u.is_admin})">
-                                    ${u.is_admin ? 'Demote' : 'Promote'}
+                                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                    ${roleBadge}
+                                    <select onchange="setRole('${u.id}', this.value)" style="background: rgba(0,0,0,0.5); color:#fff; border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-weight:800;">
+                                        <option value="">Set role…</option>
+                                        <option value="user">user</option>
+                                        <option value="moderator">moderator</option>
+                                        <option value="admin">admin</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn ${isBanned ? 'success' : 'danger'}" style="padding:5px 10px; font-size:0.7rem;" onclick="${isBanned ? `unbanUser('${u.id}')` : `banUser('${u.id}')`}">
+                                    ${isBanned ? 'Unban' : 'Ban'}
                                 </button>
-                                <button class="btn danger" style="padding:5px 10px; font-size:0.7rem; margin-left:5px;" onclick="banUser('${u.id}')">
-                                    Ban
+                                <button class="btn danger" style="padding:5px 10px; font-size:0.7rem; margin-left:5px;" onclick="deleteUser('${u.id}', '${u.username || ''}')">
+                                    Delete
                                 </button>
                             </td>
                         `;
@@ -501,8 +579,64 @@
             }
         }
 
+        async function fetchMessages() {
+            try {
+                const q = (document.getElementById('msg-search')?.value || '').trim().toLowerCase();
+                const type = (document.getElementById('msg-type')?.value || '').trim().toLowerCase();
+
+                let query = supabaseClient
+                    .from('messages')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(120);
+
+                if (type) query = query.eq('channel_type', type);
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                const list = document.getElementById('l-messages');
+                list.innerHTML = '';
+
+                const rows = (data || []).filter(m => {
+                    if (!q) return true;
+                    const hay = `${m.sender || ''} ${m.receiver || ''} ${m.content || ''}`.toLowerCase();
+                    return hay.includes(q.replace(/^@/, ''));
+                });
+
+                document.getElementById('stat-total-messages').textContent = rows.length;
+                document.getElementById('stat-global-messages').textContent = rows.filter(m => m.channel_type === 'global' || m.receiver === 'global_chat').length;
+                document.getElementById('stat-direct-messages').textContent = rows.filter(m => m.channel_type === 'direct').length;
+
+                if (rows.length === 0) {
+                    list.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No messages found</td></tr>';
+                    return;
+                }
+
+                rows.forEach(m => {
+                    const tr = document.createElement('tr');
+                    const content = (m.content || '').toString();
+                    tr.innerHTML = `
+                        <td><strong>@${m.sender || 'Unknown'}</strong></td>
+                        <td style="color: var(--text-muted);">${escapeHtmlLite(m.receiver || '')}</td>
+                        <td style="max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtmlLite(content)}</td>
+                        <td style="color: var(--text-muted);">${formatTime(m.created_at)}</td>
+                        <td>
+                            <button class="btn danger" style="padding:5px 12px; font-size:0.7rem;" onclick="deleteMessageAdmin('${m.id}')">Delete</button>
+                        </td>
+                    `;
+                    list.appendChild(tr);
+                });
+            } catch (e) {
+                console.error('Fetch messages error:', e);
+            }
+        }
+
         async function fetchReports() {
             try {
+                const q = (document.getElementById('report-search')?.value || '').trim().toLowerCase();
+                const status = (document.getElementById('report-status')?.value || '').trim().toLowerCase();
+
                 const { data, error } = await supabaseClient
                     .from('reports')
                     .select('*')
@@ -513,17 +647,27 @@
                 list.innerHTML = '';
 
                 if (data && data.length > 0) {
-                    const pending = data.filter(r => r.status !== 'resolved').length;
-                    const resolved = data.filter(r => r.status === 'resolved').length;
+                    let filtered = [...data];
+                    if (status) filtered = filtered.filter(r => String(r.status || '').toLowerCase().includes(status));
+                    if (q) {
+                        filtered = filtered.filter(r => {
+                            const cd = r.content_data ? JSON.stringify(r.content_data) : '';
+                            const hay = `${r.reporter || ''} ${r.reason || ''} ${r.content_type || ''} ${r.content_id || ''} ${cd}`.toLowerCase();
+                            return hay.includes(q.replace(/^@/, ''));
+                        });
+                    }
+
+                    const pending = filtered.filter(r => r.status !== 'resolved').length;
+                    const resolved = filtered.filter(r => r.status === 'resolved').length;
                     document.getElementById('stat-pending-reports').textContent = pending;
                     document.getElementById('stat-resolved-reports').textContent = resolved;
 
-                    data.forEach(r => {
+                    filtered.forEach(r => {
                         const tr = document.createElement('tr');
-                        const targetData = r.content_data ? JSON.parse(r.content_data || '{}') : {};
+                        const targetData = r.content_data || {};
                         const statusBadge = r.status === 'resolved'
                             ? '<span class="status-badge verified">Resolved</span>'
-                            : '<span class="status-badge admin">Pending</span>';
+                            : (r.status === 'reviewed' ? '<span class="status-badge unverified">Reviewed</span>' : '<span class="status-badge admin">Pending</span>');
 
                         tr.innerHTML = `
                             <td>@${targetData.offender || r.reporter || 'Unknown'}</td>
@@ -531,7 +675,8 @@
                             <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${r.reason || targetData.reason || 'No reason provided'}</td>
                             <td>${statusBadge}</td>
                             <td>
-                                <button class="btn danger" style="padding:5px 10px; font-size:0.7rem;" onclick="wipeUser('${targetData.offender || ''}')">Wipe</button>
+                                <button class="btn danger" style="padding:5px 10px; font-size:0.7rem;" onclick="wipeUser('${targetData.offender || ''}')">Wipe Threads</button>
+                                <button class="btn" style="padding:5px 10px; font-size:0.7rem; margin-left:5px;" onclick="markReviewed('${r.id}')">Review</button>
                                 <button class="btn success" style="padding:5px 10px; font-size:0.7rem; margin-left:5px;" onclick="resolveReport('${r.id}')">Resolve</button>
                             </td>
                         `;
@@ -636,6 +781,74 @@
             } catch (e) {
                 showToast('Error: ' + e.message);
             }
+        }
+
+        async function unbanUser(userId) {
+            if (!confirm('Unban this user?')) return;
+            try {
+                await supabaseClient.from('profiles').update({ status: 'Ready to chat' }).eq('id', userId);
+                logAction('unban', userId);
+                showToast('User unbanned');
+                fetchUsers();
+            } catch (e) {
+                showToast('Error: ' + e.message);
+            }
+        }
+
+        async function setRole(userId, role) {
+            if (!role) return;
+            if (!confirm(`Set role to "${role}"?`)) return;
+            try {
+                await supabaseClient.from('profiles').update({ role: role, is_admin: role === 'admin' }).eq('id', userId);
+                logAction('set_role', `${userId}:${role}`);
+                showToast('Role updated');
+                fetchUsers();
+            } catch (e) {
+                showToast('Error: ' + e.message);
+            }
+        }
+
+        async function deleteUser(userId, username) {
+            if (!confirm(`Delete @${username || userId}? This only deletes the profile row (auth user deletion requires server key).`)) return;
+            try {
+                await supabaseClient.from('profiles').delete().eq('id', userId);
+                logAction('delete_user', username || userId);
+                showToast('User profile deleted');
+                fetchUsers();
+            } catch (e) {
+                showToast('Error: ' + e.message);
+            }
+        }
+
+        async function deleteMessageAdmin(messageId) {
+            if (!confirm('Delete this message?')) return;
+            try {
+                await supabaseClient.from('messages').delete().eq('id', messageId);
+                logAction('delete_message', messageId);
+                showToast('Message deleted');
+                fetchMessages();
+            } catch (e) {
+                showToast('Error: ' + e.message);
+            }
+        }
+
+        async function markReviewed(reportId) {
+            try {
+                await supabaseClient.from('reports').update({ status: 'reviewed' }).eq('id', reportId);
+                showToast('Report marked reviewed');
+                fetchReports();
+            } catch (e) {
+                showToast('Error: ' + e.message);
+            }
+        }
+
+        function escapeHtmlLite(str) {
+            return String(str || '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
         }
 
         async function wipeUser(username) {
