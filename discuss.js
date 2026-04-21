@@ -323,7 +323,7 @@ async function initializeState() {
             state.people[id] = {
                 id,
                 name: p.display_name || p.username,
-                avatarUrl: p.avatar_url || state.threadAvatars[id] || "",
+                avatarUrl: p.avatar_url || state.threadAvatars[id] || "jay.png",
                 presence: "online", // Simple for now
                 statusText: p.status || "Ready to chat",
                 initials: getInitials(p.display_name || p.username),
@@ -353,10 +353,14 @@ async function syncChatsWithDatabase() {
         .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id},sender.eq.${uuid},receiver.eq.${uuid},receiver.eq.global_chat`)
         .order('created_at', { ascending: true });
 
-    if (msgError) {
-        console.error('[Pulse] Failed to load messages:', msgError);
-        return;
-    }
+    // Fetch read receipts to calculate unread counts
+    const { data: receipts } = await window.supabaseClient
+        .from('read_receipts')
+        .select('*')
+        .eq('user_name', state.currentUser.id);
+    
+    const readMap = new Map();
+    receipts?.forEach(r => readMap.set(r.channel_id, new Date(r.last_read_at).getTime()));
     
     console.log(`[Pulse] Found ${messages?.length || 0} messages in cloud history.`);
 
@@ -381,19 +385,29 @@ async function syncChatsWithDatabase() {
         }
 
         if (!chatsMap.has(chatId)) {
+            const lastRead = readMap.get(chatId) || 0;
             chatsMap.set(chatId, {
                 id: chatId,
                 type: chatType,
-                participantIds: chatType === 'direct' ? [state.currentUser.id, chatId.replace('dm-', '')] : [],
+                participantIds: chatType === 'direct' ? [state.currentUser.id, chatId.replace('dm-', '')].filter(id => id !== state.currentUser.id) : [], // Should only be the peer
                 name: chatName,
                 unread: 0,
-                lastTimestamp: 0
+                lastTimestamp: 0,
+                lastReadAt: lastRead
             });
+            // Fix participantIds to match state.currentUser.id exactly
+            if (chatType === 'direct') {
+                const peer = chatId.replace('dm-', '');
+                chatsMap.get(chatId).participantIds = [state.currentUser.id, peer];
+            }
         }
 
         const chat = chatsMap.get(chatId);
         const ts = new Date(msg.created_at).getTime();
         if (ts > chat.lastTimestamp) chat.lastTimestamp = ts;
+        if (ts > chat.lastReadAt && msg.sender !== state.currentUser.id) {
+            chat.unread++;
+        }
 
         // CRITICAL: Actually store the message in state
         if (!state.messages[chatId]) state.messages[chatId] = [];
