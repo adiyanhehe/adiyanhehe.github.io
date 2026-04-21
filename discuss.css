@@ -2122,3 +2122,67 @@ textarea:focus-visible {
     text-align: center;
     margin-left: auto;
 }
+/* Friends Stage Layout */
+.friends-directory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.friend-card {
+    background: var(--bg-panel-soft);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.friend-card:hover {
+    transform: translateY(-4px);
+    background: var(--bg-panel-hover);
+    border-color: var(--accent);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.friend-card-avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+}
+
+.friend-card-meta {
+    margin-bottom: 20px;
+}
+
+.friend-card-meta strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+
+.friend-card-meta span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.ghost-button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    padding: 8px 24px;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all var(--transition);
+}
+
+.friend-card:hover .ghost-button {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
