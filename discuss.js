@@ -200,6 +200,9 @@ function cacheElements() {
     elements.requestsViewButton = document.getElementById("requestsViewButton");
     elements.requestsBadge = document.getElementById("requestsBadge");
     
+    // These are the remaining elements not yet cached above
+    elements.membersToggleButton = document.getElementById("membersToggleButton");
+    elements.jumpLatestButton = document.getElementById("jumpLatestButton");
     elements.uploadButton = document.getElementById("uploadButton");
     elements.fileInput = document.getElementById("fileInput");
 
@@ -1483,10 +1486,14 @@ function startPresenceHeartbeat() {
 
 async function updateMyPresence(status) {
     if (!state.currentUser) return;
-    await window.supabaseClient.rpc('update_user_presence', { 
-        username: state.currentUser.id, 
-        status: status 
-    });
+    try {
+        await window.supabaseClient.rpc('update_user_presence', { 
+            username: state.currentUser.id, 
+            status: status 
+        });
+    } catch (e) {
+        console.warn('[Pulse] Presence sync failed. Did you run feature_updates.sql?', e);
+    }
 }
 
 function detectMentions() {
@@ -2229,13 +2236,17 @@ function selectChat(chatId) {
 
 async function markChannelAsRead(chatId) {
     if (!state.currentUser) return;
-    await window.supabaseClient
-        .from('read_receipts')
-        .upsert({ 
-            user_name: state.currentUser.id, 
-            channel_id: chatId, 
-            last_read_at: new Date().toISOString() 
-        }, { onConflict: 'user_name, channel_id' });
+    try {
+        await window.supabaseClient
+            .from('read_receipts')
+            .upsert({ 
+                user_name: state.currentUser.id, 
+                channel_id: chatId, 
+                last_read_at: new Date().toISOString() 
+            }, { onConflict: 'user_name, channel_id' });
+    } catch (e) {
+        console.warn('[Pulse] Read receipt sync failed. Did you run feature_updates.sql?', e);
+    }
 }
 
 // Mock simulation removed as requested.
