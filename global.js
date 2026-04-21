@@ -436,7 +436,7 @@ window.showProfileSummary = async (username) => {
             display: 'none', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)',
             transition: '0.4s', opacity: '0'
         });
-        modal.onclick = (e) => { if (e.target === modal) closeProfileSummary(); };
+        modal.onclick = (e) => { if (e.target === modal) window.closeProfileSummary?.(); };
         modal.innerHTML = `
             <div id="psm-box" style="background:#0a0a0a; width:400px; padding:0; border-radius:18px; border:1px solid #333; overflow:hidden; transform:translateY(20px); transition:0.5s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow:0 40px 80px rgba(0,0,0,0.8);">
                 <div id="psm-banner" style="height:120px; background:linear-gradient(45deg, #111, #222); position:relative;">
@@ -501,7 +501,7 @@ window.showProfileSummary = async (username) => {
     }
     document.getElementById('psm-link').href = `profile.html?user=${encodeURIComponent(username)}`;
     document.getElementById('psm-dm-btn').onclick = () => { 
-        closeProfileSummary(); 
+        window.closeProfileSummary?.(); 
         if (window.openDirectMessage) {
             window.openDirectMessage(username);
         } else {
