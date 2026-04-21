@@ -1707,17 +1707,29 @@ async function sendGif(gifUrl) {
     renderApp();
     scrollToLatest(true);
 
-    const { data, error } = await window.supabaseClient
-        .from('messages')
-        .insert([{
-            sender: state.currentUser.id,
-            receiver,
-            content: '[GIF]',
-            gif_url: gifUrl,
-            channel_type: activeChat.type
-        }])
-        .select()
-        .single();
+    const payload = {
+        sender: state.currentUser.id,
+        receiver,
+        content: '[GIF]',
+        gif_url: gifUrl,
+        channel_type: activeChat.type
+    };
+
+    const performInsert = async (p) => {
+        return await window.supabaseClient.from('messages').insert([p]).select().single();
+    };
+
+    let { data, error } = await performInsert(payload);
+
+    // Resilience: Retry without optional columns if they don't exist in DB
+    if (error && (error.message.includes('gif_url') || error.message.includes('channel_type'))) {
+        const fallbackPayload = { ...payload };
+        if (error.message.includes('gif_url')) delete fallbackPayload.gif_url;
+        if (error.message.includes('channel_type')) delete fallbackPayload.channel_type;
+        const retry = await performInsert(fallbackPayload);
+        data = retry.data;
+        error = retry.error;
+    }
 
     if (error) {
         console.error('GIF send failed:', error);
@@ -1730,7 +1742,7 @@ async function sendGif(gifUrl) {
         id: String(data.id),
         senderId: data.sender,
         text: data.content,
-        gifUrl: data.gif_url,
+        gifUrl: data.gif_url || null,
         timestamp: new Date(data.created_at).getTime(),
         reactions: []
     };
@@ -1789,16 +1801,26 @@ async function sendMessage() {
     renderApp();
     scrollToLatest(true);
 
-    const { data, error } = await window.supabaseClient
-        .from('messages')
-        .insert([{
-            sender: state.currentUser.id,
-            receiver,
-            content: text,
-            channel_type: activeChat.type
-        }])
-        .select()
-        .single();
+    const payload = {
+        sender: state.currentUser.id,
+        receiver,
+        content: text,
+        channel_type: activeChat.type
+    };
+
+    const performInsert = async (p) => {
+        return await window.supabaseClient.from('messages').insert([p]).select().single();
+    };
+
+    let { data, error } = await performInsert(payload);
+
+    if (error && error.message.includes('channel_type')) {
+        const fallbackPayload = { ...payload };
+        delete fallbackPayload.channel_type;
+        const retry = await performInsert(fallbackPayload);
+        data = retry.data;
+        error = retry.error;
+    }
 
     if (error) {
         console.error('Message send failed:', error);
