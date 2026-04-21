@@ -131,9 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Global helper for profile summary & other pages
-window.openDirectMessage = (username) => {
+window.openDirectMessage = async (username) => {
     if (!username) return;
-    const person = ensurePersonInDB(username);
+    const person = await ensurePersonInDB(username);
+    if (!person) return;
     const chat = ensureDirectChat(person.id);
     selectChat(chat.id);
 };
@@ -303,15 +304,15 @@ async function initializeState() {
     // Load recent thread avatars as fallback (using 'threads' table, not 'posts')
     const { data: latestThreads } = await window.supabaseClient
         .from('threads')
-        .select('author, avatar_url')
-        .not('avatar_url', 'is', null)
-        .order('created_at', { ascending: false })
+        .select('author, avatar')
+        .not('avatar', 'is', null)
+        .order('timestamp', { ascending: false })
         .limit(100);
 
     state.threadAvatars = {};
     if (latestThreads) {
         latestThreads.forEach(t => {
-            if (t.author && !state.threadAvatars[t.author]) state.threadAvatars[t.author] = t.avatar_url;
+            if (t.author && !state.threadAvatars[t.author]) state.threadAvatars[t.author] = t.avatar;
         });
     }
 
@@ -437,8 +438,26 @@ async function syncChatsWithDatabase() {
     // Fetch friend requests
     await fetchFriendRequests();
 
-    // Build friends list from all known people except self
-    state.friends = Object.keys(state.people).filter(id => id !== state.currentUser.id);
+    // Build friends list from users you follow
+    const { data: follows } = await window.supabaseClient
+        .from('follows')
+        .select('following')
+        .eq('follower', state.currentUser.id);
+    
+    const followingIds = follows?.map(f => f.following) || [];
+    
+    // Add people you have active chats with as 'friends' to the directory
+    const chatParticipantIds = state.chats
+        .filter(c => c.type === 'direct')
+        .map(c => c.participantIds.find(id => id !== state.currentUser.id))
+        .filter(Boolean);
+
+    state.friends = [...new Set([...followingIds, ...chatParticipantIds])];
+    
+    // If no friends yet, fall back to showing all known people (except self) so the app doesn't look empty
+    if (state.friends.length === 0) {
+        state.friends = Object.keys(state.people).filter(id => id !== state.currentUser.id);
+    }
 }
 
 async function fetchGroups() {
@@ -1037,30 +1056,54 @@ function renderFriendsDirectory() {
 }
 
 function renderFriendsStage() {
+    const onlineFriends = state.friends.filter((friendId) => state.people[friendId]?.presence === "online");
+    const groupCount = state.chats.filter((chat) => chat.type === "group").length;
+    const unreadCount = state.chats.reduce((total, chat) => total + (chat.unread || 0), 0);
+
     const visible = getVisibleFriends();
-    
+
     return `
-        <div class="message-stream">
-            <div class="stream-inner" style="padding: 32px;">
-                <div class="friends-directory-grid">
-                    ${visible.map(person => `
-                        <div class="friend-card" onclick="window.openDirectMessage('${person.id}')">
-                            ${renderPersonAvatar(person, "friend-card-avatar", true)}
-                            <div class="friend-card-meta">
-                                <strong>${escapeHtml(person.name)}</strong>
-                                <span>${escapeHtml(person.statusText)}</span>
-                            </div>
-                            <button class="ghost-button">Message</button>
-                        </div>
-                    `).join("")}
+        <div class="friends-hero">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <strong>${onlineFriends.length}</strong>
+                    <p>Friends online now</p>
                 </div>
+                <div class="stat-card">
+                    <strong>${groupCount}</strong>
+                    <p>Active group chats</p>
+                </div>
+                <div class="stat-card">
+                    <strong>${unreadCount}</strong>
+                    <p>Unread notifications</p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 40px;">
+                <h2 style="font-family: var(--font-display); font-size: 2.2rem; margin-bottom: 8px;">Stay connected to your network.</h2>
+                <p style="color:var(--text-soft); font-size: 1.1rem; max-width: 600px;">Pulse is most powerful when you are building together. Start a sync with anyone below.</p>
+            </div>
+
+            <div class="friends-directory-grid">
+                ${visible.map(person => `
+                    <div class="friend-card" onclick="window.openDirectMessage('${person.id}')">
+                        <div class="friend-card-avatar-wrap">
+                            ${renderPersonAvatar(person, "friend-card-avatar", true)}
+                        </div>
+                        <div class="friend-card-meta">
+                            <strong>${escapeHtml(person.name)}</strong>
+                            <span>${escapeHtml(person.statusText)}</span>
+                        </div>
+                        <button class="ghost-button" style="width: 100%; margin-top: 12px; height: 40px; border-radius: 12px;">Message</button>
+                    </div>
+                `).join("")}
                 ${visible.length === 0 ? `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">👥</div>
+                    <div class="empty-state" style="grid-column: 1 / -1; padding: 60px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;">👥</div>
                         <h3>Your circle is quiet</h3>
                         <p>Search for teammates or invite them to Pulse to start building together.</p>
                         <div style="display:flex; gap:12px; margin-top:24px; justify-content:center;">
-                            <button class="primary-button" onclick="openConversationModal('direct')">Find Users</button>
+                            <button class="create-button" onclick="openConversationModal('direct')">Find Users</button>
                             <button class="ghost-button" onclick="setNavView('home')">Back to Inbox</button>
                         </div>
                     </div>
@@ -1266,51 +1309,7 @@ function renderWorkspaceChatIdentity(chat) {
     `;
 }
 
-function renderFriendsStage() {
-    const onlineFriends = state.friends.filter((friendId) => state.people[friendId]?.presence === "online");
-    const groupCount = state.chats.filter((chat) => chat.type === "group").length;
-    const unreadCount = state.chats.reduce((total, chat) => total + chat.unread, 0);
 
-    return `
-        <div class="friends-hero">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <strong>${onlineFriends.length}</strong>
-                    <p>Friends online now</p>
-                </div>
-                <div class="stat-card">
-                    <strong>${groupCount}</strong>
-                    <p>Active group chats</p>
-                </div>
-                <div class="stat-card">
-                    <strong>${unreadCount}</strong>
-                    <p>Unread notifications</p>
-                </div>
-            </div>
-
-            <div>
-                <h2>Stay close to the people moving the work forward.</h2>
-                <p style="color:var(--text-muted); margin:0 0 18px;">Use friends as a quick launchpad into direct messages, then jump back into the inbox once the conversation is rolling.</p>
-            </div>
-
-            <div class="friend-highlight-grid">
-                ${onlineFriends.slice(0, 4).map((personId) => {
-        const person = state.people[personId];
-        return `
-                        <div class="friend-highlight">
-                            ${renderPersonAvatar(person, "friend-avatar", true)}
-                            <div>
-                                <strong>${escapeHtml(person.name)}</strong>
-                                <p style="margin:6px 0 0; color:var(--text-muted);">${escapeHtml(person.statusText)}</p>
-                            </div>
-                            <button class="create-button" type="button" data-friend-id="${person.id}" data-start-chat="true">Message ${escapeHtml(person.name.split(" ")[0])}</button>
-                        </div>
-                    `;
-    }).join("")}
-            </div>
-        </div>
-    `;
-}
 
 function renderMessages(chat) {
     const messages = getMessages(chat.id);
@@ -2139,7 +2138,7 @@ async function ensurePersonInDB(name) {
     const { data, error } = await window.supabaseClient
         .from('profiles')
         .select('*')
-        .or(`username.eq.${name},display_name.eq.${name}`)
+        .or(`username.ilike.${name},display_name.ilike.${name}`)
         .maybeSingle();
 
     if (error || !data) {
