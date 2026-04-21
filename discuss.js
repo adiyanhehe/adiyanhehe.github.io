@@ -80,7 +80,11 @@ const state = {
     mentionIndex: 0,
     // Search state
     searchQuery: "",
-    searchActive: false
+    searchActive: false,
+    // Advanced messaging
+    replyingTo: null,
+    editingMessage: null,
+    currentSheetTab: "members" 
 };
 
 const elements = {};
@@ -212,6 +216,22 @@ function cacheElements() {
     elements.workspaceSearchField = document.getElementById("workspaceSearchField");
     elements.workspaceSearchInput = document.getElementById("workspaceSearchInput");
     elements.closeWorkspaceSearch = document.getElementById("closeWorkspaceSearch");
+
+    elements.replyPreview = document.getElementById("replyPreview");
+    elements.replyToName = document.getElementById("replyToName");
+    elements.replyToText = document.getElementById("replyToText");
+    elements.cancelReplyButton = document.getElementById("cancelReplyButton");
+    
+    elements.editPreview = document.getElementById("editPreview");
+    elements.cancelEditButton = document.getElementById("cancelEditButton");
+
+    elements.pinnedMessagesBar = document.getElementById("pinnedMessagesBar");
+    elements.pinnedMessageText = document.getElementById("pinnedMessageText");
+    elements.closePinnedBar = document.getElementById("closePinnedBar");
+
+    elements.membersSheet = document.getElementById("membersSheet");
+    elements.sheetContent = document.getElementById("sheetContent");
+    elements.sheetTabs = document.querySelectorAll(".sheet-tab");
 }
 
 async function initializeState() {
@@ -700,6 +720,19 @@ function bindEvents() {
 
     // Mention events
     elements.mentionDropdown.addEventListener("click", handleMentionClick);
+
+    // Advanced features
+    if (elements.cancelReplyButton) elements.cancelReplyButton.addEventListener("click", cancelReply);
+    if (elements.cancelEditButton) elements.cancelEditButton.addEventListener("click", cancelEdit);
+    if (elements.closePinnedBar) elements.closePinnedBar.addEventListener("click", () => elements.pinnedMessagesBar.classList.add("hidden"));
+
+    elements.sheetTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            state.currentSheetTab = tab.dataset.tab;
+            elements.sheetTabs.forEach(t => t.classList.toggle("active", t === tab));
+            renderSheet();
+        });
+    });
 }
 
 async function handleFileUpload(event) {
@@ -1019,13 +1052,75 @@ function renderWorkspace() {
         return;
     }
 
-    elements.workspaceIdentity.innerHTML = renderWorkspaceChatIdentity(activeChat);
+    // Setup Workspace Content
+    if (state.searchActive) {
+        renderSearchHeader();
+    } else {
+        elements.workspaceIdentity.innerHTML = renderWorkspaceChatIdentity(activeChat);
+        renderPinnedBar(activeChat);
+    }
+    
     // Global Chat and group chats show Members panel; DMs show Profile
     elements.membersToggleButton.textContent = (activeChat.type === "group" || activeChat.type === "global") ? "Members" : "Profile";
     elements.membersSheet.classList.toggle("hidden", !state.membersOpen);
-    elements.membersSheet.innerHTML = renderMembersSheet(activeChat);
+    
     renderMessages(activeChat);
+    renderSheet();
     elements.messageInput.placeholder = `Message ${getChatTitle(activeChat)}`;
+}
+
+function renderPinnedBar(chat) {
+    if (!chat || !elements.pinnedMessagesBar) return;
+    const messages = state.messages[chat.id] || [];
+    const pins = messages.filter(m => m.isPinned);
+    
+    if (pins.length > 0) {
+        elements.pinnedMessagesBar.classList.remove("hidden");
+        elements.pinnedMessageText.innerText = pins[pins.length - 1].text.substring(0, 60) + "...";
+        elements.pinnedMessageText.onclick = () => scrollToMessage(pins[pins.length - 1].id);
+    } else {
+        elements.pinnedMessagesBar.classList.add("hidden");
+    }
+}
+
+function renderSheet() {
+    if (!state.membersOpen || !elements.sheetContent) return;
+    
+    const activeChat = getActiveChat();
+    if (!activeChat) return;
+
+    if (state.currentSheetTab === "members") {
+        elements.sheetContent.innerHTML = renderMembersSheet(activeChat);
+    } else if (state.currentSheetTab === "gallery") {
+        const messages = state.messages[activeChat.id] || [];
+        const media = messages.filter(m => m.gifUrl);
+        elements.sheetContent.innerHTML = `
+            <div class="gallery-grid">
+                ${media.map(m => `
+                    <div class="gallery-item" onclick="window.showLightbox('${m.gifUrl}')">
+                        <img src="${m.gifUrl}" loading="lazy">
+                    </div>
+                `).join("")}
+            </div>
+            ${media.length === 0 ? '<p style="text-align:center; color:var(--text-muted); font-size:0.8rem; margin-top:20px;">No media found.</p>' : ''}
+        `;
+    } else if (state.currentSheetTab === "pinned") {
+        const messages = state.messages[activeChat.id] || [];
+        const pins = messages.filter(m => m.isPinned);
+        elements.sheetContent.innerHTML = `
+            <div class="members-list">
+                ${pins.map(m => `
+                    <div class="search-result-item" onclick="scrollToMessage('${m.id}')">
+                        <div class="search-result-info">
+                            <strong>${escapeHtml(m.sender)}</strong>
+                            <span>${escapeHtml(m.text.substring(0, 40))}...</span>
+                        </div>
+                    </div>
+                `).join("")}
+                ${pins.length === 0 ? '<p style="text-align:center; color:var(--text-muted); font-size:0.8rem; margin-top:20px;">No pinned messages.</p>' : ''}
+            </div>
+        `;
+    }
 }
 
 function renderWorkspaceSectionIdentity(title, copy) {
@@ -1166,35 +1261,38 @@ function renderMessages(chat) {
 
         return `
             ${divider}
-            <article class="message-item ${isOwn ? "sent" : "received"}" data-message-id="${message.id}">
+            <article class="message-item ${isOwn ? "sent" : "received"} ${message.isPinned ? "is-pinned" : ""}" data-message-id="${message.id}">
                 ${isOwn ? "" : renderPersonAvatar(sender, "member-avatar", true)}
                 <div class="message-shell">
                     <div class="message-meta">
-                    <strong class="message-sender" onclick="window.showProfileSummary('${message.senderId}')" style="cursor: pointer;">${escapeHtml(sender.name)}</strong>
-                    <span class="message-time">${escapeHtml(formatMessageTimestamp(message.timestamp))}</span>
-                </div>
+                        <strong class="message-sender" onclick="window.showProfileSummary('${message.senderId}')" style="cursor: pointer;">${escapeHtml(sender.name)}</strong>
+                        <span class="message-time">${escapeHtml(formatMessageTimestamp(message.timestamp))}</span>
+                    </div>
+                    ${message.isPinned ? `<div style="color:var(--accent); font-size:0.6rem; margin-bottom:4px; display:flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M12 2L15 8L22 9L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9L9 8L12 2Z"/></svg> Pinned</div>` : ""}
+                    ${message.reply_to ? renderReplyContext(message.reply_to, chat.id) : ""}
                     ${message.gifUrl ? `<div class="message-attachment"><img src="${escapeHtml(message.gifUrl)}" alt="GIF attachment" loading="lazy"></div>` : ""}
-                    ${message.text ? `<div class="message-bubble">${renderFormattedText(message.text)}</div>` : ""}
+                    ${message.text ? `<div class="message-bubble">${renderFormattedText(message.text)}${message.is_edited ? '<span class="message-edited-tag">(edited)</span>' : ''}</div>` : ""}
+                    ${message.link_preview ? renderLinkPreview(message.link_preview) : ""}
                     ${reactionMenu}
                     ${reactions}
                 </div>
                 <div class="message-toolbar ${state.reactionMenu && state.reactionMenu.messageId === message.id ? "active" : ""}">
+                    <button class="message-action-button" type="button" title="Reply" data-action="reply" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                    </button>
+                    ${isOwn ? `
+                        <button class="message-action-button" type="button" title="Edit" data-action="edit" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                    ` : ""}
                     <button class="message-action-button" type="button" title="React" data-action="toggle-reaction-menu" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <circle cx="12" cy="12" r="8.5"></circle>
-                            <path d="M8.5 10.5h.01"></path>
-                            <path d="M15.5 10.5h.01"></path>
-                            <path d="M8.5 14.5c.8 1.1 2 1.7 3.5 1.7s2.7-.6 3.5-1.7"></path>
-                        </svg>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.5 10.5h.01"></path><path d="M15.5 10.5h.01"></path><path d="M8.5 14.5c.8 1.1 2 1.7 3.5 1.7s2.7-.6 3.5-1.7"></path></svg>
+                    </button>
+                    <button class="message-action-button" type="button" title="Pin" data-action="pin" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15 8L22 9L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9L9 8L12 2Z"/></svg>
                     </button>
                     <button class="message-action-button delete" type="button" title="Delete" data-action="delete-message" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M4 7h16"></path>
-                            <path d="M10 11v6"></path>
-                            <path d="M14 11v6"></path>
-                            <path d="M6 7l1 12h10l1-12"></path>
-                            <path d="M9 7V4h6v3"></path>
-                        </svg>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M6 7l1 12h10l1-12"></path><path d="M9 7V4h6v3"></path></svg>
                     </button>
                 </div>
             </article>
@@ -1207,6 +1305,31 @@ function renderMessages(chat) {
 
     renderTypingIndicator();
     updateJumpButton();
+}
+
+function renderReplyContext(replyToId, chatId) {
+    const parent = (state.messages[chatId] || []).find(m => String(m.id) === String(replyToId));
+    if (!parent) return "";
+    
+    return `
+        <div class="message-reply-context" onclick="scrollToMessage('${parent.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
+            <span>Replying to <strong>${escapeHtml(state.people[parent.senderId]?.name || parent.senderId)}</strong></span>
+        </div>
+    `;
+}
+
+function renderLinkPreview(preview) {
+    return `
+        <div class="link-preview-card" onclick="window.open('${escapeHtml(preview.url)}', '_blank')">
+            ${preview.image ? `<img src="${escapeHtml(preview.image)}" class="link-preview-image">` : ""}
+            <div class="link-preview-body">
+                <div class="link-preview-title">${escapeHtml(preview.title)}</div>
+                <div class="link-preview-desc">${escapeHtml(preview.desc)}</div>
+                <div class="link-preview-site">${escapeHtml(new URL(preview.url).hostname)}</div>
+            </div>
+        </div>
+    `;
 }
 
 function renderMessageReactions(chatId, message) {
@@ -1479,7 +1602,13 @@ function handleMessageActions(event) {
         return;
     }
 
-    if (action === "delete-message") {
+    if (action === "reply") {
+        setReply(chatId, messageId);
+    } else if (action === "edit") {
+        setEdit(chatId, messageId);
+    } else if (action === "pin") {
+        togglePinMessage(chatId, messageId);
+    } else if (action === "delete-message") {
         deleteMessage(chatId, messageId);
     }
 }
@@ -2036,6 +2165,12 @@ async function sendMessage() {
     const text = elements.messageInput.value.trim();
     if (!activeChat || !text) return;
 
+    if (state.editingMessage) {
+        await updateMessage(activeChat.id, state.editingMessage.id, text);
+        cancelEdit();
+        return;
+    }
+
     let receiver;
     if (activeChat.type === 'global') {
         receiver = 'global_chat';
@@ -2045,23 +2180,41 @@ async function sendMessage() {
         receiver = activeChat.participantIds.find(id => id !== state.currentUser.id);
     }
 
+    // Link Preview Logic (Simple Regex)
+    let linkPreview = null;
+    const urlMatch = text.match(/https?:\/\/[^\s<]+/);
+    if (urlMatch) {
+         linkPreview = {
+             url: urlMatch[0],
+             title: "Link Preview",
+             desc: "Click to visit this resource on the web.",
+             image: null
+         };
+    }
+
     // Optimistic UI: show message immediately before DB confirms
     const optimisticId = `opt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    if (!state.messages[activeChat.id]) state.messages[activeChat.id] = [];
-    state.messages[activeChat.id].push({
+    const newMessage = {
         id: optimisticId,
         senderId: state.currentUser.id,
         text,
         timestamp: Date.now(),
         reactions: [],
-        pending: true
-    });
+        pending: true,
+        reply_to: state.replyingTo ? state.replyingTo.id : null,
+        is_edited: false,
+        link_preview: linkPreview
+    };
+
+    if (!state.messages[activeChat.id]) state.messages[activeChat.id] = [];
+    state.messages[activeChat.id].push(newMessage);
 
     // Update chat lastTimestamp so it floats to top
     const chat = getChatById(activeChat.id);
     if (chat) chat.lastTimestamp = Date.now();
 
     elements.messageInput.value = '';
+    cancelReply();
     autoResizeComposer();
     updateComposerMetrics();
     renderApp();
@@ -2071,7 +2224,9 @@ async function sendMessage() {
         sender: state.currentUser.id,
         receiver,
         content: text,
-        channel_type: activeChat.type
+        channel_type: activeChat.type,
+        reply_to: newMessage.reply_to,
+        link_preview: newMessage.link_preview
     };
 
     const performInsert = async (p) => {
@@ -2090,7 +2245,6 @@ async function sendMessage() {
 
     if (error) {
         console.error('Message send failed:', error);
-        // Roll back the optimistic message
         state.messages[activeChat.id] = state.messages[activeChat.id].filter(m => m.id !== optimisticId);
         renderApp();
         if (window.showTopNotification) window.showTopNotification('Failed to send message. Try again.', 'error');
@@ -2098,14 +2252,16 @@ async function sendMessage() {
     }
 
     // Replace optimistic placeholder with the confirmed DB message
-    // (realtime will also fire, but handleIncomingMessage deduplicates by id)
     const confirmed = {
         id: String(data.id),
         senderId: data.sender,
         text: data.content,
         gifUrl: data.gif_url || null,
         timestamp: new Date(data.created_at).getTime(),
-        reactions: []
+        reactions: [],
+        reply_to: data.reply_to,
+        is_edited: data.is_edited,
+        link_preview: data.link_preview
     };
     state.messages[activeChat.id] = state.messages[activeChat.id].filter(m => m.id !== optimisticId);
     if (!state.messages[activeChat.id].some(m => m.id === confirmed.id)) {
@@ -2115,6 +2271,95 @@ async function sendMessage() {
     renderApp();
     scrollToLatest(false);
 }
+
+async function updateMessage(chatId, messageId, newText) {
+    const { error } = await window.supabaseClient
+        .from('messages')
+        .update({ content: newText, is_edited: true, updated_at: new Date().toISOString() })
+        .eq('id', messageId);
+        
+    if (!error) {
+        const msg = state.messages[chatId].find(m => String(m.id) === String(messageId));
+        if (msg) {
+            msg.text = newText;
+            msg.is_edited = true;
+            renderWorkspace();
+        }
+    }
+}
+
+async function togglePinMessage(chatId, messageId) {
+    const msg = state.messages[chatId].find(m => String(m.id) === String(messageId));
+    if (!msg) return;
+    
+    const newPin = !msg.isPinned;
+    const { error } = await window.supabaseClient
+        .from('messages')
+        .update({ is_pinned: newPin })
+        .eq('id', messageId);
+        
+    if (!error) {
+        msg.isPinned = newPin;
+        renderWorkspace();
+    }
+}
+
+function setReply(chatId, messageId) {
+    const msg = state.messages[chatId].find(m => String(m.id) === String(messageId));
+    if (!msg) return;
+    state.replyingTo = msg;
+    state.editingMessage = null;
+    
+    elements.replyToName.innerText = state.people[msg.senderId]?.name || msg.senderId;
+    elements.replyToText.innerText = msg.text.substring(0, 50) + (msg.text.length > 50 ? '...' : '');
+    elements.replyPreview.classList.remove("hidden");
+    elements.editPreview.classList.add("hidden");
+    elements.messageInput.focus();
+}
+
+function cancelReply() {
+    state.replyingTo = null;
+    elements.replyPreview.classList.add("hidden");
+}
+
+function setEdit(chatId, messageId) {
+    const msg = state.messages[chatId].find(m => String(m.id) === String(messageId));
+    if (!msg) return;
+    state.editingMessage = msg;
+    state.replyingTo = null;
+    
+    elements.messageInput.value = msg.text;
+    elements.editPreview.classList.remove("hidden");
+    elements.replyPreview.classList.add("hidden");
+    elements.messageInput.focus();
+    autoResizeComposer();
+}
+
+function cancelEdit() {
+    state.editingMessage = null;
+    elements.messageInput.value = "";
+    elements.editPreview.classList.add("hidden");
+    autoResizeComposer();
+}
+
+function scrollToMessage(messageId) {
+    const el = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-pulse');
+        setTimeout(() => el.classList.remove('highlight-pulse'), 2000);
+    }
+}
+
+window.showLightbox = (url) => {
+    // Basic lightbox implementation
+    const lb = document.createElement('div');
+    lb.className = 'modal-backdrop';
+    lb.style.zIndex = '1000';
+    lb.onclick = () => lb.remove();
+    lb.innerHTML = `<img src="${url}" style="max-width:90vw; max-height:90vh; border-radius:24px; box-shadow:var(--shadow-lg);">`;
+    document.body.appendChild(lb);
+};
 
 function createMessage(chatId, senderId, text) {
     return {
@@ -2218,6 +2463,8 @@ function selectChat(chatId) {
     state.emojiOpen = false;
     state.settingsOpen = false;
     state.reactionMenu = null;
+    cancelReply();
+    cancelEdit();
     closeDrawers();
 
     const chat = getChatById(chatId);
