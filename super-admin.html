@@ -154,6 +154,7 @@
         <button class="nav-btn" onclick="showSection('reports', this)">🚨 Reports</button>
         <button class="nav-btn" onclick="showSection('staff', this)">🛡️ Staff</button>
         <button class="nav-btn" onclick="showSection('config', this)">⚙️ Config</button>
+        <button class="nav-btn" onclick="showSection('settings', this)">🧩 Settings</button>
         <button class="nav-btn exit" onclick="location.href='index.html'">EXIT_CORE</button>
     </div>
 
@@ -297,6 +298,43 @@
             </div>
         </div>
 
+        <!-- Settings Section -->
+        <div id="v-settings" class="section-view">
+            <h2 style="font-size:2rem; font-weight:900; margin-bottom:30px;">SETTINGS.</h2>
+            <div class="card">
+                <h3>Feature Toggles</h3>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid var(--border); border-radius:12px; background: rgba(255,255,255,0.02);">
+                        <span style="font-weight:900; letter-spacing:1px; text-transform:uppercase; font-size:0.75rem;">Threads</span>
+                        <input type="checkbox" id="ft-threads">
+                    </label>
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid var(--border); border-radius:12px; background: rgba(255,255,255,0.02);">
+                        <span style="font-weight:900; letter-spacing:1px; text-transform:uppercase; font-size:0.75rem;">Global Chat</span>
+                        <input type="checkbox" id="ft-global-chat">
+                    </label>
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid var(--border); border-radius:12px; background: rgba(255,255,255,0.02);">
+                        <span style="font-weight:900; letter-spacing:1px; text-transform:uppercase; font-size:0.75rem;">Friend Requests</span>
+                        <input type="checkbox" id="ft-friends">
+                    </label>
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid var(--border); border-radius:12px; background: rgba(255,255,255,0.02);">
+                        <span style="font-weight:900; letter-spacing:1px; text-transform:uppercase; font-size:0.75rem;">GIFs</span>
+                        <input type="checkbox" id="ft-gifs">
+                    </label>
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid var(--border); border-radius:12px; background: rgba(255,255,255,0.02);">
+                        <span style="font-weight:900; letter-spacing:1px; text-transform:uppercase; font-size:0.75rem;">Maintenance Mode</span>
+                        <input type="checkbox" id="ft-maintenance">
+                    </label>
+                </div>
+                <div style="display:flex; gap: 12px; margin-top: 18px; flex-wrap: wrap;">
+                    <button class="btn" onclick="saveFeatureToggles()">Save Toggles</button>
+                    <button class="btn" onclick="loadFeatureToggles()">Reload</button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 12px; line-height: 1.5;">
+                    These toggles are stored in Supabase `system_settings` (key: <strong>features</strong>). Apply `admin_extras.sql` for this to work.
+                </p>
+            </div>
+        </div>
+
         <!-- Config Section -->
         <div id="v-config" class="section-view">
             <h2 style="font-size:2rem; font-weight:900; margin-bottom:30px;">SYSTEM.</h2>
@@ -356,7 +394,8 @@
                 const { error } = await supabaseClient.auth.signInWithOAuth({
                     provider: provider,
                     options: { 
-                        redirectTo: window.location.origin + '/super-admin.html' 
+                        // Works both on root domains and GitHub Pages subpaths
+                        redirectTo: new URL('super-admin.html', window.location.href).toString()
                     }
                 });
                 
@@ -387,8 +426,24 @@
                 if (session) {
                     const email = session.user.email;
                     const adminEmails = ['adiyachowdhury8@gmail.com', 'adiyanhehe@gmail.com'];
-                    
-                    if (adminEmails.includes(email) || window.isAdmin?.(null, email)) {
+
+                    // Server-backed role check (preferred over frontend-only checks)
+                    let isPrivileged = false;
+                    try {
+                        const { data: profile } = await supabaseClient
+                            .from('profiles')
+                            .select('role, is_admin, status')
+                            .eq('id', session.user.id)
+                            .maybeSingle();
+
+                        const role = (profile?.role || (profile?.is_admin ? 'admin' : 'user')).toLowerCase();
+                        const banned = String(profile?.status || '').toUpperCase() === 'BANNED';
+                        isPrivileged = !banned && (role === 'admin' || role === 'moderator');
+                    } catch (e) {
+                        // If profiles lookup fails, fall back to allowlist below
+                    }
+
+                    if (isPrivileged || adminEmails.includes(email) || window.isAdmin?.(null, email)) {
                         currentUser = session.user;
                         document.getElementById('gate').style.display = 'none';
                         startDashboard();
@@ -453,7 +508,8 @@
                 fetchUsers(),
                 fetchMessages(),
                 fetchReports(),
-                fetchStaff()
+                fetchStaff(),
+                loadFeatureToggles()
             ]);
         }
 
@@ -717,18 +773,34 @@
                     });
                 }
 
-                // Admin action log (simulated from localStorage)
+                // Admin action log (server-side if available; fallback to localStorage)
                 const logList = document.getElementById('l-admin-log');
                 logList.innerHTML = '';
-                const actions = JSON.parse(localStorage.getItem('admin_actions') || '[]');
-                
+
+                let actions = [];
+                try {
+                    const { data: serverActions } = await supabaseClient
+                        .from('admin_actions')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(20);
+                    actions = (serverActions || []).map(a => ({
+                        admin: a.actor_username || 'staff',
+                        action: a.action,
+                        target: a.target || '',
+                        time: a.created_at
+                    }));
+                } catch (e) {
+                    actions = JSON.parse(localStorage.getItem('admin_actions') || '[]');
+                }
+
                 if (actions.length > 0) {
                     actions.slice(0, 10).forEach(action => {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td>@${action.admin}</td>
-                            <td>${action.action}</td>
-                            <td>@${action.target}</td>
+                            <td>@${escapeHtmlLite(action.admin)}</td>
+                            <td>${escapeHtmlLite(action.action)}</td>
+                            <td>${escapeHtmlLite(action.target)}</td>
                             <td style="color: var(--text-muted);">${formatTime(action.time)}</td>
                         `;
                         logList.appendChild(tr);
@@ -937,6 +1009,66 @@
             });
             // Keep only last 100 actions
             localStorage.setItem('admin_actions', JSON.stringify(actions.slice(0, 100)));
+
+            // Also attempt server-side audit log (requires admin_extras.sql)
+            (async () => {
+                try {
+                    const { data: profile } = await supabaseClient
+                        .from('profiles')
+                        .select('username')
+                        .eq('id', currentUser?.id)
+                        .maybeSingle();
+
+                    await supabaseClient.from('admin_actions').insert([{
+                        actor_id: currentUser?.id || null,
+                        actor_username: profile?.username || (currentUser?.email || 'staff'),
+                        action,
+                        target
+                    }]);
+                } catch (e) { }
+            })();
+        }
+
+        async function loadFeatureToggles() {
+            const el = (id) => document.getElementById(id);
+            try {
+                const { data } = await supabaseClient
+                    .from('system_settings')
+                    .select('value')
+                    .eq('key', 'features')
+                    .maybeSingle();
+                const v = data?.value || {};
+                if (el('ft-threads')) el('ft-threads').checked = v.enable_threads !== false;
+                if (el('ft-global-chat')) el('ft-global-chat').checked = v.enable_global_chat !== false;
+                if (el('ft-friends')) el('ft-friends').checked = v.enable_friend_requests !== false;
+                if (el('ft-gifs')) el('ft-gifs').checked = v.enable_gifs !== false;
+                if (el('ft-maintenance')) el('ft-maintenance').checked = v.maintenance_mode === true;
+            } catch (e) { }
+        }
+
+        async function saveFeatureToggles() {
+            const el = (id) => document.getElementById(id);
+            try {
+                const payload = {
+                    enable_threads: !!el('ft-threads')?.checked,
+                    enable_global_chat: !!el('ft-global-chat')?.checked,
+                    enable_friend_requests: !!el('ft-friends')?.checked,
+                    enable_gifs: !!el('ft-gifs')?.checked,
+                    maintenance_mode: !!el('ft-maintenance')?.checked
+                };
+
+                await supabaseClient.from('system_settings').upsert({
+                    key: 'features',
+                    value: payload,
+                    updated_at: new Date().toISOString(),
+                    updated_by: currentUser?.id || null
+                });
+
+                logAction('settings_update', 'features');
+                showToast('Settings saved');
+            } catch (e) {
+                showToast('Settings save failed: ' + e.message);
+            }
         }
 
         function formatTime(timestamp) {
