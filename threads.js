@@ -30,11 +30,18 @@ function cacheElements() {
 }
 
 // Ensure Supabase is fully loaded from global.js before running app logic
-const initInterval = setInterval(() => {
+const initInterval = setInterval(async () => {
     if (window.supabaseClient && !state.initialized) {
         state.initialized = true;
         clearInterval(initInterval);
-        initializeThreads();
+        try {
+            await initializeThreads();
+        } catch (e) {
+            console.error('[Threads] initializeThreads failed — degraded boot:', e);
+            // Still attempt a basic render so the page isn't dead
+            cacheElements();
+            bindEvents();
+        }
     }
 }, 100);
 
