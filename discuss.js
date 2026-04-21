@@ -1,6 +1,7 @@
 const STORAGE_KEY = "pulse-messenger-ui-v1";
 const THEME_KEY = "site-theme";
 const KLIPY_API_KEY = "4o9v8SiiAWDJy8Dq2Q4mHfV35hQtFswJpH3NTRckha7dG5MmGzXdgfk94XEE8gUQ";
+const DRAFT_KEY_PREFIX = "pulse-draft-v1:";
 
 const MAX_MESSAGE_LENGTH = 400;
 const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉"];
@@ -52,6 +53,7 @@ const REPLY_BANK = {
 
 const state = {
     theme: "dark",
+    connection: navigator.onLine ? "online" : "offline",
     currentUser: null,
     people: {},
     friends: [],
@@ -93,6 +95,22 @@ const elements = {};
 
 document.addEventListener("DOMContentLoaded", () => {
     cacheElements();
+
+    // Connection awareness (used for send gating + UI copy)
+    const updateConnection = () => {
+        state.connection = navigator.onLine ? "online" : "offline";
+        updateComposerMetrics();
+        // Render only the header identity if possible; full render is heavier
+        if (elements.workspaceIdentity) {
+            const activeChat = getActiveChat();
+            if (activeChat && !state.searchActive) {
+                elements.workspaceIdentity.innerHTML = renderWorkspaceChatIdentity(activeChat);
+            }
+        }
+    };
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+    updateConnection();
 
     // Polling bootloader: ensures we don't proceed until Supabase is ready
     let bootAttempts = 0;
@@ -1313,6 +1331,11 @@ function renderWorkspaceSectionIdentity(title, copy) {
 }
 
 function renderWorkspaceChatIdentity(chat) {
+    const connectionLabel = state.connection === "offline" ? "Offline" : "Online";
+    const connectionDot = state.connection === "offline"
+        ? `<span style="width:8px; height:8px; border-radius:999px; background: var(--danger); display:inline-block;"></span>`
+        : `<span style="width:8px; height:8px; border-radius:999px; background: var(--success); display:inline-block;"></span>`;
+
     if (chat.type === "global") {
         const globalInfo = {
             id: 'global_chat',
@@ -1327,7 +1350,7 @@ function renderWorkspaceChatIdentity(chat) {
                 ${renderPersonAvatar(globalInfo, "workspace-avatar", false)}
                 <div class="workspace-avatar-copy">
                     <h2>Global Chat</h2>
-                    <p>Connecting everyone across the Pulse network</p>
+                    <p style="display:flex; align-items:center; gap:8px;">${connectionDot}<span>${connectionLabel}</span><span style="opacity:0.7;">·</span><span>Connecting everyone across the Pulse network</span></p>
                 </div>
             </div>
         `;
@@ -1343,7 +1366,7 @@ function renderWorkspaceChatIdentity(chat) {
                 </div>
                 <div class="workspace-avatar-copy">
                     <h2>${escapeHtml(getChatTitle(chat))}</h2>
-                    <p>${participants.length + 1} members, ${onlineCount} online right now</p>
+                    <p style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${connectionDot}<span>${connectionLabel}</span><span style="opacity:0.7;">·</span><span>${participants.length + 1} members, ${onlineCount} online right now</span></p>
                 </div>
             </div>
         `;
@@ -1360,7 +1383,7 @@ function renderWorkspaceChatIdentity(chat) {
             ${renderPersonAvatar(person, "workspace-avatar", true)}
             <div class="workspace-avatar-copy">
                 <h2>${escapeHtml(person.name)}</h2>
-                <p>${escapeHtml(buildPresenceCopy(person))}</p>
+                <p style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${connectionDot}<span>${connectionLabel}</span><span style="opacity:0.7;">·</span><span>${escapeHtml(buildPresenceCopy(person))}</span></p>
             </div>
         </div>
     `;
@@ -1414,6 +1437,11 @@ function renderMessages(chat) {
                         <button class="message-action-button" type="button" title="Edit" data-action="edit" data-chat-id="${chat.id}" data-message-id="${message.id}">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
+                        ${message.failed ? `
+                            <button class="message-action-button" type="button" title="Retry" data-action="retry-send" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3.2-6.9"></path><path d="M21 3v6h-6"></path></svg>
+                            </button>
+                        ` : ""}
                     ` : ""}
                     <button class="message-action-button" type="button" title="React" data-action="toggle-reaction-menu" data-chat-id="${chat.id}" data-message-id="${message.id}">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.5 10.5h.01"></path><path d="M15.5 10.5h.01"></path><path d="M8.5 14.5c.8 1.1 2 1.7 3.5 1.7s2.7-.6 3.5-1.7"></path></svg>
@@ -1782,6 +1810,11 @@ function handleMessageActions(event) {
         return;
     }
 
+    if (action === "retry-send") {
+        retrySendMessage(chatId, messageId);
+        return;
+    }
+
     if (action === "reply") {
         setReply(chatId, messageId);
     } else if (action === "edit") {
@@ -1791,6 +1824,60 @@ function handleMessageActions(event) {
     } else if (action === "delete-message") {
         deleteMessage(chatId, messageId);
     }
+}
+
+async function retrySendMessage(chatId, messageId) {
+    const list = state.messages[chatId] || [];
+    const msg = list.find(m => String(m.id) === String(messageId));
+    if (!msg || !msg.failed || !msg._retryPayload) return;
+    if (state.connection === "offline") {
+        if (window.showTopNotification) window.showTopNotification("You appear to be offline. Retry aborted.", "error");
+        return;
+    }
+
+    // Mark pending again
+    msg.failed = false;
+    msg.pending = true;
+    renderApp();
+
+    const performInsert = async (p) => {
+        return await window.supabaseClient.from('messages').insert([p]).select().single();
+    };
+
+    let { data, error } = await performInsert(msg._retryPayload);
+    if (error && error.message.includes('channel_type')) {
+        const fallbackPayload = { ...msg._retryPayload };
+        delete fallbackPayload.channel_type;
+        const retry = await performInsert(fallbackPayload);
+        data = retry.data;
+        error = retry.error;
+    }
+
+    if (error) {
+        msg.pending = false;
+        msg.failed = true;
+        renderApp();
+        if (window.showTopNotification) window.showTopNotification("Retry failed. Please try again.", "error");
+        return;
+    }
+
+    // Replace the failed local message with confirmed one
+    const confirmed = {
+        id: String(data.id),
+        senderId: data.sender,
+        text: data.content,
+        gifUrl: data.gif_url || null,
+        timestamp: new Date(data.created_at).getTime(),
+        reactions: data.reactions || [],
+        reply_to: data.reply_to,
+        is_edited: data.is_edited,
+        link_preview: data.link_preview
+    };
+
+    state.messages[chatId] = list.filter(m => m.id !== msg.id);
+    state.messages[chatId].push(confirmed);
+    renderApp();
+    scrollToLatest(false);
 }
 
 function handleEmojiPickerClick(event) {
@@ -1806,6 +1893,49 @@ function handleComposerInput() {
     
     // Broadcast typing state
     broadcastTyping(true);
+
+    // Draft persistence (per chat)
+    scheduleDraftSave();
+}
+
+let draftSaveTimer = null;
+function getDraftStorageKey(chatId) {
+    return `${DRAFT_KEY_PREFIX}${chatId || "none"}`;
+}
+
+function scheduleDraftSave() {
+    if (!state.activeChatId || !elements.messageInput) return;
+    if (draftSaveTimer) clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(() => {
+        try {
+            const value = elements.messageInput.value || "";
+            if (value.trim().length === 0) {
+                localStorage.removeItem(getDraftStorageKey(state.activeChatId));
+            } else {
+                localStorage.setItem(getDraftStorageKey(state.activeChatId), value);
+            }
+        } catch (e) {
+            // ignore storage quota / privacy mode
+        }
+    }, 250);
+}
+
+function loadDraftIntoComposer(chatId) {
+    if (!chatId || !elements.messageInput) return;
+    try {
+        const draft = localStorage.getItem(getDraftStorageKey(chatId));
+        if (draft && !elements.messageInput.value) {
+            elements.messageInput.value = draft;
+            autoResizeComposer();
+            updateComposerMetrics();
+        }
+    } catch (e) { }
+}
+
+function clearDraft(chatId) {
+    try {
+        localStorage.removeItem(getDraftStorageKey(chatId));
+    } catch (e) { }
 }
 
 // Presence heartbeat
@@ -2241,7 +2371,7 @@ function updateComposerMetrics() {
     // NOTE: Global Chat IS a valid active chat (id = 'global_chat'), so
     // we do NOT gate on state.nav — that would permanently block Global Chat
     // which uses nav='global' but still has a valid activeChatId.
-    elements.sendButton.disabled = length === 0 || !state.activeChatId;
+    elements.sendButton.disabled = length === 0 || !state.activeChatId || state.connection === "offline";
 }
 
 function autoResizeComposer() {
@@ -2344,6 +2474,10 @@ async function sendMessage() {
     const activeChat = getActiveChat();
     const text = elements.messageInput.value.trim();
     if (!activeChat || !text) return;
+    if (state.connection === "offline") {
+        if (window.showTopNotification) window.showTopNotification("You appear to be offline. Message not sent.", "error");
+        return;
+    }
 
     if (state.editingMessage) {
         await updateMessage(activeChat.id, state.editingMessage.id, text);
@@ -2394,6 +2528,7 @@ async function sendMessage() {
     if (chat) chat.lastTimestamp = Date.now();
 
     elements.messageInput.value = '';
+    clearDraft(activeChat.id);
     cancelReply();
     autoResizeComposer();
     updateComposerMetrics();
@@ -2425,7 +2560,14 @@ async function sendMessage() {
 
     if (error) {
         console.error('Message send failed:', error);
-        state.messages[activeChat.id] = state.messages[activeChat.id].filter(m => m.id !== optimisticId);
+        const failed = state.messages[activeChat.id].find(m => m.id === optimisticId);
+        if (failed) {
+            failed.pending = false;
+            failed.failed = true;
+            failed._retryPayload = payload;
+        } else {
+            // Fallback: if optimistic message is missing, no-op safely
+        }
         renderApp();
         if (window.showTopNotification) window.showTopNotification('Failed to send message. Try again.', 'error');
         return;
@@ -2652,6 +2794,7 @@ function selectChat(chatId) {
 
     persistState();
     renderApp();
+    loadDraftIntoComposer(chatId);
     scrollToLatest(false);
     
     // Mark as read in DB
