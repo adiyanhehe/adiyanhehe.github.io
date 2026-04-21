@@ -78,17 +78,33 @@ const state = {
 
 const elements = {};
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
     cacheElements();
 
-    // Wait for Supabase to be ready from global.js
-    const waitForSupabase = setInterval(async () => {
+    // Polling bootloader: ensures we don't proceed until Supabase is ready
+    let bootAttempts = 0;
+    const bootInterval = setInterval(async () => {
+        bootAttempts++;
         if (window.supabaseClient) {
-            clearInterval(waitForSupabase);
-            await initializeState();
+            clearInterval(bootInterval);
+            console.log(`[Pulse] Booting with Supabase after ${bootAttempts * 100}ms`);
+            
+            try {
+                await initializeState();
+            } catch (error) {
+                console.error('[Pulse] Critical initialization failure:', error);
+            }
+
+            // Always attempt to bind and render, even if state is partial
             bindEvents();
             renderApp();
             setupRealtimeSubscriptions();
+        } else if (bootAttempts > 50) { 
+            // Safety timeout after 5s - attempt to render whatever we can
+            clearInterval(bootInterval);
+            console.warn('[Pulse] Supabase took too long. Booting in offline mode.');
+            bindEvents();
+            renderApp();
         }
     }, 100);
 });
@@ -223,17 +239,18 @@ async function initializeState() {
         .from('profiles')
         .select('*');
 
-    // Load recent post avatars as fallback from threads
-    const { data: latestPosts } = await window.supabaseClient
-        .from('posts')
+    // Load recent thread avatars as fallback (using 'threads' table, not 'posts')
+    const { data: latestThreads } = await window.supabaseClient
+        .from('threads')
         .select('author, avatar_url')
         .not('avatar_url', 'is', null)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100);
 
     state.threadAvatars = {};
-    if (latestPosts) {
-        latestPosts.forEach(post => {
-            if (!state.threadAvatars[post.author]) state.threadAvatars[post.author] = post.avatar_url;
+    if (latestThreads) {
+        latestThreads.forEach(t => {
+            if (t.author && !state.threadAvatars[t.author]) state.threadAvatars[t.author] = t.avatar_url;
         });
     }
 
@@ -716,6 +733,10 @@ function handleSearchResultSelection(event) {
 }
 
 function renderApp() {
+    // Guard: if currentUser isn't set yet (e.g. initializeState failed or redirected),
+    // skip the full render to prevent cascading crashes in renderDirectory/renderWorkspace/renderMessages.
+    if (!state.currentUser) return;
+
     applyAppTheme();
     elements.app.classList.toggle("sidebar-open", state.drawer === "sidebar");
     elements.app.classList.toggle("directory-open", state.drawer === "directory");
@@ -731,6 +752,10 @@ function renderApp() {
 }
 
 function renderSidebar() {
+    // Guard: if currentUser isn't loaded yet (e.g. initializeState returned early),
+    // skip the render to avoid crashing on null.name / null.statusText
+    if (!state.currentUser) return;
+
     const homeUnread = state.chats.reduce((total, chat) => total + (chat.unread || 0), 0);
     const onlineFriends = state.friends.filter((friendId) => state.people[friendId]?.presence === "online").length;
 
@@ -917,7 +942,8 @@ function renderWorkspace() {
     }
 
     elements.workspaceIdentity.innerHTML = renderWorkspaceChatIdentity(activeChat);
-    elements.membersToggleButton.textContent = activeChat.type === "group" ? "Members" : "Profile";
+    // Global Chat and group chats show Members panel; DMs show Profile
+    elements.membersToggleButton.textContent = (activeChat.type === "group" || activeChat.type === "global") ? "Members" : "Profile";
     elements.membersSheet.classList.toggle("hidden", !state.membersOpen);
     elements.membersSheet.innerHTML = renderMembersSheet(activeChat);
     renderMessages(activeChat);
@@ -925,9 +951,11 @@ function renderWorkspace() {
 }
 
 function renderWorkspaceSectionIdentity(title, copy) {
+    const toneA = state.currentUser?.toneA || '#7b8cff';
+    const toneB = state.currentUser?.toneB || '#64d9ff';
     return `
         <div class="workspace-identity">
-            <div class="workspace-avatar avatar-token" style="--avatar-a:${state.currentUser.toneA}; --avatar-b:${state.currentUser.toneB};">
+            <div class="workspace-avatar avatar-token" style="--avatar-a:${toneA}; --avatar-b:${toneB};">
                 <span>${escapeHtml(title.charAt(0).toUpperCase())}</span>
             </div>
             <div class="workspace-avatar-copy">
@@ -1048,7 +1076,7 @@ function renderMessages(chat) {
         const dayLabel = formatDayLabel(message.timestamp);
         const divider = dayLabel !== currentDayLabel ? `<div class="message-day-divider">${escapeHtml(dayLabel)}</div>` : "";
         currentDayLabel = dayLabel;
-        const isOwn = message.senderId === state.currentUser.id;
+        const isOwn = !!state.currentUser && message.senderId === state.currentUser.id;
         const reactions = renderMessageReactions(chat.id, message);
         const reactionMenu = state.reactionMenu && state.reactionMenu.chatId === chat.id && state.reactionMenu.messageId === message.id
             ? `<div class="message-reaction-menu">${QUICK_REACTIONS.map((emoji) => `
@@ -1964,11 +1992,15 @@ function getChatParticipants(chat) {
 }
 
 function getDirectPeer(chat) {
-    return getChatParticipants(chat).find((person) => person.id !== state.currentUser.id) || state.currentUser;
+    if (!chat || !chat.participantIds) return state.currentUser || { id: 'unknown', name: 'Unknown' };
+    const selfId = state.currentUser?.id || '';
+    return getChatParticipants(chat).find((person) => person.id !== selfId) || state.currentUser || { id: 'unknown', name: 'Unknown' };
 }
 
 function getChatTitle(chat) {
-    return chat.type === "group" ? chat.name : getDirectPeer(chat).name;
+    // Global and group chats use their own name; direct chats use the peer's name
+    if (chat.type === "group" || chat.type === "global") return chat.name;
+    return getDirectPeer(chat).name;
 }
 
 function buildPresenceCopy(person) {
