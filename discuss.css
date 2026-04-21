@@ -1998,3 +1998,127 @@ textarea:focus-visible {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+/* Polls Styling */
+.message-poll {
+    background: var(--bg-panel-soft);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 10px;
+    max-width: 320px;
+}
+
+.poll-question {
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: block;
+    font-family: var(--font-display);
+}
+
+.poll-option {
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.poll-option-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+}
+
+.poll-bar-container {
+    height: 8px;
+    background: var(--bg-panel-hover);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.poll-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Activity Hub */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.activity-item {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-panel-soft);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform var(--transition);
+}
+
+.activity-item:hover {
+    transform: scale(1.01);
+    background: var(--bg-panel-hover);
+}
+
+.activity-badge {
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+/* Search Scope Toggle */
+.search-scope-toggle {
+    display: flex;
+    background: var(--bg-panel-strong);
+    padding: 2px;
+    border-radius: 10px;
+    margin: 0 12px;
+    align-self: center;
+}
+
+.scope-btn {
+    padding: 2px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 8px;
+    color: var(--text-muted);
+}
+
+.scope-btn.active {
+    background: var(--accent);
+    color: white;
+}
+
+/* Role Badges */
+.role-badge {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-left: 6px;
+}
+
+.role-owner { background: rgba(255, 215, 0, 0.1); color: gold; border: 1px solid rgba(255, 215, 0, 0.3); }
+.role-admin { background: rgba(255, 0, 255, 0.1); color: #ff00ff; border: 1px solid rgba(255, 0, 255, 0.3); }
+
+/* Nav Badges */
+.nav-badge {
+    background: var(--accent);
+    color: white;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    min-width: 18px;
+    text-align: center;
+    margin-left: auto;
+}
