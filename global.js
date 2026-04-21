@@ -30,7 +30,7 @@ async function syncIdentity() {
             .maybeSingle();
             
         if (!profile) {
-            // 2. Try by username if ID failed (legacy)
+            // 2. Try by username if ID failed (legacy support for users created before ID was primary)
             const storedUser = localStorage.getItem('rbx_user') || defaultUsername;
             const { data: profileByName } = await window.supabaseClient
                 .from('profiles')
@@ -43,21 +43,28 @@ async function syncIdentity() {
         if (profile) {
             localStorage.setItem('rbx_user', profile.username.toLowerCase());
             localStorage.setItem('rbx_email', session.user.email);
-            if (profile.avatar_url) localStorage.setItem('rbx_pic', profile.avatar_url);
-            if (profile.display_name) localStorage.setItem('rbx_display_name', profile.display_name);
+            localStorage.setItem('rbx_pic', profile.avatar_url || 'jay.png');
+            localStorage.setItem('rbx_display_name', profile.display_name || profile.username);
+            localStorage.setItem('rbx_is_admin', profile.is_admin || false);
+            localStorage.setItem('rbx_verified', profile.is_verified || false);
+            localStorage.setItem('rbx_status', profile.status || 'Ready to chat');
         } else {
-            // 3. Create fresh profile
+            // 3. Create fresh profile if missing
             const finalUsername = (localStorage.getItem('rbx_user') || defaultUsername).toLowerCase();
             const { data: created } = await window.supabaseClient.from('profiles').upsert([{
                 id: session.user.id,
                 username: finalUsername,
                 avatar_url: localStorage.getItem('rbx_pic') || 'jay.png',
-                display_name: finalUsername
+                display_name: finalUsername,
+                status: 'Ready to chat'
             }]).select().single();
             
             if (created) {
                 localStorage.setItem('rbx_user', created.username.toLowerCase());
                 localStorage.setItem('rbx_email', session.user.email);
+                localStorage.setItem('rbx_pic', created.avatar_url);
+                localStorage.setItem('rbx_display_name', created.display_name);
+                localStorage.setItem('rbx_status', created.status);
             }
         }
     } catch (e) {
