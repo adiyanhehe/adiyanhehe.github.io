@@ -84,7 +84,9 @@ const state = {
     // Advanced messaging
     replyingTo: null,
     editingMessage: null,
-    currentSheetTab: "members" 
+    currentSheetTab: "members",
+    searchScope: "local", // 'local' or 'all'
+    activityNotifications: [] 
 };
 
 const elements = {};
@@ -232,6 +234,15 @@ function cacheElements() {
     elements.membersSheet = document.getElementById("membersSheet");
     elements.sheetContent = document.getElementById("sheetContent");
     elements.sheetTabs = document.querySelectorAll(".sheet-tab");
+
+    elements.activityStage = document.getElementById("activityStage");
+    elements.activityBadge = document.getElementById("activityBadge");
+    
+    elements.profileModal = document.getElementById("profileModal");
+    elements.pollModal = document.getElementById("pollModal");
+    elements.pollOptionsContainer = document.getElementById("pollOptionsContainer");
+    
+    elements.searchScopeToggle = document.getElementById("searchScopeToggle");
 }
 
 async function initializeState() {
@@ -726,6 +737,20 @@ function bindEvents() {
     if (elements.cancelEditButton) elements.cancelEditButton.addEventListener("click", cancelEdit);
     if (elements.closePinnedBar) elements.closePinnedBar.addEventListener("click", () => elements.pinnedMessagesBar.classList.add("hidden"));
 
+    document.getElementById("saveProfileBtn")?.addEventListener("click", saveProfile);
+    document.getElementById("publishPollBtn")?.addEventListener("click", publishPoll);
+
+    if (elements.searchScopeToggle) {
+        const btns = elements.searchScopeToggle.querySelectorAll(".scope-btn");
+        btns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                state.searchScope = btn.dataset.scope;
+                btns.forEach(b => b.classList.toggle("active", b === btn));
+                renderWorkspace();
+            });
+        });
+    }
+
     elements.sheetTabs.forEach(tab => {
         tab.addEventListener("click", () => {
             state.currentSheetTab = tab.dataset.tab;
@@ -1027,12 +1052,26 @@ function renderWorkspace() {
     if (state.nav === "requests") {
         elements.friendsStage.classList.add("hidden");
         elements.requestsStage.classList.remove("hidden");
+        elements.activityStage.classList.add("hidden");
         elements.chatStage.classList.add("hidden");
         elements.composer.classList.add("hidden");
         elements.membersToggleButton.classList.add("hidden");
         elements.jumpLatestButton.classList.add("hidden");
         elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Requests", "Manage your pending chat invitations.");
         renderRequestsView();
+        return;
+    }
+
+    if (state.nav === "activity") {
+        elements.friendsStage.classList.add("hidden");
+        elements.requestsStage.classList.add("hidden");
+        elements.activityStage.classList.remove("hidden");
+        elements.chatStage.classList.add("hidden");
+        elements.composer.classList.add("hidden");
+        elements.membersToggleButton.classList.add("hidden");
+        elements.jumpLatestButton.classList.add("hidden");
+        elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Activity", "Catch up on your mentions and recent alerts.");
+        renderActivityHub();
         return;
     }
 
@@ -1273,6 +1312,7 @@ function renderMessages(chat) {
                     ${message.gifUrl ? `<div class="message-attachment"><img src="${escapeHtml(message.gifUrl)}" alt="GIF attachment" loading="lazy"></div>` : ""}
                     ${message.text ? `<div class="message-bubble">${renderFormattedText(message.text)}${message.is_edited ? '<span class="message-edited-tag">(edited)</span>' : ''}</div>` : ""}
                     ${message.link_preview ? renderLinkPreview(message.link_preview) : ""}
+                    ${message.poll_data ? renderPoll(message.id, message.poll_data, chat.id) : ""}
                     ${reactionMenu}
                     ${reactions}
                 </div>
@@ -1305,6 +1345,56 @@ function renderMessages(chat) {
 
     renderTypingIndicator();
     updateJumpButton();
+}
+
+async function renderActivityHub() {
+    if (!elements.activityStage) return;
+    
+    // Fetch mentions from DB
+    const { data: mentions, error } = await window.supabaseClient
+        .from('message_mentions')
+        .select('*, messages(*)')
+        .eq('mentioned_username', state.currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+    if (error) {
+        elements.activityStage.innerHTML = renderEmptyStateCard("Could not load activity", "Please try again later.");
+        return;
+    }
+
+    if (mentions.length === 0) {
+        elements.activityStage.innerHTML = renderEmptyStateCard("No new activity", "When you're mentioned in a chat, it will show up here.");
+        return;
+    }
+
+    elements.activityStage.innerHTML = `
+        <div class="activity-list">
+            ${mentions.map(m => {
+                const msg = m.messages;
+                const sender = state.people[msg.sender] || { name: msg.sender };
+                return `
+                    <div class="activity-item" onclick="selectChatAndScroll('${msg.receiver}', '${msg.id}')">
+                        ${renderPersonAvatar(sender, "avatar-token", false)}
+                        <div class="activity-info">
+                            <span class="activity-badge">Mentioned You</span>
+                            <strong>${escapeHtml(sender.name)}</strong> in <strong>${escapeHtml(msg.receiver)}</strong>
+                            <p>${escapeHtml(msg.content.substring(0, 100))}...</p>
+                        </div>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+    
+    // Clear badge
+    state.activityNotifications = [];
+    if (elements.activityBadge) elements.activityBadge.classList.add("hidden");
+}
+
+function selectChatAndScroll(chatId, messageId) {
+    selectChat(chatId);
+    setTimeout(() => scrollToMessage(messageId), 200);
 }
 
 function renderReplyContext(replyToId, chatId) {
@@ -2549,10 +2639,30 @@ function getActiveChat() {
 }
 
 function getMessages(chatId) {
-    let msgs = [...(state.messages[chatId] || [])].sort((left, right) => left.timestamp - right.timestamp);
+    let msgs = [];
+    
+    if (state.searchQuery && state.searchScope === "all") {
+        // Flatten all messages across all chats
+        Object.values(state.messages).forEach(channelMessages => {
+            msgs.push(...channelMessages);
+        });
+    } else {
+        msgs = [...(state.messages[chatId] || [])];
+    }
+    
+    msgs.sort((left, right) => left.timestamp - right.timestamp);
     
     if (state.searchQuery) {
         msgs = msgs.filter(m => m.text && m.text.toLowerCase().includes(state.searchQuery));
+        // If global search, unique by ID
+        if (state.searchScope === "all") {
+            const seen = new Set();
+            msgs = msgs.filter(m => {
+                if (seen.has(m.id)) return false;
+                seen.add(m.id);
+                return true;
+            });
+        }
     }
     
     return msgs;
@@ -2606,21 +2716,89 @@ function renderChatAvatar(chat) {
     `;
 }
 
-function renderPersonAvatar(person, className = "avatar-token", withPresence = true) {
-    if (!person) return "";
-    const name = person.name || "User";
-    const initials = person.initials || getInitials(name);
-    const toneA = person.toneA || "#7b8cff";
-    const toneB = person.toneB || "#64d9ff";
+window.showProfileSummary = (userId) => {
+     // Trigger profile edit if it's "me", else show info
+     if (userId === state.currentUser.id) {
+         openProfileModal();
+     } else {
+         // Existing summary logic...
+     }
+};
+
+function openProfileModal() {
+    const user = state.currentUser;
+    document.getElementById("profileDisplayName").value = user.name || "";
+    document.getElementById("profileAvatarUrl").value = user.avatarUrl || "";
+    document.getElementById("profileBio").value = user.bio || "";
+    elements.profileModal.classList.remove("hidden");
+}
+
+window.closeProfileModal = () => elements.profileModal.classList.add("hidden");
+
+async function saveProfile() {
+    const name = document.getElementById("profileDisplayName").value.trim();
+    const avatar = document.getElementById("profileAvatarUrl").value.trim();
+    const bio = document.getElementById("profileBio").value.trim();
     
-    const presenceHtml = withPresence ? `<span class="presence-dot ${escapeHtml(person.presence || 'offline')}"></span>` : "";
+    const { error } = await window.supabaseClient
+        .from('profiles')
+        .update({ display_name: name, avatar_url: avatar, bio: bio })
+        .eq('username', state.currentUser.id);
+        
+    if (!error) {
+        state.currentUser.name = name;
+        state.currentUser.avatarUrl = avatar;
+        state.currentUser.bio = bio;
+        state.people[state.currentUser.id] = { ...state.people[state.currentUser.id], name, avatarUrl: avatar, bio };
+        window.closeProfileModal();
+        renderSidebar();
+        renderWorkspace();
+    }
+}
+
+// Poll Functions
+window.openPollModal = () => elements.pollModal.classList.remove("hidden");
+window.closePollModal = () => elements.pollModal.classList.add("hidden");
+
+window.addPollOption = () => {
+    const opt = document.createElement('label');
+    opt.className = 'modal-field';
+    opt.innerHTML = `<span>Option ${elements.pollOptionsContainer.children.length + 1}</span><input type="text" class="poll-option-input" placeholder="Enter option...">`;
+    elements.pollOptionsContainer.appendChild(opt);
+};
+
+async function publishPoll() {
+    const question = document.getElementById("pollQuestion").value.trim();
+    const options = Array.from(document.querySelectorAll(".poll-option-input"))
+        .map(input => input.value.trim())
+        .filter(Boolean);
+        
+    if (!question || options.length < 2) return;
     
-    return `
-        <div class="${className} avatar-token" style="--avatar-a:${toneA}; --avatar-b:${toneB};">
-            ${person.avatarUrl ? `<img src="${escapeHtml(person.avatarUrl)}" alt="${escapeHtml(name)}">` : `<span>${escapeHtml(initials)}</span>`}
-            ${presenceHtml}
-        </div>
-    `;
+    const pollData = {
+        question,
+        options: options.map(opt => ({ text: opt, votes: 0 }))
+    };
+    
+    const activeChat = getActiveChat();
+    // Use existing sendMessage logic but with poll_data
+    const { data, error } = await window.supabaseClient.from('messages').insert([{
+        sender: state.currentUser.id,
+        receiver: activeChat.id,
+        content: `📊 POLL: ${question}`,
+        channel_type: activeChat.type,
+        poll_data: pollData
+    }]).select().single();
+    
+    if (!error) {
+        window.closePollModal();
+        // Clear inputs
+        document.getElementById("pollQuestion").value = "";
+        elements.pollOptionsContainer.innerHTML = `
+            <label class="modal-field"><span>Option 1</span><input type="text" class="poll-option-input" placeholder="e.g. Pizza"></label>
+            <label class="modal-field"><span>Option 2</span><input type="text" class="poll-option-input" placeholder="e.g. Tacos"></label>
+        `;
+    }
 }
 
 function ensureDirectChat(friendId) {
