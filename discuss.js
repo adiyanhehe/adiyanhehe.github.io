@@ -1037,14 +1037,14 @@ function renderFriendsDirectory() {
 }
 
 function renderFriendsStage() {
-    const onlineCounter = state.friends.filter(id => state.people[id]?.presence === 'online').length;
+    const visible = getVisibleFriends();
     
     return `
         <div class="message-stream">
             <div class="stream-inner" style="padding: 32px;">
                 <div class="friends-directory-grid">
-                    ${getVisibleFriends().map(person => `
-                        <div class="friend-card" onclick="selectChat('dm-${person.id}')">
+                    ${visible.map(person => `
+                        <div class="friend-card" onclick="window.openDirectMessage('${person.id}')">
                             ${renderPersonAvatar(person, "friend-card-avatar", true)}
                             <div class="friend-card-meta">
                                 <strong>${escapeHtml(person.name)}</strong>
@@ -1054,11 +1054,15 @@ function renderFriendsStage() {
                         </div>
                     `).join("")}
                 </div>
-                ${state.friends.length === 0 ? `
+                ${visible.length === 0 ? `
                     <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
                         <h3>Your circle is quiet</h3>
                         <p>Search for teammates or invite them to Pulse to start building together.</p>
-                        <button class="primary-button" onclick="openConversationModal('direct')" style="margin-top:20px;">Start a Conversation</button>
+                        <div style="display:flex; gap:12px; margin-top:24px; justify-content:center;">
+                            <button class="primary-button" onclick="openConversationModal('direct')">Find Users</button>
+                            <button class="ghost-button" onclick="setNavView('home')">Back to Inbox</button>
+                        </div>
                     </div>
                 ` : ""}
             </div>
