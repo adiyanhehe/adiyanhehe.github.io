@@ -233,32 +233,31 @@ async function publishTransmission() {
         const threadData = {
             author: state.currentUser.id,
             content: content,
-            avatar: state.currentUser.avatar,
-            avatar_url: state.currentUser.avatar
+            avatar: state.currentUser.avatar
         };
 
         if (state.mediaPreview) {
             threadData.media_url = state.mediaPreview;
         }
 
-        const performInsert = async (payload) => {
-            return await window.supabaseClient.from('threads').insert([payload]).select().single();
-        };
-
-        let { data, error } = await performInsert(threadData);
-
-        // Retry logic for missing columns
-        if (error && (error.message.includes('media_url') || error.message.includes('avatar_url'))) {
-            const secondaryPayload = { ...threadData };
-            if (error.message.includes('media_url')) delete secondaryPayload.media_url;
-            if (error.message.includes('avatar_url')) delete secondaryPayload.avatar_url;
-            
-            const retry = await performInsert(secondaryPayload);
-            data = retry.data;
-            error = retry.error;
-        }
+        const { data, error } = await window.supabaseClient.from('threads').insert([threadData]).select().single();
 
         if (error) {
+            console.error("Broadcast Error:", error);
+            // If media_url failed, try one more time without it as a safety fallback
+            if (error.message.includes('media_url')) {
+                delete threadData.media_url;
+                const retry = await window.supabaseClient.from('threads').insert([threadData]).select().single();
+                if (!retry.error) {
+                    if (retry.data) {
+                        const exists = state.threads.find(t => t.id === retry.data.id);
+                        if (!exists) { state.threads.unshift(retry.data); renderFeed(); }
+                    }
+                    // Success on retry
+                    finishPublishing();
+                    return;
+                }
+            }
             alert("Broadcast Failed [Network Error]: " + error.message);
             elements.postBtn.disabled = false;
             elements.postBtn.innerText = "Broadcast";
@@ -269,13 +268,15 @@ async function publishTransmission() {
             const exists = state.threads.find(t => t.id === data.id);
             if (!exists) { state.threads.unshift(data); renderFeed(); }
         }
+        finishPublishing();
     } catch (e) {
         alert("Broadcast Failed [Runtime Exception]: " + e.message);
         elements.postBtn.disabled = false;
         elements.postBtn.innerText = "Broadcast";
-        return;
     }
+}
 
+function finishPublishing() {
     // Clear Composer and re-enable button
     elements.composerInput.value = '';
     elements.postBtn.disabled = true;  // stays disabled until user types
