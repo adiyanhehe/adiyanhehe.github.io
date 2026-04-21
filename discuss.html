@@ -211,6 +211,14 @@
                 <div class="workspace-stage hidden" id="requestsStage"></div>
 
                 <section class="chat-stage" id="chatStage">
+                    <div class="pinned-messages-bar hidden" id="pinnedMessagesBar">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L15 8L22 9L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9L9 8L12 2Z"/></svg>
+                        <span id="pinnedMessageText">Pinned message</span>
+                        <button class="utility-button" id="closePinnedBar" type="button" aria-label="Dismiss pin">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
                     <div class="message-stream" id="messageStream"></div>
 
                     <div class="typing-indicator hidden" id="typingIndicator">
@@ -222,7 +230,14 @@
                         <span id="typingLabel">Someone is typing...</span>
                     </div>
 
-                    <aside class="members-sheet hidden" id="membersSheet"></aside>
+                    <aside class="members-sheet hidden" id="membersSheet">
+                        <div class="sheet-tabs">
+                            <button class="sheet-tab active" data-tab="members">Members</button>
+                            <button class="sheet-tab" data-tab="gallery">Gallery</button>
+                            <button class="sheet-tab" data-tab="pinned">Pins</button>
+                        </div>
+                        <div class="sheet-content" id="sheetContent"></div>
+                    </aside>
                 </section>
             </section>
 
@@ -230,6 +245,28 @@
             <div class="emoji-picker hidden" id="emojiPicker"></div>
             
             <div id="mentionDropdown" class="mention-dropdown hidden"></div>
+
+            <div class="composer-previews">
+                <div class="reply-preview hidden" id="replyPreview">
+                    <div class="reply-preview-line"></div>
+                    <div class="reply-preview-content">
+                        <small>Replying to <strong id="replyToName">User</strong></small>
+                        <p id="replyToText">Message content...</p>
+                    </div>
+                    <button class="utility-button" id="cancelReplyButton" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                
+                <div class="edit-preview hidden" id="editPreview">
+                    <div class="reply-preview-content">
+                        <small>Editing Message</small>
+                    </div>
+                    <button class="utility-button" id="cancelEditButton" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
 
             <div class="gif-picker hidden" id="gifPicker">
                 <div class="gif-picker-header">
