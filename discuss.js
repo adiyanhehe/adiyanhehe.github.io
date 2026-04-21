@@ -1,7 +1,6 @@
 const STORAGE_KEY = "pulse-messenger-ui-v1";
 const THEME_KEY = "site-theme";
-// Use a robust fallback key if the primary one is limited
-const GIPHY_API_KEY = "dc6zaTOxFJmzC"; 
+const KLIPY_API_KEY = "4o9v8SiiAWDJy8Dq2Q4mHfV35hQtFswJpH3NTRckha7dG5MmGzXdgfk94XEE8gUQ";
 
 const MAX_MESSAGE_LENGTH = 400;
 const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉"];
@@ -1165,27 +1164,33 @@ function renderGifPicker() {
 }
 
 async function fetchGifs(query) {
+    if (!elements.gifGrid) return;
     elements.gifGrid.innerHTML = '<p class="text-muted" style="padding: 12px; text-align: center;">Loading GIFs...</p>';
+
     const url = query
-        ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=20`
-        : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20`;
+        ? `https://api.klipy.com/api/v1/${KLIPY_API_KEY}/search?q=${encodeURIComponent(query.trim())}&limit=20`
+        : `https://api.klipy.com/api/v1/${KLIPY_API_KEY}/trending?limit=20`;
 
     try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error("Giphy API Error");
-        
+        if (!response.ok) throw new Error(`Klipy API responded with status ${response.status}`);
+
         const json = await response.json();
-        if (!json.data || json.data.length === 0) {
+        const results = (json.data && Array.isArray(json.data.data)) ? json.data.data : [];
+
+        if (results.length === 0) {
             elements.gifGrid.innerHTML = '<p class="text-muted" style="padding: 12px; text-align: center;">No GIFs found for this search.</p>';
             return;
         }
 
-        elements.gifGrid.innerHTML = json.data.map(gif => `
-            <img class="gif-item" src="${gif.images.fixed_height_small.url}" data-full-url="${gif.images.fixed_height.url}" alt="${escapeHtml(gif.title || 'GIF')}" loading="lazy">
-        `).join("");
+        elements.gifGrid.innerHTML = results.map(gif => {
+            const gifUrl = gif?.file?.gif || '';
+            if (!gifUrl) return '';
+            return `<img class="gif-item" src="${gifUrl}" data-full-url="${gifUrl}" alt="${escapeHtml(gif.title || 'GIF')}" loading="lazy">`;
+        }).join("");
     } catch (e) {
-        console.error('[Pulse] Giphy Fetch Fail:', e);
-        elements.gifGrid.innerHTML = '<p class="text-danger" style="padding: 12px; text-align: center;">Giphy is currently unavailable.</p>';
+        console.error('[Pulse] Klipy Fetch Fail:', e);
+        elements.gifGrid.innerHTML = '<p class="text-danger" style="padding: 12px; text-align: center;">GIF service is currently unavailable.</p>';
     }
 }
 
