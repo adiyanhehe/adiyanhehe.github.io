@@ -494,7 +494,14 @@ window.showProfileSummary = async (username) => {
         }); 
     }
     document.getElementById('psm-link').href = `profile.html?user=${encodeURIComponent(username)}`;
-    document.getElementById('psm-dm-btn').onclick = () => { closeProfileSummary(); if(window.location.pathname.includes('discuss.html')) setMode('dm', username); else location.href = `discuss.html?dm=${encodeURIComponent(username)}`; };
+    document.getElementById('psm-dm-btn').onclick = () => { 
+        closeProfileSummary(); 
+        if (window.openDirectMessage) {
+            window.openDirectMessage(username);
+        } else {
+            location.href = `discuss.html?dm=${encodeURIComponent(username)}`; 
+        }
+    };
     document.getElementById('psm-fr-btn').onclick = () => { if(window.sendFriendRequest) window.sendFriendRequest(username); else alert("Friend System Offline"); };
 };
 window.closeProfileSummary = () => {
