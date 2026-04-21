@@ -355,11 +355,14 @@ async function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file || !window.supabaseClient) return;
 
+    // Reset the input so the same file can be re-selected after an error
+    event.target.value = '';
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `threads/${fileName}`;
 
-    elements.postBtn.innerText = "Encrypting...";
+    elements.postBtn.innerText = "Uploading...";
     elements.postBtn.disabled = true;
 
     const { error } = await window.supabaseClient.storage
@@ -367,8 +370,10 @@ async function handleFileUpload(event) {
         .upload(filePath, file);
 
     if (error) {
-        alert("Upload Corrupted");
+        alert("Upload failed: " + error.message);
         elements.postBtn.innerText = "Broadcast";
+        // Only re-enable if there's actual text in the composer
+        elements.postBtn.disabled = !elements.composerInput.value.trim();
         return;
     }
 
@@ -397,7 +402,11 @@ window.removePreview = () => {
 window.toggleGifPicker = () => {
     state.gifOpen = !state.gifOpen;
     elements.gifPicker.classList.toggle('hidden', !state.gifOpen);
-    if (state.gifOpen) searchGifs('');
+    if (state.gifOpen) {
+        // Reset search state so stale text doesn't show while trending loads
+        if (elements.gifSearchInput) elements.gifSearchInput.value = '';
+        searchGifs('');
+    }
 };
 
 async function searchGifs(query) {
