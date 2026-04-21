@@ -1036,6 +1036,36 @@ function renderFriendsDirectory() {
     `;
 }
 
+function renderFriendsStage() {
+    const onlineCounter = state.friends.filter(id => state.people[id]?.presence === 'online').length;
+    
+    return `
+        <div class="message-stream">
+            <div class="stream-inner" style="padding: 32px;">
+                <div class="friends-directory-grid">
+                    ${getVisibleFriends().map(person => `
+                        <div class="friend-card" onclick="selectChat('dm-${person.id}')">
+                            ${renderPersonAvatar(person, "friend-card-avatar", true)}
+                            <div class="friend-card-meta">
+                                <strong>${escapeHtml(person.name)}</strong>
+                                <span>${escapeHtml(person.statusText)}</span>
+                            </div>
+                            <button class="ghost-button">Message</button>
+                        </div>
+                    `).join("")}
+                </div>
+                ${state.friends.length === 0 ? `
+                    <div class="empty-state">
+                        <h3>Your circle is quiet</h3>
+                        <p>Search for teammates or invite them to Pulse to start building together.</p>
+                        <button class="primary-button" onclick="openConversationModal('direct')" style="margin-top:20px;">Start a Conversation</button>
+                    </div>
+                ` : ""}
+            </div>
+        </div>
+    `;
+}
+
 function renderWorkspace() {
     if (state.nav === "friends") {
         elements.friendsStage.classList.remove("hidden");
