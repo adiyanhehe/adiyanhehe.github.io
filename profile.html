@@ -299,32 +299,59 @@
         const params = new URLSearchParams(window.location.search);
         let user = params.get('user');
         if (user) user = user.toLowerCase();
-        const me_raw = localStorage.getItem('rbx_user');
-        const me = me_raw ? me_raw.toLowerCase() : null;
+
+        const state = {
+            me: null,
+            profile: null
+        };
 
         async function initProfile() {
-            // 1. Wait for Supabase
-            let attempts = 0;
-            while (!window.supabaseClient && attempts < 20) {
-                await new Promise(r => setTimeout(r, 100));
-                attempts++;
-            }
+            console.log("[Identity] Initializing profile flow...");
+            
+            // 1. Wait for Supabase to be ready from global.js
+            let bootAttempts = 0;
+            const bootInterval = setInterval(async () => {
+                bootAttempts++;
+                if (window.supabaseClient) {
+                    clearInterval(bootInterval);
+                    await startSession();
+                } else if (bootAttempts > 50) {
+                    clearInterval(bootInterval);
+                    console.error("[Identity] Supabase failed to load.");
+                    alert("Network Error: Could not connect to Nexus Cloud.");
+                }
+            }, 100);
+        }
 
-            // 2. Resolve 'me' identifier
-            let currentMe = localStorage.getItem('rbx_user');
-            if (!currentMe && window.supabaseClient) {
+        async function startSession() {
+            // 2. Resolve 'me' identifier from session
+            try {
                 const { data: { session } } = await window.supabaseClient.auth.getSession();
-                if (session) currentMe = session.user.email.split('@')[0];
+                if (session) {
+                    // Try to get username from profile first, then fallback to email
+                    const { data: profile } = await window.supabaseClient
+                        .from('profiles')
+                        .select('username')
+                        .eq('id', session.user.id)
+                        .maybeSingle();
+                    
+                    const sessionUser = profile?.username || localStorage.getItem('rbx_user') || session.user.email.split('@')[0];
+                    state.me = sessionUser.toLowerCase();
+                    localStorage.setItem('rbx_user', state.me);
+                }
+            } catch (e) {
+                console.warn("[Identity] Session check failed:", e);
+                state.me = localStorage.getItem('rbx_user')?.toLowerCase();
             }
-            if (currentMe) currentMe = currentMe.toLowerCase();
 
+            // 3. Handle default 'user' (viewing self)
             if (!user) {
-                user = currentMe;
-                if (!user) { location.href = 'index.html'; return; }
-                location.href = `profile.html?user=${encodeURIComponent(user)}`;
+                if (!state.me) { location.href = 'index.html'; return; }
+                location.href = `profile.html?user=${encodeURIComponent(state.me)}`;
                 return;
             }
 
+            // 4. Load components
             renderIdentity();
             await fetchCloudData();
             await fetchSocialStats();
@@ -333,57 +360,146 @@
 
         function renderIdentity() {
             document.getElementById('name-ui').innerText = user;
-            document.getElementById('handle-ui').innerText = '@' + user.toLowerCase();
+            document.getElementById('handle-ui').innerText = '@' + user;
             setupActions();
         }
 
         function setupActions() {
             const slot = document.getElementById('action-slot');
-            if (user === me) {
+            if (state.me && user === state.me) {
                 slot.innerHTML = `<button class="nav-button active" onclick="openEditModal()">Edit Profile</button>`;
-            } else if (me) {
+            } else if (state.me) {
                 slot.innerHTML = `<button id="follow-btn" class="send-button" onclick="toggleFollow()">Follow</button>`;
                 checkFollowStatus();
             }
         }
 
         async function fetchCloudData() {
-            if (!window.supabaseClient) { setTimeout(fetchCloudData, 500); return; }
-            const { data } = await window.supabaseClient.from('profiles').select('*').eq('username', user).maybeSingle();
+            const { data, error } = await window.supabaseClient.from('profiles').select('*').eq('username', user).maybeSingle();
             if (data) {
+                state.profile = data;
                 document.getElementById('name-ui').innerText = data.display_name || user;
                 if (data.bio) document.getElementById('bio-ui').innerText = data.bio;
                 if (data.avatar_url) document.getElementById('pfp-ui').src = data.avatar_url;
                 if (data.banner_url) document.getElementById('banner-ui').style.background = `url(${data.banner_url}) center/cover`;
+            } else if (error) {
+                console.error("[Identity] Profile fetch failed:", error);
             }
         }
 
         async function fetchSocialStats() {
-            const { count: followers } = await window.supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following', user);
-            const { count: following } = await window.supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower', user);
-            
-            document.getElementById('stat-followers').innerText = followers || 0;
-            document.getElementById('stat-following').innerText = following || 0;
+            try {
+                const { count: followers } = await window.supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following', user);
+                const { count: following } = await window.supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower', user);
+                
+                document.getElementById('stat-followers').innerText = followers || 0;
+                document.getElementById('stat-following').innerText = following || 0;
+
+                // Calculate reputation (sum of likes on user's threads)
+                const { data: posts } = await window.supabaseClient.from('threads').select('likes').eq('author', user);
+                const reputation = posts?.reduce((sum, p) => sum + (p.likes || 0), 0) || 0;
+                document.getElementById('stat-reputation').innerText = reputation;
+            } catch (e) {
+                console.warn("[Identity] Could not load social stats");
+            }
         }
 
         async function loadUserPosts() {
             const feed = document.getElementById('posts-feed');
-            const { data } = await window.supabaseClient.from('threads').select('*').eq('author', user).order('timestamp', { ascending: false });
-            
-            if (!data || data.length === 0) {
-                feed.innerHTML = `<div style="padding: 60px; text-align: center; color: var(--text-soft);">No transmissions found in archive.</div>`;
-                return;
-            }
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('threads')
+                    .select('*')
+                    .eq('author', user)
+                    .order('created_at', { ascending: false });
+                
+                if (error || !data || data.length === 0) {
+                    feed.innerHTML = `<div style="padding: 60px; text-align: center; color: var(--text-soft);">No transmissions found in archive.</div>`;
+                    return;
+                }
 
-            feed.innerHTML = data.map(t => `
-                <div class="thread-item" style="padding: 24px; background: var(--bg-panel-soft); border-radius: var(--radius-xl); border: 1px solid var(--border); margin-bottom: 16px;">
-                    <div style="font-size: 1.1rem; margin-bottom: 8px;">${t.content}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-soft);">${new Date(t.timestamp).toLocaleString()}</div>
-                </div>
-            `).join('');
+                feed.innerHTML = data.map(t => {
+                    const date = new Date(t.created_at || t.timestamp || Date.now());
+                    return `
+                        <div class="thread-item" style="padding: 24px; background: var(--bg-panel-soft); border-radius: var(--radius-xl); border: 1px solid var(--border); margin-bottom: 16px;">
+                            <div style="font-size: 1.1rem; margin-bottom: 8px;">${escapeHtml(t.content)}</div>
+                            ${t.media_url ? `<div style="margin: 12px 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border);"><img src="${t.media_url}" style="width: 100%; display: block;"></div>` : ''}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                                <div style="font-size: 0.75rem; color: var(--text-soft); opacity: 0.6;">${date.toLocaleString()}</div>
+                                <div style="display: flex; gap: 12px; font-size: 0.8rem; color: var(--accent); font-weight: 700;">
+                                    <span>${t.likes || 0} Likes</span>
+                                    <span>${t.replies || 0} Replies</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                feed.innerHTML = `<div style="padding: 60px; text-align: center; color: var(--text-soft);">Sensors offline.</div>`;
+            }
+        }
+
+        async function loadConnections() {
+            const feed = document.getElementById('posts-feed');
+            feed.innerHTML = `<div style="padding: 60px; text-align: center; color: var(--text-soft);">Scanning network connections...</div>`;
+            
+            try {
+                const { data: followingRefs } = await window.supabaseClient.from('follows').select('following').eq('follower', user);
+                const followingIds = followingRefs?.map(f => f.following) || [];
+                
+                if (followingIds.length === 0) {
+                    feed.innerHTML = `<div style="padding: 60px; text-align: center; color: var(--text-soft);">No active platform connections.</div>`;
+                    return;
+                }
+
+                const { data: profiles } = await window.supabaseClient.from('profiles').select('*').in('username', followingIds);
+                
+                feed.innerHTML = profiles.map(p => `
+                    <div class="thread-item" style="display: flex; align-items: center; gap: 16px; padding: 20px; background: var(--bg-panel-soft); border-radius: var(--radius-xl); border: 1px solid var(--border); margin-bottom: 12px; cursor: pointer;" onclick="location.href='profile.html?user=${p.username}'">
+                        <img src="${p.avatar_url || 'jay.png'}" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover;">
+                        <div>
+                            <strong style="display: block; font-size: 1.1rem;">${escapeHtml(p.display_name || p.username)}</strong>
+                            <span style="color: var(--accent); font-weight: 700;">@${p.username}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                feed.innerHTML = `<div style="padding: 60px; text-align: center; color: var(--text-soft);">Connection scan failed.</div>`;
+            }
+        }
+
+        // Tab Switching
+        document.querySelectorAll('.profile-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                if (tab.innerText === 'Broadcasts') {
+                    loadUserPosts();
+                } else {
+                    loadConnections();
+                }
+            });
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
         }
 
         window.openEditModal = () => {
+            if (!state.profile) {
+                // Fallback if cloud profile load failed but user is viewing self
+                document.getElementById('m-name').value = document.getElementById('name-ui').innerText;
+                document.getElementById('m-pfp').value = document.getElementById('pfp-ui').src;
+                document.getElementById('m-bio').value = document.getElementById('bio-ui').innerText;
+            } else {
+                document.getElementById('m-name').value = state.profile.display_name || '';
+                document.getElementById('m-pfp').value = state.profile.avatar_url || '';
+                document.getElementById('m-bio').value = state.profile.bio || '';
+            }
+
             const modal = document.getElementById('edit-modal');
             modal.style.display = 'flex';
             modal.classList.remove('hidden');
@@ -394,39 +510,56 @@
         };
 
         async function saveIdentity() {
+            if (!state.me) return;
+            
+            const nBtn = event?.target; 
+            if (nBtn) { nBtn.disabled = true; nBtn.innerText = "Syncing..."; }
+
             const dName = document.getElementById('m-name').value;
             const pfp = document.getElementById('m-pfp').value;
             const bio = document.getElementById('m-bio').value;
 
+            // Update primary record
             const { error } = await window.supabaseClient.from('profiles').update({
                 display_name: dName,
                 avatar_url: pfp,
                 bio: bio,
                 updated_at: new Date().toISOString()
-            }).eq('username', me);
+            }).eq('username', state.me);
 
-            if (error) alert("Sync failed: " + error.message);
-            else location.reload();
+            if (error) {
+                alert("Cloud Sync failed: " + error.message);
+                if (nBtn) { nBtn.disabled = false; nBtn.innerText = "Update Record"; }
+            } else {
+                // Sync important metadata to localStorage for instant UI updates on other pages
+                if (pfp) localStorage.setItem('rbx_pic', pfp);
+                if (dName) localStorage.setItem('rbx_display_name', dName);
+                location.reload();
+            }
         }
 
         async function checkFollowStatus() {
-            const { data } = await window.supabaseClient.from('follows').select('*').eq('follower', me).eq('following', user).maybeSingle();
+            if (!state.me) return;
+            const { data } = await window.supabaseClient.from('follows').select('*').eq('follower', state.me).eq('following', user).maybeSingle();
             const btn = document.getElementById('follow-btn');
-            if (data) {
+            if (data && btn) {
                 btn.innerText = 'Unfollow';
+                btn.classList.add('active');
                 btn.style.background = 'var(--bg-panel-soft)';
                 btn.style.color = 'var(--text-main)';
             }
         }
 
         async function toggleFollow() {
+            if (!state.me) { alert("Identify yourself to follow teammates."); return; }
             const btn = document.getElementById('follow-btn');
             const isFollowing = btn.innerText === 'Unfollow';
             
+            btn.disabled = true;
             if (isFollowing) {
-                await window.supabaseClient.from('follows').delete().eq('follower', me).eq('following', user);
+                await window.supabaseClient.from('follows').delete().eq('follower', state.me).eq('following', user);
             } else {
-                await window.supabaseClient.from('follows').insert([{ follower: me, following: user }]);
+                await window.supabaseClient.from('follows').insert([{ follower: state.me, following: user }]);
             }
             location.reload();
         }
