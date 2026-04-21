@@ -394,9 +394,8 @@ window.checkIfUserExists = async (username) => {
     const foundUser = allUsers.find(u => u.toLowerCase() === username.trim().toLowerCase());
     if (foundUser) return foundUser;
     
-    // Last resort: just return the username they entered
-    // This allows adding friends even if they haven't registered in Supabase yet
-    return username.trim();
+    // Last resort: If not found in DB or local fallback, return null (fail validation)
+    return null;
 };
 
 // --- REPORTING SYSTEM ---
