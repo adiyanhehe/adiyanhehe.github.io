@@ -73,7 +73,14 @@ const state = {
     typing: null,
     messageSubscription: null,
     threadAvatars: {},
-    requests: []
+    requests: [],
+    // Mention state
+    mentionQuery: null,
+    mentionPeople: [],
+    mentionIndex: 0,
+    // Search state
+    searchQuery: "",
+    searchActive: false
 };
 
 const elements = {};
@@ -99,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
             bindEvents();
             renderApp();
             setupRealtimeSubscriptions();
+            startPresenceHeartbeat();
 
             // Handle deep-linking via query params (?dm=username)
             const params = new URLSearchParams(window.location.search);
@@ -192,11 +200,15 @@ function cacheElements() {
     elements.requestsViewButton = document.getElementById("requestsViewButton");
     elements.requestsBadge = document.getElementById("requestsBadge");
     
-    // These are the remaining elements not yet cached above
-    elements.membersToggleButton = document.getElementById("membersToggleButton");
-    elements.jumpLatestButton = document.getElementById("jumpLatestButton");
     elements.uploadButton = document.getElementById("uploadButton");
     elements.fileInput = document.getElementById("fileInput");
+
+    // New elements
+    elements.mentionDropdown = document.getElementById("mentionDropdown");
+    elements.openSearchButton = document.getElementById("openSearchButton");
+    elements.workspaceSearchField = document.getElementById("workspaceSearchField");
+    elements.workspaceSearchInput = document.getElementById("workspaceSearchInput");
+    elements.closeWorkspaceSearch = document.getElementById("closeWorkspaceSearch");
 }
 
 async function initializeState() {
@@ -482,6 +494,23 @@ function setupRealtimeSubscriptions() {
             }
         })
         .subscribe();
+
+    // Listen for reaction updates
+    window.supabaseClient
+        .channel('realtime-reactions')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+            const msg = payload.new;
+            // Find message in all chats
+            for (const chatId in state.messages) {
+                const existing = state.messages[chatId].find(m => String(m.id) === String(msg.id));
+                if (existing) {
+                    existing.reactions = msg.reactions || [];
+                    if (state.activeChatId === chatId) renderWorkspace();
+                    break;
+                }
+            }
+        })
+        .subscribe();
 }
 
 function handleIncomingMessage(msg) {
@@ -637,6 +666,14 @@ function bindEvents() {
     window.addEventListener("resize", handleResize);
     elements.uploadButton.addEventListener("click", () => elements.fileInput.click());
     elements.fileInput.addEventListener("change", handleFileUpload);
+
+    // Search events
+    elements.openSearchButton.addEventListener("click", toggleWorkspaceSearch);
+    elements.closeWorkspaceSearch.addEventListener("click", toggleWorkspaceSearch);
+    elements.workspaceSearchInput.addEventListener("input", handleWorkspaceSearch);
+
+    // Mention events
+    elements.mentionDropdown.addEventListener("click", handleMentionClick);
 }
 
 async function handleFileUpload(event) {
@@ -1111,7 +1148,7 @@ function renderMessages(chat) {
                     <span class="message-time">${escapeHtml(formatMessageTimestamp(message.timestamp))}</span>
                 </div>
                     ${message.gifUrl ? `<div class="message-attachment"><img src="${escapeHtml(message.gifUrl)}" alt="GIF attachment" loading="lazy"></div>` : ""}
-                    ${message.text ? `<div class="message-bubble">${formatMessageText(message.text)}</div>` : ""}
+                    ${message.text ? `<div class="message-bubble">${renderFormattedText(message.text)}</div>` : ""}
                     ${reactionMenu}
                     ${reactions}
                 </div>
@@ -1430,10 +1467,214 @@ function handleEmojiPickerClick(event) {
 function handleComposerInput() {
     autoResizeComposer();
     updateComposerMetrics();
-    // Typing indicators intentionally omitted (no simulation)
+    detectMentions();
+    
+    // Broadcast typing state
+    broadcastTyping(true);
 }
 
+// Presence heartbeat
+let presenceInterval = null;
+function startPresenceHeartbeat() {
+    if (presenceInterval) clearInterval(presenceInterval);
+    updateMyPresence('online');
+    presenceInterval = setInterval(() => updateMyPresence('online'), 1000 * 60); // every minute
+}
+
+async function updateMyPresence(status) {
+    if (!state.currentUser) return;
+    await window.supabaseClient.rpc('update_user_presence', { 
+        username: state.currentUser.id, 
+        status: status 
+    });
+}
+
+function detectMentions() {
+    const value = elements.messageInput.value;
+    const selectionStart = elements.messageInput.selectionStart;
+    const textBeforeCursor = value.substring(0, selectionStart);
+    
+    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    
+    if (mentionMatch) {
+        state.mentionQuery = mentionMatch[1].toLowerCase();
+        const activeChat = getActiveChat();
+        
+        // Filter pool: If in group/global, first show chat participants, then all friends
+        let pool = [];
+        if (activeChat && (activeChat.type === 'group' || activeChat.type === 'global')) {
+            pool = getChatParticipants(activeChat);
+        } else {
+            pool = state.friends.map(id => state.people[id]).filter(Boolean);
+        }
+        
+        state.mentionPeople = pool.filter(p => 
+            p.id !== state.currentUser.id && 
+            (p.name.toLowerCase().includes(state.mentionQuery) || p.id.toLowerCase().includes(state.mentionQuery))
+        ).slice(0, 8);
+        
+        if (state.mentionPeople.length > 0) {
+            renderMentionDropdown();
+            return;
+        }
+    }
+    
+    state.mentionQuery = null;
+    renderMentionDropdown();
+}
+
+function handleMentionClick(event) {
+    const item = event.target.closest(".mention-item");
+    if (!item) return;
+    insertMention(item.dataset.username);
+}
+
+function insertMention(username) {
+    const value = elements.messageInput.value;
+    const selectionStart = elements.messageInput.selectionStart;
+    const textBeforeCursor = value.substring(0, selectionStart);
+    const textAfterCursor = value.substring(selectionStart);
+    
+    const nextBefore = textBeforeCursor.replace(/@\w*$/, `@${username} `);
+    elements.messageInput.value = nextBefore + textAfterCursor;
+    
+    state.mentionQuery = null;
+    renderMentionDropdown();
+    elements.messageInput.focus();
+    updateComposerMetrics();
+    autoResizeComposer();
+}
+
+function renderMentionDropdown() {
+    const show = state.mentionQuery !== null && state.mentionPeople.length > 0;
+    elements.mentionDropdown.classList.toggle("hidden", !show);
+    
+    if (!show) return;
+    
+    elements.mentionDropdown.innerHTML = state.mentionPeople.map((person, idx) => `
+        <button class="mention-item ${idx === state.mentionIndex ? 'active' : ''}" type="button" data-username="${person.id}">
+            ${renderPersonAvatar(person, "avatar-token", false)}
+            <div class="mention-info">
+                <strong>${escapeHtml(person.name)}</strong>
+                <span>@${escapeHtml(person.id)}</span>
+            </div>
+        </button>
+    `).join("");
+}
+
+function toggleWorkspaceSearch() {
+    state.searchActive = !state.searchActive;
+    elements.workspaceSearchField.classList.toggle("hidden", !state.searchActive);
+    elements.openSearchButton.classList.toggle("hidden", state.searchActive);
+    
+    if (state.searchActive) {
+        elements.workspaceSearchInput.focus();
+    } else {
+        state.searchQuery = "";
+        elements.workspaceSearchInput.value = "";
+        renderWorkspace();
+    }
+}
+
+function handleWorkspaceSearch(event) {
+    state.searchQuery = event.target.value.trim().toLowerCase();
+    renderWorkspace();
+}
+
+function renderFormattedText(text) {
+    // 1. Escape HTML
+    let content = escapeHtml(text).replace(/\n/g, "<br>");
+    
+    // 2. Format URLs
+    content = content.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // 3. Format Mentions: @username
+    // Use state.people to check if user exists
+    content = content.replace(/@(\w+)/g, (match, username) => {
+        const person = state.people[username.toLowerCase()];
+        if (person) {
+            return `<span class="message-mention" onclick="window.showProfileSummary('${person.id}')">@${escapeHtml(person.id)}</span>`;
+        }
+        return match;
+    });
+    
+    return content;
+}
+
+// Typing Indicator broadcasting
+let typingTimeout = null;
+async function broadcastTyping(isTyping) {
+    const activeChat = getActiveChat();
+    if (!activeChat || !state.currentUser) return;
+
+    // Use Supabase presence/broadcast for real-time typing
+    const channel = window.supabaseClient.channel(`chat-typing-${activeChat.id}`);
+    
+    await channel.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { 
+            senderId: state.currentUser.id, 
+            senderName: state.currentUser.name,
+            isTyping 
+        }
+    });
+
+    if (isTyping) {
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => broadcastTyping(false), 3000);
+    }
+}
+
+// Update setupRealtimeSubscriptions to handle custom typing events
+const originalSetup = setupRealtimeSubscriptions;
+setupRealtimeSubscriptions = function() {
+    originalSetup();
+    
+    const activeChat = getActiveChat();
+    if (!activeChat) return;
+
+    window.supabaseClient
+        .channel(`chat-typing-${activeChat.id}`)
+        .on('broadcast', { event: 'typing' }, ({ payload }) => {
+            if (payload.senderId !== state.currentUser.id) {
+                if (payload.isTyping) {
+                    state.typing = { chatId: activeChat.id, senderName: payload.senderName };
+                } else {
+                    state.typing = null;
+                }
+                renderTypingIndicator();
+            }
+        })
+        .subscribe();
+};
+
 function handleComposerKeydown(event) {
+    if (state.mentionQuery !== null && state.mentionPeople.length > 0) {
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            state.mentionIndex = (state.mentionIndex + 1) % state.mentionPeople.length;
+            renderMentionDropdown();
+            return;
+        }
+        if (event.key === "ArrowUp") {
+            event.preventDefault();
+            state.mentionIndex = (state.mentionIndex - 1 + state.mentionPeople.length) % state.mentionPeople.length;
+            renderMentionDropdown();
+            return;
+        }
+        if (event.key === "Enter" || event.key === "Tab") {
+            event.preventDefault();
+            insertMention(state.mentionPeople[state.mentionIndex].id);
+            return;
+        }
+        if (event.key === "Escape") {
+            state.mentionQuery = null;
+            renderMentionDropdown();
+            return;
+        }
+    }
+
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
         sendMessage();
@@ -1457,6 +1698,12 @@ function handleDocumentClick(event) {
     if (!insideGif && state.gifOpen) {
         state.gifOpen = false;
         renderGifPicker();
+    }
+
+    const insideMentions = event.target.closest("#mentionDropdown") || event.target.closest("#messageInput");
+    if (!insideMentions && state.mentionQuery !== null) {
+        state.mentionQuery = null;
+        renderMentionDropdown();
     }
 
     const insideMessageActions = event.target.closest("[data-action]");
@@ -1913,9 +2160,10 @@ async function deleteMessage(chatId, messageId) {
     renderApp();
 }
 
-function toggleReaction(chatId, messageId, emoji) {
-    // Reactions are stored in local state only (add a 'reactions JSONB' column
-    // to the messages table in Supabase if you want them to persist across sessions).
+async function toggleReaction(chatId, messageId, emoji) {
+    // Only allow reacting to real messages
+    if (String(messageId).startsWith('opt-')) return;
+
     const message = (state.messages[chatId] || []).find(entry => String(entry.id) === String(messageId));
     if (!message) return;
 
@@ -1935,15 +2183,32 @@ function toggleReaction(chatId, messageId, emoji) {
     }
 
     reactions = reactions.filter(entry => entry.users.length > 0);
+    
+    // Optimistic local update
     message.reactions = reactions;
     state.reactionMenu = null;
     renderWorkspace();
+
+    // Sync to DB
+    const { error } = await window.supabaseClient
+        .from('messages')
+        .update({ reactions: reactions })
+        .eq('id', messageId);
+
+    if (error) {
+        console.error('[Pulse] Reaction sync failed:', error);
+        // Rollback? Optional for reactions
+    }
 }
 
 function selectChat(chatId) {
     state.nav = "home";
     state.activeChatId = chatId;
-    state.search = "";
+    state.searchQuery = ""; // Reset search content
+    state.searchActive = false;
+    elements.workspaceSearchField.classList.add("hidden");
+    elements.openSearchButton.classList.remove("hidden");
+    
     state.chatFilter = "all";
     state.membersOpen = false;
     state.emojiOpen = false;
@@ -1957,6 +2222,20 @@ function selectChat(chatId) {
     persistState();
     renderApp();
     scrollToLatest(false);
+    
+    // Mark as read in DB
+    markChannelAsRead(chatId);
+}
+
+async function markChannelAsRead(chatId) {
+    if (!state.currentUser) return;
+    await window.supabaseClient
+        .from('read_receipts')
+        .upsert({ 
+            user_name: state.currentUser.id, 
+            channel_id: chatId, 
+            last_read_at: new Date().toISOString() 
+        }, { onConflict: 'user_name, channel_id' });
 }
 
 // Mock simulation removed as requested.
@@ -2012,7 +2291,13 @@ function getActiveChat() {
 }
 
 function getMessages(chatId) {
-    return [...(state.messages[chatId] || [])].sort((left, right) => left.timestamp - right.timestamp);
+    let msgs = [...(state.messages[chatId] || [])].sort((left, right) => left.timestamp - right.timestamp);
+    
+    if (state.searchQuery) {
+        msgs = msgs.filter(m => m.text && m.text.toLowerCase().includes(state.searchQuery));
+    }
+    
+    return msgs;
 }
 
 function getLastMessage(chatId) {
