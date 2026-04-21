@@ -99,6 +99,13 @@ document.addEventListener("DOMContentLoaded", () => {
             bindEvents();
             renderApp();
             setupRealtimeSubscriptions();
+
+            // Handle deep-linking via query params (?dm=username)
+            const params = new URLSearchParams(window.location.search);
+            const dmUser = params.get('dm');
+            if (dmUser) {
+                window.openDirectMessage(dmUser);
+            }
         } else if (bootAttempts > 50) { 
             // Safety timeout after 5s - attempt to render whatever we can
             clearInterval(bootInterval);
@@ -108,6 +115,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 100);
 });
+
+// Global helper for profile summary & other pages
+window.openDirectMessage = (username) => {
+    if (!username) return;
+    const person = ensurePersonInDB(username);
+    const chat = ensureDirectChat(person.id);
+    selectChat(chat.id);
+};
 
 window.addEventListener("beforeunload", () => {
     if (state.messageSubscription) {
