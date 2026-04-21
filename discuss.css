@@ -1712,6 +1712,28 @@ textarea:focus-visible {
     transform: scale(1.02);
 }
 
+/* ============================================================
+   THREADS PAGE GIF PICKER (threads.html uses #gif-picker)
+   The page currently has inline fixed positioning that can go off-screen.
+   This override keeps it usable on desktop + mobile.
+   ============================================================ */
+#gif-picker {
+    left: auto !important;
+    right: 24px !important;
+    bottom: 24px !important;
+    width: min(360px, calc(100vw - 48px)) !important;
+    max-height: min(60vh, 520px) !important;
+}
+
+@media (max-width: 920px) {
+    #gif-picker {
+        left: 12px !important;
+        right: 12px !important;
+        bottom: 12px !important;
+        width: auto !important;
+    }
+}
+
 .message-attachment {
     margin-top: 8px;
     border-radius: 12px;
