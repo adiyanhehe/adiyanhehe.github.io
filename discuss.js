@@ -105,6 +105,7 @@ function cacheElements() {
     elements.directoryPanel = document.getElementById("directoryPanel");
     elements.pageOverlay = document.getElementById("pageOverlay");
     elements.homeViewButton = document.getElementById("homeViewButton");
+    elements.globalViewButton = document.getElementById("globalViewButton");
     elements.friendsViewButton = document.getElementById("friendsViewButton");
     elements.homeUnreadBadge = document.getElementById("homeUnreadBadge");
     elements.friendsOnlineBadge = document.getElementById("friendsOnlineBadge");
