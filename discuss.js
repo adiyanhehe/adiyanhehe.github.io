@@ -160,25 +160,9 @@ function cacheElements() {
     elements.requestsViewButton = document.getElementById("requestsViewButton");
     elements.requestsBadge = document.getElementById("requestsBadge");
     
-    // Additional missing elements
-    elements.homeViewButton = document.getElementById("homeViewButton");
-    elements.globalViewButton = document.getElementById("globalViewButton");
-    elements.friendsViewButton = document.getElementById("friendsViewButton");
-    elements.homeUnreadBadge = document.getElementById("homeUnreadBadge");
-    elements.friendsOnlineBadge = document.getElementById("friendsOnlineBadge");
+    // These are the remaining elements not yet cached above
     elements.membersToggleButton = document.getElementById("membersToggleButton");
     elements.jumpLatestButton = document.getElementById("jumpLatestButton");
-    elements.themeToggleButton = document.getElementById("themeToggleButton");
-    elements.settingsButton = document.getElementById("settingsButton");
-    elements.changeStatusButton = document.getElementById("changeStatusButton");
-    elements.clearUnreadButton = document.getElementById("clearUnreadButton");
-    elements.resetDemoButton = document.getElementById("resetDemoButton");
-    elements.closeSidebarButton = document.getElementById("closeSidebarButton");
-    elements.pageOverlay = document.getElementById("pageOverlay");
-    elements.currentUserAvatar = document.getElementById("currentUserAvatar");
-    elements.currentUserName = document.getElementById("currentUserName");
-    elements.currentUserStatus = document.getElementById("currentUserStatus");
-    elements.settingsMenu = document.getElementById("settingsMenu");
     elements.uploadButton = document.getElementById("uploadButton");
     elements.fileInput = document.getElementById("fileInput");
 }
@@ -1560,8 +1544,8 @@ function renderRequestsView() {
                                         <p>wants to start a conversation</p>
                                     </div>
                                     <div class="request-actions">
-                                        <button class="request-btn accept" onclick="handleFriendRequestAction('${req.id}', 'accept')">Accept</button>
-                                        <button class="request-btn decline" onclick="handleFriendRequestAction('${req.id}', 'decline')">Decline</button>
+                                        <button class="request-btn accept" onclick="window.handleFriendRequestAction('${req.id}', 'accept')">Accept</button>
+                                        <button class="request-btn decline" onclick="window.handleFriendRequestAction('${req.id}', 'decline')">Decline</button>
                                     </div>
                                 </div>
                             `;
@@ -1619,8 +1603,11 @@ function toggleEmojiPicker() {
 function updateComposerMetrics() {
     const length = elements.messageInput.value.length;
     elements.characterCount.textContent = `${length} / ${MAX_MESSAGE_LENGTH}`;
-    // Disable send when: no text, wrong nav view, or no chat selected
-    elements.sendButton.disabled = length === 0 || state.nav !== "home" || !state.activeChatId;
+    // Disable send when: no text typed, or no active chat selected.
+    // NOTE: Global Chat IS a valid active chat (id = 'global_chat'), so
+    // we do NOT gate on state.nav — that would permanently block Global Chat
+    // which uses nav='global' but still has a valid activeChatId.
+    elements.sendButton.disabled = length === 0 || !state.activeChatId;
 }
 
 function autoResizeComposer() {
