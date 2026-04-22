@@ -274,7 +274,7 @@
                 const [u, m, t, r, s] = await Promise.all([
                     sb.from('profiles').select('*').order('created_at', { ascending: false }),
                     sb.from('messages').select('*').order('created_at', { ascending: false }).limit(200),
-                    sb.from('threads').select('*').order('timestamp', { ascending: false }).limit(200),
+                    sb.from('threads').select('*').limit(200),
                     sb.from('reports').select('*').order('created_at', { ascending: false }),
                     sb.from('system_settings').select('*')
                 ]);
@@ -310,8 +310,11 @@
         }
 
         function renderM() {
-            const unified = [...cache.m.map(x=>({...x, k:'MSG'})), ...cache.t.map(x=>({...x, k:'THREAD', created_at:x.timestamp, sender:x.author}))]
-                .sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+            const unified = [
+                ...cache.m.map(x=>({...x, k:'MSG'})), 
+                ...cache.t.map(x=>({...x, k:'THREAD', created_at: x.created_at || x.timestamp, sender: x.author}))
+            ].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+            
             document.getElementById('l-m').innerHTML = unified.map(x => `
                 <tr>
                     <td><strong>@${esc(x.sender)}</strong></td>
