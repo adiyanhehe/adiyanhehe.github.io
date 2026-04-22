@@ -7,6 +7,11 @@ let supabaseClient = null;
 // --- GLOBAL INITIALIZATION ---
 window.initializeNexus = async () => {
     console.log("Nexus Core initializing...");
+    // Force immediate supabase check
+    if (!window.supabaseClient && window.supabase) {
+        initializeSupabase();
+    }
+    
     if (window.supabaseClient) {
         await syncIdentity();
     }
@@ -131,15 +136,13 @@ applyTheme(currentTheme);
 // --- APP INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
     injectUniversalHeader();
-
-    // Safety reveal for mouse if cursor failed
-    document.body.style.cursor = 'auto';
+    if (document.getElementById('auth-nav')) checkGlobalAuth();
 
     if (typeof window.supabase === 'undefined') {
         const s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-        document.head.appendChild(s);
         s.onload = () => initializeSupabase();
+        document.head.appendChild(s);
     } else {
         initializeSupabase();
     }
