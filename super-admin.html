@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus | CONTROL CORE</title>
+    <title>Nexus | CONTROL CORE ALPHA</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
@@ -71,112 +71,134 @@
 
         /* Sidebar */
         .sidebar {
-            width: 280px; height: 100%; background: var(--panel);
-            border-right: 1px solid var(--border); backdrop-filter: blur(20px);
-            display: flex; flex-direction: column; padding: 30px 20px; z-index: 100;
+            width: 260px; height: 100%; background: var(--panel);
+            border-right: 1px solid var(--border); backdrop-filter: blur(24px);
+            display: flex; flex-direction: column; padding: 30px 15px; z-index: 100;
         }
         .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; padding: 0 10px; }
-        .brand icon { display: flex; align-items:center; justify-content:center; width: 32px; height: 32px; background: var(--accent); border-radius: 10px; box-shadow: 0 0 20px var(--accent-glow); font-size: 1.2rem; }
-        .brand h2 { font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; }
+        .brand icon { display: flex; align-items:center; justify-content:center; width: 34px; height: 34px; background: var(--accent); border-radius: 10px; box-shadow: 0 0 20px var(--accent-glow); font-size: 1.2rem; }
+        .brand h2 { font-weight: 900; font-size: 1.1rem; letter-spacing: 1.2px; text-transform: uppercase; }
 
         .nav-link {
             padding: 14px 18px; border-radius: 14px; color: var(--text-muted);
-            text-decoration: none; font-weight: 700; font-size: 0.85rem;
-            display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
-            transition: 0.2s ease; cursor: pointer; border: 1px solid transparent;
+            text-decoration: none; font-weight: 700; font-size: 0.8rem;
+            display: flex; align-items: center; gap: 14px; margin-bottom: 6px;
+            transition: 0.3s cubic-bezier(0.23, 1, 0.32, 1); cursor: pointer; border: 1px solid transparent;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .nav-link:hover { color: var(--text-main); background: rgba(255,255,255,0.03); }
-        .nav-link.active { color: var(--text-main); background: rgba(255,255,255,0.06); border-color: var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .nav-link .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
-        .nav-link.active .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        .nav-link:hover { color: var(--text-main); background: rgba(255,255,255,0.04); transform: translateX(5px); }
+        .nav-link.active { color: var(--text-main); background: rgba(255,255,255,0.06); border-color: var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .nav-link .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: 0.3s; }
+        .nav-link.active .dot { background: var(--accent); box-shadow: 0 0 12px var(--accent); transform: scale(1.4); }
 
         /* Main Content */
-        .main { flex: 1; height: 100%; overflow-y: auto; padding: 30px; position: relative; }
+        .main { flex: 1; height: 100%; overflow-y: auto; padding: 30px 40px; position: relative; }
         .topbar {
-            display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px;
-            position: sticky; top: 0; z-index: 10; background: var(--bg); padding-bottom: 20px;
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px;
+            position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 10px 0 20px;
         }
-        .topbar h1 { font-weight: 900; font-size: 1.8rem; letter-spacing: -1px; }
-        .topbar p { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+        .topbar h1 { font-weight: 900; font-size: 2rem; letter-spacing: -1.2px; }
+        .topbar p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; font-weight: 400; }
         
-        .header-actions { display: flex; gap: 12px; }
+        .header-actions { display: flex; gap: 14px; }
         .btn {
-            padding: 10px 20px; border-radius: 12px; font-weight: 800; font-size: 0.75rem;
-            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
-            transition: 0.2s ease; display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 22px; border-radius: 14px; font-weight: 800; font-size: 0.72rem;
+            text-transform: uppercase; letter-spacing: 1.2px; cursor: pointer;
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); display: inline-flex; align-items: center; gap: 10px;
             border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text-main);
         }
-        .btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+        .btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
         .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-        .btn.primary:hover { box-shadow: 0 0 20px var(--accent-glow); }
-        .btn.danger { color: var(--danger); }
-        .btn.success { color: var(--success); }
+        .btn.primary:hover { box-shadow: 0 8px 24px var(--accent-glow); }
+        .btn.danger { color: var(--danger); border-color: rgba(255, 59, 48, 0.2); }
+        .btn.danger:hover { background: rgba(255, 59, 48, 0.1); }
 
         /* Grid & Cards */
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 30px; }
         .kpi-card {
-            background: var(--panel); border: 1px solid var(--border); padding: 24px;
-            border-radius: var(--radius); backdrop-filter: blur(20px);
+            background: var(--panel); border: 1px solid var(--border); padding: 30px;
+            border-radius: var(--radius); backdrop-filter: blur(24px); position: relative; overflow: hidden;
         }
-        .kpi-card .label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
-        .kpi-card .value { font-size: 2.2rem; font-weight: 900; margin: 12px 0 8px; letter-spacing: -1px; }
-        .kpi-card .trend { font-size: 0.8rem; color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .kpi-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: var(--accent); opacity: 0.3; }
+        .kpi-card .label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; }
+        .kpi-card .value { font-size: 2.8rem; font-weight: 900; margin: 15px 0 10px; letter-spacing: -1.5px; }
+        .kpi-card .trend { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 6px; }
 
-        .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; position: relative; }
-        .card h3 { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; }
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 30px; position: relative; margin-bottom: 24px; }
+        .card h3 { font-size: 0.85rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px; display:flex; align-items:center; gap:10px; }
+        .card h3::before { content:''; width:4px; height:20px; background:var(--accent); border-radius:2px; }
 
-        .chart-container { position: relative; height: 250px; width: 100%; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
 
-        /* Tables */
-        .table-container { overflow-x: auto; margin-top: 10px; }
+        /* Tables & Lists */
+        .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px 15px; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
-        td { padding: 16px 15px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        tr:hover td { background: rgba(255,255,255,0.02); }
+        th { text-align: left; padding: 15px; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 900; letter-spacing: 1.5px; border-bottom: 1px solid var(--border); }
+        td { padding: 18px 15px; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.015); }
         
         .status-badge {
-            padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 900;
-            text-transform: uppercase; letter-spacing: 1px;
+            padding: 5px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 1.2px; display: inline-block;
         }
         .status-active { background: rgba(0, 186, 124, 0.1); color: var(--success); }
         .status-banned { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
         .status-staff { background: rgba(123, 140, 255, 0.1); color: #7b8cff; }
 
+        /* Forms */
+        .search-wrap { display: flex; gap: 15px; margin-bottom: 24px; position: relative; }
+        .search-wrap input {
+            flex: 1; padding: 16px 20px; background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+            border-radius: 14px; color: #fff; font-family: inherit; font-size: 0.95rem; outline: none;
+            transition: 0.3s;
+        }
+        .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+
+        /* Settings Toggle */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,0.01); margin-bottom: 12px; }
+        .toggle-row .info { display: flex; flex-direction: column; gap: 4px; }
+        .toggle-row .info label { font-weight: 800; font-size: 0.9rem; color: #fff; text-transform: uppercase; }
+        .toggle-row .info p { font-size: 0.8rem; color: var(--text-muted); }
+        
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--border); transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
         /* Modals */
         .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000;
-            display: none; align-items: center; justify-content: center; backdrop-filter: blur(20px);
-            opacity: 0; transition: 0.3s ease;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000;
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(30px);
+            opacity: 0; transition: 0.4s cubic-bezier(0.2, 1, 0.2, 1);
         }
         .modal.open { display: flex; opacity: 1; }
         .modal-content {
-            background: var(--surface); border: 1px solid var(--border); padding: 30px;
-            border-radius: 24px; width: 500px; max-width: 90vw; transform: translateY(20px); transition: 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+            background: #0d0f15; border: 1px solid var(--border); padding: 40px;
+            border-radius: 28px; width: 600px; max-width: 95vw; transform: scale(0.9) translateY(20px); transition: 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+            box-shadow: 0 30px 100px rgba(0,0,0,0.8);
         }
-        .modal.open .modal-content { transform: translateY(0); }
+        .modal.open .modal-content { transform: scale(1) translateY(0); }
 
-        /* Auth Gate */
-        .auth-gate {
-            position: fixed; inset: 0; background: var(--bg); z-index: 100000;
-            display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-        }
-        .auth-gate h2 { font-size: 2.5rem; font-weight: 900; margin-bottom: 10px; }
-        .auth-gate p { color: var(--text-muted); margin-bottom: 30px; }
+        /* Transitions */
+        .section { display: none; animation: viewIn 0.8s cubic-bezier(0.19, 1, 0.22, 1); }
+        .section.active { display: block; }
+        @keyframes viewIn { from { opacity: 0; transform: translateY(40px); filter: blur(10px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
 
-        /* Notifications */
         #toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
-            background: #fff; color: #000; padding: 14px 30px; border-radius: 100px;
-            font-weight: 800; font-size: 0.85rem; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); z-index: 1000000;
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #fff; color: #000; padding: 16px 40px; border-radius: 100px;
+            font-weight: 900; font-size: 0.85rem; z-index: 1000000; transition: 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            letter-spacing: 1px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
-        .section { display: none; animation: slideUp 0.6s cubic-bezier(0.19, 1, 0.22, 1); }
-        .section.active { display: block; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .auth-gate { position: fixed; inset: 0; background: #000; z-index: 100000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .auth-gate h1 { font-size: 3rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 10px; }
 
-        .empty-state { padding: 40px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+        .empty-state { padding: 80px 40px; text-align: center; color: var(--text-muted); opacity: 0.5; font-style: italic; }
     </style>
 </head>
 <body>
@@ -185,19 +207,19 @@
 
     <div class="preloader" id="preloader">
         <div class="loading-ring"></div>
-        <div style="margin-top: 20px; font-weight: 900; letter-spacing: 3px; font-size: 0.7rem;">SYSTEM BOOTING...</div>
+        <div style="margin-top: 25px; font-weight: 900; letter-spacing: 6px; font-size: 0.8rem; color: var(--text-muted);">INITIALIZING SYSTEM CORE</div>
     </div>
 
     <div class="auth-gate" id="auth-gate">
-        <h2>ACCESS DENIED.</h2>
-        <p>This terminal requires CORE identification.</p>
-        <button class="btn primary" onclick="handleLogin()">Authorize Identity</button>
+        <h1>ACCESS FORBIDDEN</h1>
+        <p style="color:var(--text-muted); margin-bottom:40px; letter-spacing:2px; text-transform:uppercase; font-size:0.8rem;">Encryption level required: CORE OMEGA</p>
+        <button class="btn primary" onclick="handleLogin()">Re-Authorize Identity</button>
     </div>
 
     <aside class="sidebar">
         <div class="brand">
             <icon>⚡</icon>
-            <h2>CONTROL CORE</h2>
+            <h2>NEXUS CORE</h2>
         </div>
         <nav>
             <div class="nav-link active" onclick="showSection('overview', this)">
@@ -206,425 +228,502 @@
             <div class="nav-link" onclick="showSection('users', this)">
                 <span class="dot"></span> ENTITIES
             </div>
-            <div class="nav-link" onclick="showSection('activity', this)">
-                <span class="dot"></span> ACTIVITY
+            <div class="nav-link" onclick="showSection('threads', this)">
+                <span class="dot"></span> THREADS
+            </div>
+            <div class="nav-link" onclick="showSection('messages', this)">
+                <span class="dot"></span> MESSAGES
             </div>
             <div class="nav-link" onclick="showSection('reports', this)">
                 <span class="dot"></span> INCIDENTS
             </div>
+            <div class="nav-link" onclick="showSection('activity', this)">
+                <span class="dot"></span> ACTIVITY
+            </div>
             <div class="nav-link" onclick="showSection('settings', this)">
-                <span class="dot"></span> SYSTEM
+                <span class="dot"></span> SETTINGS
             </div>
         </nav>
-        <div style="margin-top: auto;">
+        <div style="margin-top: auto; padding-top: 20px;">
             <div class="nav-link danger" onclick="location.href='index.html'">
                 <span class="dot"></span> TERMINATE
             </div>
         </div>
     </aside>
 
-    <main class="main" id="app-main">
+    <main class="main">
         <header class="topbar">
             <div>
-                <h1 id="page-title">Overview</h1>
-                <p id="page-subtitle">Real-time neural network health monitoring.</p>
+                <h1 id="page-title">Command Center</h1>
+                <p id="page-subtitle">Signal stable. All subsystems operational.</p>
             </div>
             <div class="header-actions">
-                <button class="btn" onclick="refreshData()">Refresh</button>
+                <button class="btn" onclick="refreshData()">Sync Data</button>
             </div>
         </header>
 
-        <!-- Overview Section -->
+        <!-- Overview -->
         <section id="s-overview" class="section active">
             <div class="grid">
                 <div class="kpi-card">
                     <div class="label">Total entities</div>
-                    <div class="value" id="count-users">0</div>
-                    <div class="trend" id="trend-users">+0% / week</div>
+                    <div class="value" id="kpi-users">0</div>
+                    <div class="trend" style="color:var(--success)">Signal: Optimal</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="label">Pulse events</div>
-                    <div class="value" id="count-events">0</div>
-                    <div class="trend" style="color:var(--warning)">Active monitoring</div>
+                    <div class="label">Total threads</div>
+                    <div class="value" id="kpi-threads">0</div>
+                    <div class="trend" style="color:var(--warning)">Stream: Active</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="label">Resolved reports</div>
-                    <div class="value" id="count-resolved">0</div>
-                    <div class="trend" style="color:var(--success)">100% compliance</div>
+                    <div class="label">Stored messages</div>
+                    <div class="value" id="kpi-messages">0</div>
+                    <div class="trend">Archive: Online</div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 2fr 1.25fr; gap: 20px;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
                 <div class="card">
-                    <h3>Growth Trajectory</h3>
+                    <h3>Engagement Flux</h3>
                     <div class="chart-container">
-                        <canvas id="main-chart"></canvas>
+                        <canvas id="chart-flux"></canvas>
                     </div>
                 </div>
                 <div class="card">
-                    <h3>Traffic Distribution</h3>
+                    <h3>Traffic Balance</h3>
                     <div class="chart-container">
-                        <canvas id="mix-chart"></canvas>
+                        <canvas id="chart-balance"></canvas>
                     </div>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top: 20px;">
-                <h3>Recent System Activity</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>Type</th><th>Signature</th><th>Payload</th><th>Time</th></tr>
-                        </thead>
-                        <tbody id="event-log">
-                            <tr><td colspan="4" class="empty-state">No events analyzed yet.</td></tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </section>
 
-        <!-- Users Section -->
+        <!-- Users -->
         <section id="s-users" class="section">
             <div class="card">
-                <h3>Entity Management</h3>
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <input type="text" id="user-search" placeholder="Filter by username signature..." style="flex:1; padding: 12px 15px; background: rgba(0,0,0,0.3); border:1px solid var(--border); border-radius: 10px; color:#fff; font-family:inherit;">
-                    <button class="btn primary" onclick="executeSearch()">Execute</button>
+                <h3>Entity Matrix</h3>
+                <div class="search-wrap">
+                    <input type="text" id="search-users" placeholder="Search by username, UUID or email mapping..." onkeyup="filterUsers()">
                 </div>
                 <div class="table-container">
                     <table>
                         <thead>
-                            <tr><th>User</th><th>Status</th><th>Access</th><th>Actions</th></tr>
+                            <tr><th>User</th><th>Identity</th><th>Role</th><th>Actions</th></tr>
                         </thead>
-                        <tbody id="user-list">
-                            <tr><td colspan="4" class="empty-state">Scanning for entities...</td></tr>
-                        </tbody>
+                        <tbody id="list-users"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- Placeholder Sections -->
-        <section id="s-activity" class="section"><div class="card"><h3>Activity Node</h3><div class="empty-state">Logging session active.</div></div></section>
-        <section id="s-reports" class="section"><div class="card"><h3>Incident Reports</h3><div class="empty-state">No active violations detected.</div></div></section>
-        <section id="s-settings" class="section"><div class="card"><h3>System Configuration</h3><div class="empty-state">Maintenance protocols restricted.</div></div></section>
+        <!-- Threads -->
+        <section id="s-threads" class="section">
+            <div class="card">
+                <h3>Thread Transmission Log</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Author</th><th>Content Payload</th><th>Time</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="list-threads"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Messages -->
+        <section id="s-messages" class="section">
+            <div class="card">
+                <h3>Message Archive</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Sender</th><th>Target</th><th>Payload</th><th>Time</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="list-messages"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports -->
+        <section id="s-reports" class="section">
+            <div class="card">
+                <h3>Critical Incidents</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Target</th><th>Reporter</th><th>Reason</th><th>Status</th><th>Execute</th></tr>
+                        </thead>
+                        <tbody id="list-reports"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activity -->
+        <section id="s-activity" class="section">
+            <div class="card">
+                <h3>Core Audit Trail</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Actor</th><th>Action</th><th>Target</th><th>Timestamp</th></tr>
+                        </thead>
+                        <tbody id="list-activity"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="s-settings" class="section">
+            <div class="card">
+                <h3>Omega Protocol Controls</h3>
+                <div id="settings-grid">
+                    <p style="text-align:center; padding:40px; color:var(--text-muted);">Syncing global flags...</p>
+                </div>
+                <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
+                    <button class="btn primary" onclick="commitSettings()">Apply System Changes</button>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <div id="toast">Command executed.</div>
+    <div id="toast">Signal updated.</div>
 
     <div class="modal" id="modal">
         <div class="modal-content">
-            <h2 id="modal-title" style="font-weight:900; margin-bottom:10px;">Entity Details</h2>
-            <div id="modal-body"></div>
-            <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="btn" onclick="closeModal()">Close</button>
-                <button class="btn primary" id="modal-save">Commit Changes</button>
+            <h2 id="modal-title" style="font-weight:900; margin-bottom:10px;">Entity Detail</h2>
+            <div id="modal-body" style="padding: 20px 0;"></div>
+            <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn" onclick="closeModal()">Discard</button>
+                <button class="btn primary" id="modal-save">Commit</button>
             </div>
         </div>
     </div>
 
     <script>
     (function() {
-        // ============================================
-        // CORE CONFIG
-        // ============================================
         const ADM_URL = window.SUPABASE_URL || 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
         const ADM_KEY = window.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
         const ACCESS_EMAILS = ['adiyachowdhury8@gmail.com', 'adiyanhehe@gmail.com'];
 
         let sb = null;
-        let chartLine = null;
-        let chartDonut = null;
-        let dataCache = { users: [], messages: [], threads: [], reports: [] };
+        let cFlux = null;
+        let cBalance = null;
+        let cache = { users:[], threads:[], messages:[], reports:[], settings:{} };
+        let currentUser = null;
 
-        // ============================================
-        // INITIALIZATION
-        // ============================================
-        async function boot() {
-            let attempts = 0;
-            const waitForSupabase = setInterval(async () => {
-                attempts++;
+        async function init() {
+            let attempt = 0;
+            const timer = setInterval(() => {
+                attempt++;
                 if (window.supabase) {
-                    clearInterval(waitForSupabase);
+                    clearInterval(timer);
                     sb = window.supabase.createClient(ADM_URL, ADM_KEY);
-                    setupAuth();
-                } else if (attempts > 30) {
-                    clearInterval(waitForSupabase);
-                    document.getElementById('preloader').classList.add('fade');
-                    showGate("DB_LINK_ERROR: Supabase failed to initialize.");
+                    verifyClearance();
+                } else if (attempt > 40) {
+                    clearInterval(timer);
+                    alert("DATABASE_LINK_FAILURE");
+                    hidePreloader();
                 }
             }, 200);
         }
 
-        async function setupAuth() {
+        async function verifyClearance() {
             try {
                 const { data: { session } } = await sb.auth.getSession();
+                if (!session) return showGate();
+
+                currentUser = session.user;
+                const isWhitelisted = ACCESS_EMAILS.includes(currentUser.email);
+                const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
                 
-                if (session) {
-                    const user = session.user;
-                    const isWhiteListed = ACCESS_EMAILS.includes(user.email);
-                    
-                    const { data: profile } = await sb.from('profiles').select('role, is_admin').eq('id', user.id).maybeSingle();
-                    const isDbAdmin = profile?.role === 'admin' || profile?.is_admin === true;
-
-                    if (isWhiteListed || isDbAdmin) {
-                        if (isWhiteListed && !isDbAdmin) {
-                            await sb.from('profiles').update({ role: 'admin', is_admin: true }).eq('id', user.id);
-                        }
-                        startDashboard();
-                    } else {
-                        showGate("UNAUTHORIZED: Identity lack clearance level 5.");
+                if (isWhitelisted || profile?.role === 'admin') {
+                    if (isWhitelisted && profile?.role !== 'admin') {
+                        await sb.from('profiles').update({ role: 'admin', is_admin: true }).eq('id', currentUser.id);
                     }
+                    launchSystem();
                 } else {
-                    showGate();
+                    showGate("ACCESS_DENIED: Lacking clearance.");
                 }
-            } catch (e) {
-                showGate("AUTH_SYNC_FAILED");
-            } finally {
-                setTimeout(() => document.getElementById('preloader').classList.add('fade'), 500);
-            }
+            } catch (e) { showGate("SIGNAL_ERROR"); }
+            finally { hidePreloader(); }
         }
 
-        function showGate(msg) {
-            const gate = document.getElementById('auth-gate');
-            gate.style.display = 'flex';
-            if (msg) gate.querySelector('p').textContent = msg;
-        }
-
-        function startDashboard() {
+        function launchSystem() {
             document.getElementById('auth-gate').style.display = 'none';
             refreshData();
-            setInterval(refreshData, 60000);
+            setInterval(refreshData, 120000);
         }
 
-        // ============================================
-        // DATA MANAGEMENT
-        // ============================================
         async function refreshData() {
+            console.log("[Core] Commencing data vacuum...");
             try {
-                const [u, m, t, r] = await Promise.all([
-                    sb.from('profiles').select('*').limit(200),
+                const [u, t, m, r, s, a] = await Promise.all([
+                    sb.from('profiles').select('*').order('created_at', { ascending: false }),
+                    sb.from('threads').select('*').order('timestamp', { ascending: false }),
                     sb.from('messages').select('*').order('created_at', { ascending: false }).limit(200),
-                    sb.from('threads').select('*').order('timestamp', { ascending: false }).limit(200),
-                    sb.from('reports').select('*').order('created_at', { ascending: false })
+                    sb.from('reports').select('*').order('created_at', { ascending: false }),
+                    sb.from('system_settings').select('*'),
+                    sb.from('admin_actions').select('*').order('created_at', { ascending: false }).limit(100)
                 ]);
 
-                dataCache = {
+                cache = {
                     users: u.data || [],
-                    messages: m.data || [],
                     threads: t.data || [],
-                    reports: r.data || []
+                    messages: m.data || [],
+                    reports: r.data || [],
+                    activity: a.data || [],
+                    settings: s.data?.find(x => x.key === 'features')?.value || {}
                 };
 
                 updateUI();
-                showToast("Nexus sync complete.");
-            } catch (e) {
-                showToast("SYNC_INTERRUPTED");
-            }
+                showToast("System signals synchronized.");
+            } catch (e) { showToast("SYNC_FAILURE"); }
         }
 
         function updateUI() {
             // Stats
-            document.getElementById('count-users').textContent = dataCache.users.length;
-            document.getElementById('count-events').textContent = dataCache.messages.length + dataCache.threads.length;
-            document.getElementById('count-resolved').textContent = dataCache.reports.filter(r => r.status === 'resolved').length;
+            document.getElementById('kpi-users').textContent = cache.users.length;
+            document.getElementById('kpi-threads').textContent = cache.threads.length;
+            document.getElementById('kpi-messages').textContent = cache.messages.length;
 
-            initCharts();
-            renderUserList();
-            
-            // Events table
-            const recent = [...dataCache.messages.slice(0, 8), ...dataCache.threads.slice(0, 8)]
-                .sort((a,b) => new Date(b.created_at || b.timestamp) - new Date(a.created_at || a.timestamp))
-                .slice(0, 10);
-            
-            const tbody = document.getElementById('event-log');
-            if (recent.length > 0) {
-                tbody.innerHTML = recent.map(ev => `
-                    <tr>
-                        <td><span class="status-badge" style="background:rgba(255,255,255,0.05)">${ev.author ? 'THREAD' : 'MESSAGE'}</span></td>
-                        <td>@${escape(ev.author || ev.sender || 'unknown')}</td>
-                        <td>${escape(ev.content?.substring(0, 45))}${ev.content?.length > 45 ? '...' : ''}</td>
-                        <td style="color:var(--text-muted); font-size:0.7rem;">${formatTime(ev.timestamp || ev.created_at)}</td>
-                    </tr>
-                `).join('');
-            }
+            renderCharts();
+            renderUsers();
+            renderThreads();
+            renderMessages();
+            renderReports();
+            renderActivity();
+            renderSettings();
         }
 
-        function initCharts() {
+        function renderCharts() {
             if (!window.Chart) return;
-
-            const ctxL = document.getElementById('main-chart').getContext('2d');
-            if (chartLine) chartLine.destroy();
-            
-            const last7Days = [...Array(7)].map((_, i) => {
-                const d = new Date(); d.setDate(d.getDate() - i);
-                return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
-            }).reverse();
-
-            chartLine = new Chart(ctxL, {
+            const ctxF = document.getElementById('chart-flux').getContext('2d');
+            if (cFlux) cFlux.destroy();
+            cFlux = new Chart(ctxF, {
                 type: 'line',
                 data: {
-                    labels: last7Days,
+                    labels: ['-6D','-5D','-4D','-3D','-2D','-1D','Today'],
                     datasets: [{
-                        label: 'Traffic',
-                        data: last7Days.map(() => Math.floor(Math.random() * 20) + 5),
+                        label: 'Neural Load',
+                        data: [12, 19, 15, 25, 22, 30, 28],
                         borderColor: '#ff3366',
                         backgroundColor: 'rgba(255, 51, 102, 0.1)',
-                        fill: true,
-                        tension: 0.4
+                        fill: true, tension: 0.4
                     }]
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } } }
-                    }
-                }
+                options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'rgba(255,255,255,0.3)'}}, y:{grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'rgba(255,255,255,0.3)'}} } }
             });
 
-            const ctxD = document.getElementById('mix-chart').getContext('2d');
-            if (chartDonut) chartDonut.destroy();
-            chartDonut = new Chart(ctxD, {
+            const ctxB = document.getElementById('chart-balance').getContext('2d');
+            if (cBalance) cBalance.destroy();
+            cBalance = new Chart(ctxB, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Global', 'Private', 'Threads'],
+                    labels: ['Public', 'Private', 'Incidents'],
                     datasets: [{
-                        data: [
-                            dataCache.messages.filter(m => m.channel_type === 'global').length + 5,
-                            dataCache.messages.filter(m => m.channel_type === 'direct').length + 2,
-                            dataCache.threads.length + 3
-                        ],
+                        data: [cache.threads.length + 10, cache.messages.length + 5, cache.reports.length + 2],
                         backgroundColor: ['#ff3366', '#7b8cff', '#00ba7c'],
                         borderWidth: 0
                     }]
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)', boxWidth: 8, font: { size: 10 } } } },
-                    cutout: '75%'
-                }
+                options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{color:'#fff', font:{size:10}}}} }
             });
         }
 
-        // ============================================
-        // OPERATIONS
-        // ============================================
-        function renderUserList(filter = '') {
-            const list = document.getElementById('user-list');
-            const filtered = dataCache.users.filter(u => 
-                (u.username?.toLowerCase().includes(filter.toLowerCase())) || 
-                (u.email?.toLowerCase().includes(filter.toLowerCase()))
-            );
-
-            if (filtered.length === 0) {
-                list.innerHTML = `<tr><td colspan="4" class="empty-state">Zero matches in sector.</td></tr>`;
-                return;
-            }
-
-            list.innerHTML = filtered.map(u => {
-                const isBanned = u.status === 'BANNED';
-                const isStaff = u.role === 'admin' || u.is_admin;
-                return `
-                    <tr>
-                        <td>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:32px; height:32px; background:linear-gradient(45deg, #111, #222); border:1px solid var(--border); border-radius:8px;"></div>
-                                <div>
-                                    <div style="font-weight:700;">@${escape(u.username || 'unknown')}</div>
-                                    <div style="font-size:0.65rem; color:var(--text-muted);">${u.email || 'no-signal'}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td><span class="status-badge ${isBanned ? 'status-banned' : 'status-active'}">${isBanned ? 'BANNED' : 'ACTIVE'}</span></td>
-                        <td><span class="status-badge ${isStaff ? 'status-staff' : ''}">${(u.role || 'USER').toUpperCase()}</span></td>
-                        <td>
-                            <div style="display:flex; gap:6px;">
-                                <button class="btn" style="padding:4px 10px; font-size:0.6rem;" onclick="openEntityModal('${u.id}')">Manage</button>
-                                <button class="btn danger" style="padding:4px 10px; font-size:0.6rem;" onclick="quickAction('ban', '${u.id}')">${isBanned ? 'Unlock' : 'Ban'}</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+        function renderUsers() {
+            const list = document.getElementById('list-users');
+            list.innerHTML = cache.users.map(u => `
+                <tr>
+                    <td><strong>@${esc(u.username || 'unknown')}</strong></td>
+                    <td style="color:var(--text-muted); font-size:0.75rem;">${u.email || u.id.substring(0,12)}</td>
+                    <td><span class="status-badge ${u.status === 'BANNED' ? 'status-banned' : ''}">${(u.role || 'user').toUpperCase()}</span></td>
+                    <td>
+                        <button class="btn" style="padding:6px 12px;" onclick="manageUser('${u.id}')">EDIT</button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        window.openEntityModal = (id) => {
-            const u = dataCache.users.find(u => u.id === id);
+        function renderThreads() {
+            const list = document.getElementById('list-threads');
+            list.innerHTML = cache.threads.slice(0, 50).map(t => `
+                <tr>
+                    <td>@${esc(t.author || 'unknown')}</td>
+                    <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(t.content)}</td>
+                    <td style="font-size:0.75rem; color:var(--text-muted);">${new Date(t.timestamp).toLocaleTimeString()}</td>
+                    <td><button class="btn danger" style="padding:6px 12px;" onclick="wipeThread('${t.id}')">WIPE</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" class="empty-state">No transmissions found.</td></tr>';
+        }
+
+        function renderMessages() {
+            const list = document.getElementById('list-messages');
+            list.innerHTML = cache.messages.slice(0, 50).map(m => `
+                <tr>
+                    <td>@${esc(m.sender)}</td>
+                    <td>@${esc(m.receiver)}</td>
+                    <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(m.content)}</td>
+                    <td style="font-size:0.75rem; color:var(--text-muted);">${new Date(m.created_at).toLocaleTimeString()}</td>
+                    <td><button class="btn danger" style="padding:6px 12px;" onclick="wipeMessage('${m.id}')">WIPE</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" class="empty-state">Archive empty.</td></tr>';
+        }
+
+        function renderReports() {
+            const list = document.getElementById('list-reports');
+            list.innerHTML = cache.reports.map(r => `
+                <tr>
+                    <td><strong>@${esc(r.content_id?.substring(0,10))}</strong></td>
+                    <td>@${esc(r.reporter)}</td>
+                    <td>${esc(r.reason || 'Manual Flag')}</td>
+                    <td><span class="status-badge ${r.status === 'pending' ? 'status-banned' : 'status-active'}">${(r.status || 'REPORTED').toUpperCase()}</span></td>
+                    <td><button class="btn" style="padding:6px 12px;" onclick="resolveIncident('${r.id}')">RESOLVE</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" class="empty-state">Signals clean. No active incidents.</td></tr>';
+        }
+
+        function renderActivity() {
+            const list = document.getElementById('list-activity');
+            list.innerHTML = cache.activity.map(a => `
+                <tr>
+                    <td>@${esc(a.actor_username)}</td>
+                    <td><strong>${esc(a.action.toUpperCase())}</strong></td>
+                    <td>${esc(a.target)}</td>
+                    <td style="font-size:0.75rem; color:var(--text-muted);">${new Date(a.created_at).toLocaleString()}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" class="empty-state">Audit trail cold.</td></tr>';
+        }
+
+        function renderSettings() {
+            const wrap = document.getElementById('settings-grid');
+            const f = cache.settings;
+            const flags = [
+                { k: 'enable_threads', n: 'Transmission Stream', d: 'Global thread system' },
+                { k: 'enable_global_chat', n: 'Neural Hub', d: 'Public messaging channel' },
+                { k: 'maintenance_mode', n: 'Stasis Protocol', d: 'Lock all data writes system-wide' }
+            ];
+            
+            wrap.innerHTML = flags.map(x => `
+                <div class="toggle-row">
+                    <div class="info">
+                        <label>${x.n}</label>
+                        <p>${x.d}</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-${x.k}" ${f[x.k] ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        window.manageUser = (id) => {
+            const u = cache.users.find(x => x.id === id);
             if (!u) return;
-            document.getElementById('modal-title').textContent = u.username || 'Entity';
+            document.getElementById('modal-title').textContent = `@${u.username}`;
             document.getElementById('modal-body').innerHTML = `
-                <div style="display:grid; gap:15px;">
+                <div style="display:grid; gap:20px;">
                     <div>
-                        <label style="display:block; font-size:0.65rem; font-weight:800; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase;">Clearance Level</label>
-                        <select id="m-role" style="width:100%; padding:12px; background:#000; color:#fff; border:1px solid var(--border); border-radius:10px; font-family:inherit;">
-                            <option value="user" ${u.role === 'user' ? 'selected' : ''}>Standard User</option>
-                            <option value="moderator" ${u.role === 'moderator' ? 'selected' : ''}>Moderator</option>
-                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>System Admin</option>
+                        <label style="font-size:0.7rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:8px;">CLEARANCE LEVEL</label>
+                        <select id="sel-role" style="width:100%; padding:14px; background:#000; color:#fff; border:1px solid var(--border); border-radius:12px; font-family:inherit;">
+                            <option value="user" ${u.role==='user'?'selected':''}>Sector Citizen (User)</option>
+                            <option value="moderator" ${u.role==='moderator'?'selected':''}>Guardian Node (Mod)</option>
+                            <option value="admin" ${u.role==='admin'?'selected':''}>Core Overseer (Admin)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:8px;">THREAT STATUS</label>
+                        <select id="sel-status" style="width:100%; padding:14px; background:#000; color:#fff; border:1px solid var(--border); border-radius:12px; font-family:inherit;">
+                            <option value="active" ${u.status!=='BANNED'?'selected':''}>Active Signal</option>
+                            <option value="BANNED" ${u.status==='BANNED'?'selected':''}>TERMINATED / BANNED</option>
                         </select>
                     </div>
                 </div>
             `;
-            document.getElementById('modal-save').onclick = () => saveEntity(id);
+            document.getElementById('modal-save').onclick = () => commitUser(id);
             document.getElementById('modal').classList.add('open');
         }
 
-        async function saveEntity(id) {
-            const role = document.getElementById('m-role').value;
+        async function commitUser(id) {
+            const role = document.getElementById('sel-role').value;
+            const status = document.getElementById('sel-status').value;
             try {
-                await sb.from('profiles').update({ role: role, is_admin: role === 'admin' }).eq('id', id);
-                showToast("PERMISSION_COMMITTED");
+                await sb.from('profiles').update({ role, status, is_admin: role==='admin' }).eq('id', id);
+                logAction('modify_entity', id);
+                showToast("Identity updated.");
                 closeModal();
                 refreshData();
-            } catch (e) { showToast("WRITE_ERROR"); }
+            } catch(e) { showToast("COMMIT_ERROR"); }
         }
 
-        window.quickAction = async (type, id) => {
-            if (type === 'ban') {
-                const u = dataCache.users.find(u => u.id === id);
-                const next = u.status === 'BANNED' ? 'Ready to chat' : 'BANNED';
-                await sb.from('profiles').update({ status: next }).eq('id', id);
-                showToast("SIGNAL_LOCKED");
+        window.wipeThread = async (id) => {
+            if (!confirm("Erase transmission?")) return;
+            try {
+                await sb.from('threads').delete().eq('id', id);
+                logAction('wipe_thread', id);
+                showToast("Sector purged.");
                 refreshData();
-            }
+            } catch(e) { showToast("WIPE_ERROR"); }
         }
 
-        window.handleLogin = async () => {
-            await sb.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.href } });
+        window.wipeMessage = async (id) => {
+            if (!confirm("Erase signal?")) return;
+            try {
+                await sb.from('messages').delete().eq('id', id);
+                logAction('wipe_message', id);
+                showToast("Signal vaporized.");
+                refreshData();
+            } catch(e) { showToast("WIPE_ERROR"); }
+        }
+
+        window.commitSettings = async () => {
+            const flags = {};
+            document.querySelectorAll('#settings-grid input').forEach(el => {
+                flags[el.id.replace('set-', '')] = el.checked;
+            });
+            try {
+                await sb.from('system_settings').upsert([{ key: 'features', value: flags }]);
+                logAction('update_core_config', 'features');
+                showToast("Global protocols updated.");
+                refreshData();
+            } catch(e) { showToast("SAVE_ERROR"); }
+        }
+
+        async function logAction(action, target) {
+            try {
+                await sb.from('admin_actions').insert([{
+                    actor_id: currentUser.id,
+                    actor_username: localStorage.getItem('rbx_user'),
+                    action, target
+                }]);
+            } catch(e) { console.warn("Audit log failed."); }
         }
 
         window.showSection = (name, btn) => {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.section, .nav-link').forEach(el => el.classList.remove('active'));
             document.getElementById('s-' + name).classList.add('active');
             btn.classList.add('active');
             document.getElementById('page-title').textContent = name.charAt(0).toUpperCase() + name.slice(1);
         }
 
-        window.executeSearch = () => renderUserList(document.getElementById('user-search').value);
-        window.closeModal = () => document.getElementById('modal').classList.remove('open');
-
-        function showToast(msg) {
+        function showToast(m) {
             const t = document.getElementById('toast');
-            t.textContent = msg;
+            t.textContent = m;
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 3000);
         }
 
-        function formatTime(ts) {
-            if (!ts) return "00:00";
-            const d = new Date(ts);
-            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
+        function hidePreloader() { document.getElementById('preloader').classList.add('fade'); }
+        function showGate(m) { const g = document.getElementById('auth-gate'); g.style.display='flex'; if(m) g.querySelector('p').textContent=m; }
+        window.handleLogin = () => sb.auth.signInWithOAuth({ provider:'discord', options:{ redirectTo: window.location.href } });
+        window.closeModal = () => document.getElementById('modal').classList.remove('open');
+        function esc(s) { return s ? String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])) : ""; }
 
-        function escape(str) {
-            if (!str) return "";
-            return str.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
-        }
-
-        boot();
+        init();
     })();
     </script>
 </body>
