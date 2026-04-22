@@ -4,6 +4,10 @@ window.ABLY_KEY = 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
 
 let supabaseClient = null;
 
+// Promise that resolves once supabaseClient is ready — await this before any DB call
+let _supabaseReadyResolve;
+window.supabaseReady = new Promise(r => { _supabaseReadyResolve = r; });
+
 // --- GLOBAL INITIALIZATION ---
 window.initializeNexus = async () => {
     console.log("Nexus Core initializing...");
@@ -119,7 +123,9 @@ window.applyTheme = function (theme) {
 window.isAdmin = (u, email = null) => {
     const adminEmails = ['adiyachowdhury8@gmail.com', 'adiyanhehe@gmail.com'];
     const activeEmail = email || localStorage.getItem('rbx_email');
-    const dbAdmin = localStorage.getItem('rbx_is_admin') === 'true';
+    // Coerce both boolean and string 'true' stored values (bug #19)
+    const rawFlag = localStorage.getItem('rbx_is_admin');
+    const dbAdmin = rawFlag === 'true' || rawFlag === true;
     return adminEmails.includes(activeEmail) || dbAdmin;
 };
 window.isVerified = (u) => {
@@ -272,9 +278,15 @@ function triggerFreezeEffect() {
 function initializeSupabase() {
     try {
         window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+        // Resolve the supabaseReady promise so all awaiting pages can proceed (bug #2 / R1)
+        if (_supabaseReadyResolve) _supabaseReadyResolve(window.supabaseClient);
         checkGlobalAuth();
         initDatabaseSync();
-    } catch (e) { console.error("Supabase Init Failed", e); }
+    } catch (e) {
+        console.error("Supabase Init Failed", e);
+        // Show visible error so the page isn't silently dead (bug #47)
+        if (window.showTopNotification) window.showTopNotification('Unable to connect to the backend. Please refresh.', 'error');
+    }
 }
 
 // --- DATABASE ARCHIVE LOGIC ---
@@ -363,23 +375,18 @@ async function checkGlobalAuth() {
     const authNav = document.getElementById('auth-nav');
     if (!authNav) return;
     try {
-        // First check if we have a valid session
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         
         if (session) {
             const user = session.user;
-            console.log('User session found:', user.email);
             
-            // Fetch profile
             const { data: profile, error: profileError } = await window.supabaseClient
                 .from('profiles')
                 .select('*')
                 .eq('id', user.id)
                 .maybeSingle();
             
-            if (profileError) {
-                console.error('Profile fetch error:', profileError);
-            }
+            if (profileError) console.error('Profile fetch error:', profileError);
             
             if (profile && profile.status === 'BANNED') {
                 alert("ACCESS_DENIED: YOUR ACCOUNT HAS BEEN PERMANENTLY SUSPENDED.");
@@ -388,36 +395,41 @@ async function checkGlobalAuth() {
             }
             
             const name = profile?.username || user.user_metadata?.full_name || user.email.split('@')[0];
-            const pic = user.user_metadata.avatar_url || 'https://via.placeholder.com/100';
+            const pic = profile?.avatar_url || user.user_metadata?.avatar_url || 'jay.png';
 
-            // Sync to legacy storage for older components
             localStorage.setItem('rbx_user', name);
             localStorage.setItem('rbx_pic', pic);
             localStorage.setItem('rbx_email', user.email);
-            localStorage.setItem('rbx_verified', profile?.is_verified || false);
-            localStorage.setItem('rbx_is_admin', profile?.is_admin || false);
+            localStorage.setItem('rbx_verified', String(profile?.is_verified || false));
+            // Always store as string 'true'/'false' for consistent comparison (bug #19 / S2)
+            localStorage.setItem('rbx_is_admin', String(profile?.is_admin === true));
 
-            authNav.innerHTML = `<a href="profile.html?user=${name}" class="nav-item interactable" style="color:#00A2FF; font-weight:900;">@${name}</a>
+            authNav.innerHTML = `<a href="profile.html?user=${encodeURIComponent(name)}" class="nav-item interactable" style="color:#00A2FF; font-weight:900;">@${name}</a>
                                  <a href="#" onclick="logoutNexus()" class="nav-item interactable" style="opacity:0.4; font-size:0.7rem;">LOGOUT</a>`;
         } else {
-            // No active session - check if we have stored user data (fallback for demo)
-            const storedUser = localStorage.getItem('rbx_user');
-            if (storedUser) {
-                // User has stored data but no session - they need to re-login
-                console.log('Stored user found but no session - requiring re-auth');
-                localStorage.removeItem('rbx_user');
-                localStorage.removeItem('rbx_pic');
-                localStorage.removeItem('rbx_email');
-            }
-            authNav.innerHTML = `<a href="auth.html" class="nav-item interactable" style="background:#fff; color:#000; padding:8px 20px; border-radius:100px;">Login</a>`;
+            // No session — clear stale data to prevent privilege escalation (bug S1)
+            localStorage.removeItem('rbx_user');
+            localStorage.removeItem('rbx_pic');
+            localStorage.removeItem('rbx_email');
+            localStorage.removeItem('rbx_is_admin');
+            localStorage.removeItem('rbx_role');
+            localStorage.removeItem('rbx_verified');
+            // rel="noopener" prevents tab-nabbing (bug #49)
+            authNav.innerHTML = `<a href="auth.html" rel="noopener" class="nav-item interactable" style="background:#fff; color:#000; padding:8px 20px; border-radius:100px;">Login</a>`;
         }
     } catch (e) {
         console.error("Auth Error:", e);
-        authNav.innerHTML = `<a href="auth.html" class="nav-item interactable" style="background:#fff; color:#000; padding:8px 20px; border-radius:100px;">Login</a>`;
+        authNav.innerHTML = `<a href="auth.html" rel="noopener" class="nav-item interactable" style="background:#fff; color:#000; padding:8px 20px; border-radius:100px;">Login</a>`;
     }
 }
 
 async function logoutNexus() {
+    // Close Ably realtime connection to remove ghost presence (bug #50 / S9)
+    if (window.ably) {
+        try { window.ably.close(); } catch (e) { /* ignore */ }
+        window.ably = null;
+    }
+
     if (window.supabaseClient) {
         try {
             await window.supabaseClient.auth.signOut();
@@ -426,23 +438,22 @@ async function logoutNexus() {
         }
     }
     
-    // Clear all auth-related localStorage
-    localStorage.removeItem('rbx_user');
-    localStorage.removeItem('rbx_pic');
-    localStorage.removeItem('rbx_email');
-    localStorage.removeItem('rbx_verified');
-    localStorage.removeItem('rbx_is_admin');
-    localStorage.removeItem('nexus_status_mode');
-    localStorage.removeItem('nexus_custom_status');
+    // Clear ALL auth-related localStorage including admin flag (bug #15)
+    const keysToRemove = [
+        'rbx_user', 'rbx_pic', 'rbx_email', 'rbx_verified',
+        'rbx_is_admin', 'rbx_role', 'rbx_display_name', 'rbx_status',
+        'nexus_status_mode', 'nexus_custom_status'
+    ];
+    keysToRemove.forEach(k => localStorage.removeItem(k));
     
-    // Redirect to home page
     window.location.href = 'index.html';
 }
 
 // --- GLOBAL NOTIFICATIONS ---
 function showNotification(text, type = 'info') {
     const toast = document.createElement('div');
-    toast.innerText = text;
+    // Use textContent (never innerHTML) to prevent XSS (bug S7)
+    toast.textContent = text;
     Object.assign(toast.style, {
         position: 'fixed', bottom: '40px', right: '40px', background: type === 'info' ? '#00A2FF' : '#ff3366',
         color: '#fff', padding: '18px 40px', borderRadius: '100px', fontWeight: '900', zIndex: '999999'
@@ -458,23 +469,29 @@ function showNotification(text, type = 'info') {
 
 // --- TOP NOTIFICATIONS ---
 window.showTopNotification = (text, type = 'info', persistent = false) => {
-    let topBar = document.getElementById('top-notification-bar');
-    if (!topBar) {
-        topBar = document.createElement('div');
-        topBar.id = 'top-notification-bar';
-        Object.assign(topBar.style, {
-            position: 'fixed', top: '0', left: '0', width: '100%', padding: '15px',
-            background: type === 'info' ? '#0070FF' : (type === 'error' ? '#FF2D55' : '#00D1FF'),
-            color: '#fff', textAlign: 'center', zIndex: '1000010', fontWeight: '900',
-            fontSize: '0.85rem', letterSpacing: '1px', textTransform: 'uppercase',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.3)', transform: 'translateY(-100%)',
-            transition: '0.6s cubic-bezier(0.8, 0, 0.2, 1)', backdropFilter: 'blur(10px)'
-        });
-        document.body.appendChild(topBar);
+    // Create a fresh bar each time to prevent DOM buildup (bug #20) and avoid ID re-use
+    const topBar = document.createElement('div');
+    const bgColor = type === 'error' ? '#FF2D55' : (type === 'warn' ? '#FF9500' : '#0070FF');
+    Object.assign(topBar.style, {
+        position: 'fixed', top: '0', left: '0', width: '100%', padding: '15px',
+        background: bgColor,
+        color: '#fff', textAlign: 'center', zIndex: '1000010', fontWeight: '900',
+        fontSize: '0.85rem', letterSpacing: '1px', textTransform: 'uppercase',
+        boxShadow: '0 5px 20px rgba(0,0,0,0.3)', transform: 'translateY(-100%)',
+        transition: '0.6s cubic-bezier(0.8, 0, 0.2, 1)', backdropFilter: 'blur(10px)'
+    });
+    // Use textContent (never innerHTML) to prevent XSS (bug S7)
+    topBar.textContent = text;
+    document.body.appendChild(topBar);
+    // Animate in
+    requestAnimationFrame(() => { topBar.style.transform = 'translateY(0)'; });
+    if (!persistent) {
+        setTimeout(() => {
+            topBar.style.transform = 'translateY(-100%)';
+            // Remove from DOM after animation to prevent memory leak (bug #20)
+            setTimeout(() => topBar.remove(), 700);
+        }, 4000);
     }
-    topBar.innerText = text;
-    topBar.style.transform = 'translateY(0)';
-    if (!persistent) setTimeout(() => topBar.style.transform = 'translateY(-100%)', 4000);
 };
 
 // --- USER VALIDATION ---
@@ -529,6 +546,14 @@ window.reportContent = async (type, id, data) => {
 // --- PROFILE SUMMARY SYSTEM ---
 window.showProfileSummary = async (username) => {
     if (!username) return;
+    // Verify the user actually exists before opening an empty modal (bug #21)
+    if (window.supabaseClient) {
+        const exists = await window.checkIfUserExists(username);
+        if (!exists) {
+            window.showTopNotification(`User @${username} not found.`, 'error');
+            return;
+        }
+    }
     let modal = document.getElementById('psm-modal');
     if (!modal) {
         modal = document.createElement('div');
