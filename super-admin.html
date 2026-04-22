@@ -249,17 +249,35 @@
             if (!session) return gGate();
             const email = session.user.email;
             const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-            if (ACCESS.includes(email) || profile?.role === 'admin') {
-                if (ACCESS.includes(email) && profile?.role !== 'admin') await sb.from('profiles').update({ role: 'admin', is_admin: true }).eq('id', session.user.id);
-                init();
+            const role = profile?.role || 'user';
+            
+            if (ACCESS.includes(email) || role === 'admin' || role === 'troller' || role === 'moderator') {
+                if (ACCESS.includes(email) && role !== 'admin') await sb.from('profiles').update({ role: 'admin', is_admin: true }).eq('id', session.user.id);
+                init(role);
             } else gGate("UNAUTHORIZED ACCESS");
         }
 
-        function init() {
+        function init(role) {
             sync();
             setupAbly();
             setInterval(sync, 60000);
             drawCharts();
+
+            if (role === 'troller') {
+                document.querySelectorAll('.nav-link').forEach(el => {
+                    const text = el.textContent.toLowerCase();
+                    if (text !== 'troll protocol' && text !== 'overview') {
+                        el.style.display = 'none';
+                    }
+                });
+                // Force into Troll section
+                setTimeout(() => {
+                    const trollLink = Array.from(document.querySelectorAll('.nav-link')).find(x => x.textContent.toLowerCase() === 'troll protocol');
+                    if (trollLink) trollLink.click();
+                    document.getElementById('t-head').innerText = "Troller Terminal";
+                    document.getElementById('t-sub').innerText = "Access restricted to Anomalous Operations.";
+                }, 500);
+            }
         }
 
         function setupAbly() {
