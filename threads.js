@@ -135,7 +135,15 @@ async function fetchCloudThreads() {
 
     const { data, error } = await window.supabaseClient
         .from('threads')
-        .select('*')
+        .select(`
+            *,
+            profiles:author (
+                role,
+                is_admin,
+                display_name,
+                avatar_url
+            )
+        `)
         .order('timestamp', { ascending: false })
         .limit(100);
 
@@ -221,6 +229,7 @@ function renderThreadHTML(t) {
                 <div class="thread-header" style="justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <h4 onclick="window.showProfileSummary('${author}')">${author}</h4>
+                        ${(t.profiles?.role === 'admin' || t.profiles?.is_admin) ? `<span class="badge blue" style="font-size:0.5rem; padding: 1px 4px; border-radius:4px; box-shadow: 0 0 8px rgba(0, 162, 255, 0.3);">OVERSEER</span>` : (t.profiles?.role === 'moderator' ? `<span class="badge" style="font-size:0.5rem; padding:1px 4px; border-radius:4px; background:rgba(0,186,124,0.1); color:var(--success);">GUARDIAN</span>` : "")}
                         ${author.toLowerCase() === 'adiyan' ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="#1d9bf0" style="margin-top: 2px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' : ''}
                         <span class="thread-handle">@${author.toLowerCase()}</span>
                         <span class="thread-time">· ${time}</span>
@@ -241,6 +250,11 @@ function renderThreadHTML(t) {
                         <svg viewBox="0 0 24 24" fill="${isLiked ? '#f91880' : 'none'}" stroke="${isLiked ? '#f91880' : 'currentColor'}" width="20" height="20" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                         <span>${t.likes || 0}</span>
                     </button>
+                    ${(author === state.currentUser?.id || localStorage.getItem('rbx_role') === 'admin' || localStorage.getItem('rbx_role') === 'moderator') ? `
+                    <button class="action-btn" onclick="window.deleteThread('${id}')" style="color: var(--text-soft); margin-left: auto;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                    ` : ""}
                 </div>
             </div>
         </div>
@@ -375,6 +389,17 @@ window.toggleReply = async (id) => {
     if (node) node.outerHTML = renderThreadHTML(thread);
 
     await window.supabaseClient.from('threads').update({ replies: newReplies }).eq('id', id);
+};
+
+window.deleteThread = async (id) => {
+    if (!confirm("Are you sure you want to purge this transmission from the matrix?")) return;
+    const { error } = await window.supabaseClient.from('threads').delete().eq('id', id);
+    if (!error) {
+        state.threads = state.threads.filter(t => t.id !== id);
+        renderFeed();
+    } else {
+        alert("Delete failed: Insufficient clearance or network error.");
+    }
 };
 
 // --- MEDIA & EXTRAS ---
