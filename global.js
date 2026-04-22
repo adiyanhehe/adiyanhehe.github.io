@@ -484,10 +484,10 @@ window.showProfileSummary = async (username) => {
                             <button id="psm-dm-btn" class="interactable" style="padding:16px; border-radius:18px; border:none; background:#fff; color:#000; font-weight:900; cursor:pointer; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; transition:0.3s;">Direct Link</button>
                             <button id="psm-fr-btn" class="interactable" style="padding:16px; border-radius:18px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#fff; font-weight:900; cursor:pointer; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; transition:0.3s;">Sync Contact</button>
                         </div>
+                        <a id="psm-link" href="#" style="display:block; text-align:center; color:var(--accent); font-size:0.7rem; text-decoration:none; font-weight:900; text-transform:uppercase; letter-spacing:2px; margin-top:15px; opacity:0.6; transition:0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">Full Profile Tracking</a>
                     </div>
                 </div>
             </div>`;
-      </div>`;
         document.body.appendChild(modal);
     }
     modal.style.display = 'flex';
