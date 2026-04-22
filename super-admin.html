@@ -103,6 +103,7 @@
             <div class="nav-link" onclick="nav('matrix', this)">Live Activity</div>
             <div class="nav-link" onclick="nav('scrub', this)">Emergency Cleanup</div>
             <div class="nav-link" onclick="nav('incidents', this)">Reports</div>
+            <div class="nav-link" onclick="nav('troll', this)">Troll Protocol</div>
             <div class="nav-link" onclick="nav('settings', this)">Settings</div>
         </nav>
         <div style="margin-top: auto;">
@@ -182,6 +183,28 @@
         
         <!-- Settings -->
         <section id="s-settings" class="section"><div class="card"><h3>Feature Configuration</h3><div id="l-s"></div></div></section>
+
+        <!-- Troll Protocol -->
+        <section id="s-troll" class="section">
+            <div class="card">
+                <h3>Anomaly Deployment (Troll)</h3>
+                <p style="color:var(--text-muted); margin-bottom:40px;">Execute remote system disruptions on specific nodes (users). These actions are real-time.</p>
+                
+                <div style="margin-bottom:30px;">
+                    <label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">TARGET USERNAME</label>
+                    <input type="text" id="troll-target" placeholder="Enter target username..." style="max-width:400px;">
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:20px;">
+                    <button class="btn danger" onclick="execTroll('rickroll')">Rickroll Pulse</button>
+                    <button class="btn" onclick="execTroll('matrix')" style="border-color:#00ffaa; color:#00ffaa;">Matrix Rain</button>
+                    <button class="btn danger" onclick="execTroll('freeze')" style="border-color:#ff0000; color:#ff0000;">Connection Stasis</button>
+                    <button class="btn" onclick="execTroll('glitch')" style="border-color:#ffcc00; color:#ffcc00;">UI Glitch</button>
+                    <button class="btn" onclick="execTroll('shake')" style="border-color:#ff8800; color:#ff8800;">Screen Shake</button>
+                    <button class="btn" onclick="execTroll('lightmode')" style="background:#fff; color:#000;">Force Light Mode</button>
+                </div>
+            </div>
+        </section>
     </main>
 
     <div class="modal" id="modal">
@@ -359,8 +382,16 @@
             document.getElementById('m-h').textContent = `Manage @${x.username}`;
             document.getElementById('m-c').innerHTML = `
                 <div style="display:grid; gap:20px;">
+                    <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">ACCESS IDENTITY (USERNAME)</label><input type="text" id="ux-u" value="${x.username}"></div>
                     <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">ACCOUNT ROLE</label><select id="ux-r"><option value="user" ${x.role==='user'?'selected':''}>Standard Member</option><option value="moderator" ${x.role==='moderator'?'selected':''}>Moderator</option><option value="admin" ${x.role==='admin'?'selected':''}>Administrator</option></select></div>
                     <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">ACCOUNT STATUS</label><select id="ux-s"><option value="active" ${x.status!=='BANNED'?'selected':''}>Active (Unlocked)</option><option value="BANNED" ${x.status==='BANNED'?'selected':''}>Banned (Locked)</option></select></div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">SYSTEM STRIKES</label><input type="number" id="ux-st" value="${x.strikes||0}"></div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                            <label style="font-size:0.75rem; font-weight:900;">GHOST MODE</label>
+                            <input type="checkbox" id="ux-g" ${x.ghost_mode?'checked':''} style="width:25px; height:25px;">
+                        </div>
+                    </div>
                     <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">MODERATOR NOTES</label><textarea id="ux-n" style="height:100px;" placeholder="Add internal notes about this user...">${x.internal_notes || ''}</textarea></div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-weight:950; letter-spacing:2px; font-size:0.8rem;">VERIFIED STATUS</span>
@@ -373,12 +404,16 @@
         }
 
         async function saveU(id) {
+            const username = document.getElementById('ux-u').value.toLowerCase().replace(/\s/g, '');
             const role = document.getElementById('ux-r').value;
             const status = document.getElementById('ux-s').value;
             const notes = document.getElementById('ux-n').value;
             const ver = document.getElementById('ux-v').checked;
-            await sb.from('profiles').update({ role, status, internal_notes:notes, is_verified:ver, is_admin:role==='admin' }).eq('id', id);
-            toast("Changes Saved Successfully"); cM(); sync();
+            const strikes = parseInt(document.getElementById('ux-st').value) || 0;
+            const ghost_mode = document.getElementById('ux-g').checked;
+            
+            await sb.from('profiles').update({ username, role, status, internal_notes:notes, is_verified:ver, is_admin:role==='admin', strikes, ghost_mode }).eq('id', id);
+            toast("Identity Re-Serialized Successfully"); cM(); sync();
         }
 
         window.executeScrub = async () => {
@@ -398,7 +433,21 @@
             const msg = prompt(`Enter system message for @${user}:`);
             if (!msg) return;
             await sb.from('messages').insert([{ sender:'SYSTEM', receiver:user, content:msg, channel_type:'direct' }]);
-            toast("Message Sent");
+            toast("Ping Sent");
+        }
+
+        window.execTroll = (type) => {
+            const target = document.getElementById('troll-target').value;
+            if (!target) { toast("Please enter a Target Username!"); return; }
+            if (target === 'Adiyan') { toast("ACCESS DENIED: CANNOT TROLL THE CREATOR."); return; }
+            
+            pulse(`TROLL INITIATED: ${type.toUpperCase()} -> @${target}`);
+            ably.channels.get('site-global-config').publish('config_update', {
+                action: 'troll',
+                target: target.toLowerCase(),
+                value: type
+            });
+            toast(`Anomalous signal sent to @${target}`);
         }
 
         window.broadCast = async () => {
@@ -406,6 +455,25 @@
             if (!msg) return;
             ably.channels.get('site-global-config').publish('config_update', { action:'announcement', value:msg });
             toast("Announcement Broadcasted");
+        }
+
+        function moderationPurge(type, id, reportId) {
+            if (!confirm("This will delete the content and dismiss the report. Proceed?")) return;
+            sb.from(type).delete().eq('id', id).then(() => {
+                resI(reportId);
+                toast("Content Purged");
+            });
+        }
+
+        async function wipe(table, id) {
+            if(!confirm("Purge signal permanently?")) return;
+            const { error } = await sb.from(table).delete().eq('id', id);
+            if(!error) { toast("Signal Pruned"); sync(); }
+        }
+
+        async function resI(id) {
+            await sb.from('reports').update({ status: 'resolved', auditor: localStorage.getItem('rbx_user') }).eq('id', id);
+            toast("Incident Dismissed"); sync();
         }
 
         async function saveS() {
