@@ -1455,6 +1455,11 @@ function renderMessages(chat) {
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M6 7l1 12h10l1-12"></path><path d="M9 7V4h6v3"></path></svg>
                     </button>
                     ` : ""}
+                    ${!isOwn ? `
+                    <button class="message-action-button" type="button" title="Report" data-action="report-message" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                    </button>
+                    ` : ""}
                 </div>
             </article>
         `;
@@ -1829,6 +1834,19 @@ function handleMessageActions(event) {
         togglePinMessage(chatId, messageId);
     } else if (action === "delete-message") {
         deleteMessage(chatId, messageId);
+    } else if (action === "report-message") {
+        const msg = (state.messages[chatId] || []).find(m => String(m.id) === String(messageId));
+        if (msg) {
+            const reason = prompt("Enter reason for reporting this transmission:");
+            if (reason) {
+                window.reportContent('message', messageId, {
+                    sender: msg.senderId || msg.sender,
+                    content: msg.content,
+                    reason: reason,
+                    chat_id: chatId
+                });
+            }
+        }
     }
 }
 
