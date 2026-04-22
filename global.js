@@ -439,35 +439,46 @@ window.showProfileSummary = async (username) => {
         });
         modal.onclick = (e) => { if (e.target === modal) window.closeProfileSummary?.(); };
         modal.innerHTML = `
-            <div id="psm-box" style="background:#0a0a0a; width:400px; padding:0; border-radius:18px; border:1px solid #333; overflow:hidden; transform:translateY(20px); transition:0.5s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow:0 40px 80px rgba(0,0,0,0.8);">
-                <div id="psm-banner" style="height:120px; background:linear-gradient(45deg, #111, #222); position:relative;">
-                    <button onclick="closeProfileSummary()" style="position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.5); border:none; color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer;">×</button>
+            <div id="psm-box" style="background:rgba(10,10,10,0.95); width:400px; padding:0; border-radius:32px; border:1px solid rgba(255,255,255,0.1); overflow:hidden; transform:translateY(30px); transition:0.6s cubic-bezier(0.19, 1, 0.22, 1); box-shadow:0 60px 120px rgba(0,0,0,0.9); backdrop-filter:blur(40px);">
+                <div id="psm-banner" style="height:140px; background:linear-gradient(135deg, #001, #003); position:relative; overflow:hidden;">
+                    <div style="position:absolute; inset:0; background: radial-gradient(circle at 20% 20%, rgba(0, 162, 255, 0.2), transparent);"></div>
+                    <button onclick="closeProfileSummary()" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1); color:#fff; width:36px; height:36px; border-radius:12px; cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px); z-index:10;">&times;</button>
                 </div>
-                <div style="padding:0 20px 20px; position:relative;">
-                    <div style="position:relative; margin-top:-45px; display:inline-block;">
-                        <img id="psm-pfp" src="https://via.placeholder.com/100" style="width:100px; height:100px; border-radius:50%; border:8px solid #0a0a0a; background:#111; object-fit:cover;">
-                        <div id="psm-status-dot" style="width:24px; height:24px; background:#43b581; border:5px solid #0a0a0a; border-radius:50%; position:absolute; bottom:5px; right:5px; display:none;"></div>
+                <div style="padding:0 30px 30px; position:relative;">
+                    <div style="position:relative; margin-top:-60px; display:inline-block; filter: drop-shadow(0 0 20px rgba(0,0,0,0.8));">
+                        <img id="psm-pfp" src="jay.png" style="width:120px; height:120px; border-radius:32px; border:6px solid #000; background:#111; object-fit:cover;">
+                        <div id="psm-status-dot" style="width:24px; height:24px; background:#00ffaa; border:5px solid #000; border-radius:50%; position:absolute; bottom:5px; right:5px; display:none; box-shadow:0 0 10px rgba(0,255,170,0.5);"></div>
                     </div>
-                    <div style="margin-top:10px;">
-                        <h2 id="psm-name" style="margin:0; font-weight:900; font-size:1.4rem; color:#fff; display:flex; align-items:center; gap:8px;">...</h2>
-                        <p id="psm-handle" style="color:#b9bbbe; font-size:0.85rem; margin:2px 0 15px;">@...</p>
+                    <div style="margin-top:15px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div>
+                                <h2 id="psm-name" style="margin:0; font-weight:900; font-size:1.8rem; color:#fff; letter-spacing:-1px; line-height:1.2;">...</h2>
+                                <p id="psm-handle" style="color:rgba(255,255,255,0.4); font-size:0.95rem; margin:2px 0 0; font-weight:500;">@...</p>
+                            </div>
+                            <div id="psm-role-badge"></div>
+                        </div>
                         
-                        <div style="background:#18191c; border-radius:8px; padding:15px; margin-bottom:15px;">
-                            <div style="text-transform:uppercase; font-size:0.7rem; font-weight:800; color:#b9bbbe; margin-bottom:8px;">About Me</div>
-                            <p id="psm-bio" style="color:#dcddde; font-size:0.85rem; line-height:1.4; margin:0;">New entity detected.</p>
+                        <div style="background:rgba(255,255,255,0.03); border-radius:24px; padding:20px; margin:20px 0; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="text-transform:uppercase; font-size:0.65rem; font-weight:900; color:rgba(255,255,255,0.3); margin-bottom:10px; letter-spacing:2px;">Entity Metadata</div>
+                            <p id="psm-bio" style="color:rgba(255,255,255,0.8); font-size:0.95rem; line-height:1.5; margin:0 0 15px; font-weight:400;">Awaiting profile synchronization...</p>
                             
-                            <div style="text-transform:uppercase; font-size:0.7rem; font-weight:800; color:#b9bbbe; margin:15px 0 8px;">Nexus Member Since</div>
-                            <p id="psm-joined" style="color:#dcddde; font-size:0.85rem; margin:0;">Calculating...</p>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
+                                <div>
+                                    <div style="font-size:0.6rem; font-weight:900; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px;">Sequence Start</div>
+                                    <p id="psm-joined" style="color:#fff; font-size:0.8rem; margin:2px 0 0; font-weight:700;">...</p>
+                                </div>
+                                <button id="psm-report-btn" class="interactable" style="background:rgba(255,50,50,0.1); border:1px solid rgba(255,50,50,0.2); color:#ff3b3b; padding:8px 16px; border-radius:12px; font-size:0.65rem; font-weight:900; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:0.3s; height:fit-content;">Report Incident</button>
+                            </div>
                         </div>
 
-                        <div style="display:flex; gap:10px; margin-bottom:10px;">
-                            <button id="psm-dm-btn" style="flex:1; padding:10px; border-radius:4px; border:none; background:#5865f2; color:#fff; font-weight:700; cursor:pointer; font-size:0.85rem;">Send Message</button>
-                            <button id="psm-fr-btn" style="flex:1; padding:10px; border-radius:4px; border:1px solid #4f545c; background:transparent; color:#fff; font-weight:700; cursor:pointer; font-size:0.85rem;">Add Friend</button>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                            <button id="psm-dm-btn" class="interactable" style="padding:16px; border-radius:18px; border:none; background:#fff; color:#000; font-weight:900; cursor:pointer; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; transition:0.3s;">Direct Link</button>
+                            <button id="psm-fr-btn" class="interactable" style="padding:16px; border-radius:18px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#fff; font-weight:900; cursor:pointer; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; transition:0.3s;">Sync Contact</button>
                         </div>
-                        <a id="psm-link" href="#" style="display:block; text-align:center; color:#00A2FF; font-size:0.75rem; text-decoration:none; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-top:5px;">Full Profile Tracking</a>
                     </div>
                 </div>
             </div>`;
+      </div>`;
         document.body.appendChild(modal);
     }
     modal.style.display = 'flex';
@@ -482,6 +493,20 @@ window.showProfileSummary = async (username) => {
                 document.getElementById('psm-bio').innerText = data.bio || 'New entity detected.';
                 if(data.banner_url) document.getElementById('psm-banner').style.background = `url(${data.banner_url}) center/cover`;
                 
+                const rb = document.getElementById('psm-role-badge');
+                if (data.role === 'admin' || data.is_admin) {
+                   rb.innerHTML = `<span class="badge blue" style="font-size:0.6rem; padding:4px 8px; border-radius:8px;">OVERSEER</span>`;
+                } else if (data.role === 'moderator') {
+                   rb.innerHTML = `<span class="badge" style="font-size:0.6rem; padding:4px 8px; border-radius:8px; background:rgba(0,186,124,0.1); color:#00ffaa;">GUARDIAN</span>`;
+                } else {
+                   rb.innerHTML = ``;
+                }
+
+                document.getElementById('psm-report-btn').onclick = () => {
+                    const reason = prompt(`Reason for reporting @${data.username}:`);
+                    if (reason) window.reportContent('user', data.id, { username:data.username, reason:reason, context:'Manual Profile Report' });
+                };
+
                 if (data.created_at) {
                     const date = new Date(data.created_at);
                     const options = { month: 'short', day: 'numeric', year: 'numeric' };
