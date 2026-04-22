@@ -265,6 +265,7 @@
         function setupAbly() {
             if (typeof Ably === 'undefined') return;
             ably = new Ably.Realtime(ABLY_KEY);
+            window.ably = ably; // Expose for Anomalous Ops
             ably.channels.get('global-hub').presence.subscribe('enter', m => pulse(`User Online: @${m.data.user}`));
             ably.channels.get('site-global-config').subscribe('config_update', m => pulse(`Subsystem: ${m.data.action.toUpperCase()}`));
         }
