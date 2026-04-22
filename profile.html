@@ -211,7 +211,7 @@
                     start();
                 } else if (!window.supabaseClient && window.supabase) {
                     // Fail-safe init
-                    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
                 } else if (attempts > 80) {
                     clearInterval(t);
                     alert("PROTOCOL ERROR: Cloud link fractured. Manual refresh required.");
