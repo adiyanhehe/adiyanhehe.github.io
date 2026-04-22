@@ -46,6 +46,7 @@ async function syncIdentity() {
             localStorage.setItem('rbx_pic', profile.avatar_url || 'jay.png');
             localStorage.setItem('rbx_display_name', profile.display_name || profile.username);
             localStorage.setItem('rbx_is_admin', profile.is_admin || false);
+            localStorage.setItem('rbx_role', profile.role || 'user');
             localStorage.setItem('rbx_verified', profile.is_verified || false);
             localStorage.setItem('rbx_status', profile.status || 'Ready to chat');
         } else {
