@@ -9,6 +9,8 @@
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="anomalous_ops.css">
+    <script src="anomalous_ops.js"></script>
     <style>
         :root {
             --bg: #020306; --surface: #0a0b10; --panel: rgba(12, 14, 22, 0.98);
@@ -118,7 +120,7 @@
                 <p id="t-sub">Full administrative access established.</p>
             </div>
             <div class="header-actions">
-                <button class="btn primary" onclick="broadCast()">Send Broadcast</button>
+                <button class="btn primary" onclick="deployAnnouncement()">Neural Announcement</button>
                 <button class="btn" onclick="sync()">Refresh Data</button>
             </div>
         </header>
@@ -184,24 +186,33 @@
         <!-- Settings -->
         <section id="s-settings" class="section"><div class="card"><h3>Feature Configuration</h3><div id="l-s"></div></div></section>
 
-        <!-- Troll Protocol -->
+        <!-- Troll Protocol (Upgraded to Anomalous Operations) -->
         <section id="s-troll" class="section">
             <div class="card">
-                <h3>Anomaly Deployment (Troll)</h3>
-                <p style="color:var(--text-muted); margin-bottom:40px;">Execute remote system disruptions on specific nodes (users). These actions are real-time.</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <h3>Anomaly Deployment (MODULE 05)</h3>
+                        <p style="color:var(--text-muted);">Execute remote system disruptions on specific nodes (users). Creator Immunity Active.</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="badge b-blue" id="troll-status">SYSTEM_READY</span>
+                        <div style="font-size:0.6rem; color:var(--text-muted); margin-top:5px; letter-spacing:1px;">COOLDOWN: 5,000MS</div>
+                    </div>
+                </div>
                 
-                <div style="margin-bottom:30px;">
-                    <label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">TARGET USERNAME</label>
-                    <input type="text" id="troll-target" placeholder="Enter target username..." style="max-width:400px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px; margin-bottom:40px; background:rgba(255,255,255,0.02); padding:30px; border-radius:32px; border:1px solid var(--border);">
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">TARGET IDENTIFIER (@USERNAME)</label>
+                        <input type="text" id="troll-target" placeholder="Enter target username..." style="font-family:monospace; color:var(--accent);">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">SEARCH OPERATIONS (1-100)</label>
+                        <input type="text" id="troll-search" placeholder="Search feature name or ID..." onkeyup="filterTrolls()">
+                    </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:20px;">
-                    <button class="btn danger" onclick="execTroll('rickroll')">Rickroll Pulse</button>
-                    <button class="btn" onclick="execTroll('matrix')" style="border-color:#00ffaa; color:#00ffaa;">Matrix Rain</button>
-                    <button class="btn danger" onclick="execTroll('freeze')" style="border-color:#ff0000; color:#ff0000;">Connection Stasis</button>
-                    <button class="btn" onclick="execTroll('glitch')" style="border-color:#ffcc00; color:#ffcc00;">UI Glitch</button>
-                    <button class="btn" onclick="execTroll('shake')" style="border-color:#ff8800; color:#ff8800;">Screen Shake</button>
-                    <button class="btn" onclick="execTroll('lightmode')" style="background:#fff; color:#000;">Force Light Mode</button>
+                <div id="troll-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:15px; max-height:600px; overflow-y:auto; padding-right:10px;">
+                    <!-- Features injected by JS -->
                 </div>
             </div>
         </section>
@@ -436,25 +447,92 @@
             toast("Ping Sent");
         }
 
-        window.execTroll = (type) => {
+        window.execTroll = async (type) => {
             const target = document.getElementById('troll-target').value;
             if (!target) { toast("Please enter a Target Username!"); return; }
-            if (target === 'Adiyan') { toast("ACCESS DENIED: CANNOT TROLL THE CREATOR."); return; }
             
-            pulse(`TROLL INITIATED: ${type.toUpperCase()} -> @${target}`);
-            ably.channels.get('site-global-config').publish('config_update', {
-                action: 'troll',
-                target: target.toLowerCase(),
-                value: type
-            });
-            toast(`Anomalous signal sent to @${target}`);
+            if (window.ANOMALOUS_OPS) {
+                const res = await window.ANOMALOUS_OPS.triggerTroll(type, target);
+                if (res.success) {
+                    toast(`Anomaly Transmitted: ${type}`);
+                    pulse(`TRIGGER: ${type} -> @${target}`);
+                } else {
+                    toast(`Access Error: ${res.error}`);
+                    if (res.error === 'TARGET_IMMUNE') pulse(`BLOCKED: Creator Immunity Active`);
+                }
+            } else {
+                toast("Anomalous Module Offline");
+            }
         }
 
-        window.broadCast = async () => {
-            const msg = prompt("Enter announcement for all users:");
-            if (!msg) return;
-            ably.channels.get('site-global-config').publish('config_update', { action:'announcement', value:msg });
-            toast("Announcement Broadcasted");
+        const TROLL_FEATURES = [
+            {id:1, name:'Quantum Blur Pulse', cat:'Visual'}, {id:2, name:'Pixel Drift', cat:'Visual'}, {id:3, name:'RGB Split Glitch', cat:'Visual'},
+            {id:4, name:'Inversion Flash', cat:'Visual'}, {id:5, name:'Neon Overdrive', cat:'Visual'}, {id:6, name:'Ghost Frames', cat:'Visual'},
+            {id:7, name:'Screen Melt', cat:'Visual'}, {id:8, name:'Static Noise Overlay', cat:'Visual'}, {id:9, name:'Warp Tunnel', cat:'Visual'},
+            {id:10, name:'Frame Skip', cat:'Visual'}, {id:11, name:'Glass Fracture', cat:'Visual'}, {id:12, name:'Scanline Sweep', cat:'Visual'},
+            {id:13, name:'Depth Collapse', cat:'Visual'}, {id:14, name:'UI Echo Clone', cat:'Visual'}, {id:15, name:'Color Cycle Storm', cat:'Visual'},
+            {id:16, name:'Vignette Lock', cat:'Visual'}, {id:17, name:'Aspect Warp', cat:'Visual'}, {id:18, name:'Flash Freeze Frame', cat:'Visual'},
+            {id:19, name:'Hologram Flicker', cat:'Visual'}, {id:20, name:'Matrix Cascade', cat:'Visual'}, {id:21, name:'Echo Burst', cat:'Audio'},
+            {id:22, name:'Glitch Clicks', cat:'Audio'}, {id:23, name:'Reverse Ping', cat:'Audio'}, {id:24, name:'Frequency Sweep', cat:'Audio'},
+            {id:31, name:'Cursor Drift', cat:'Input'}, {id:32, name:'Click Delay', cat:'Input'}, {id:35, name:'Cursor Trail', cat:'Input'},
+            {id:36, name:'Reverse Scroll', cat:'Input'}, {id:37, name:'Input Freeze Spike', cat:'Input'}, {id:38, name:'Button Dodge', cat:'Input'},
+            {id:46, name:'Fake Reconnect', cat:'Network'}, {id:52, name:'Loading Loop', cat:'Network'}, {id:60, name:'Reaction Flood', cat:'Social'},
+            {id:68, name:'Fake System Alert', cat:'Social'}, {id:71, name:'Dark Mode Pulse', cat:'Env'}, {id:75, name:'Fog Overlay', cat:'Env'},
+            {id:79, name:'Horizon Tilt', cat:'Env'}, {id:81, name:'Button Bounce', cat:'Micro'}, {id:84, name:'Icon Spin', cat:'Micro'},
+            {id:91, name:'Slow Motion Mode', cat:'Cinema'}, {id:95, name:'Focus Spotlight', cat:'Cinema'}, {id:98, name:'Cinematic Bars', cat:'Cinema'},
+            {id:100, name:'Reality Glitch Event', cat:'Cinema'}
+        ];
+
+        // Fill in the rest of the 100 features
+        for(let i=1; i<=100; i++) {
+            if(!TROLL_FEATURES.find(f => f.id === i)) {
+                TROLL_FEATURES.push({id:i, name:`Operation ${i.toString().padStart(3, '0')}`, cat:'Standard'});
+            }
+        }
+        TROLL_FEATURES.sort((a,b) => a.id - b.id);
+
+        function renderTrolls() {
+            const grid = document.getElementById('troll-grid');
+            if(!grid) return;
+            const q = (document.getElementById('troll-search')?.value || '').toLowerCase();
+            
+            grid.innerHTML = TROLL_FEATURES.filter(f => f.name.toLowerCase().includes(q) || f.id.toString() === q).map(f => `
+                <div class="troll-card" onclick="execTroll('${f.id}')" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); padding:20px; border-radius:20px; cursor:pointer; transition:0.3s; position:relative; overflow:hidden;">
+                    <div style="font-size:0.6rem; font-weight:950; color:var(--text-muted); text-transform:uppercase; margin-bottom:5px;">ID: ${f.id.toString().padStart(3, '0')} | ${f.cat}</div>
+                    <div style="font-weight:800; font-size:0.85rem; letter-spacing:0.5px;">${f.name}</div>
+                    <div style="position:absolute; bottom:10px; right:15px; font-size:1rem; opacity:0.2;">⚡</div>
+                </div>
+            `).join('');
+            
+            // Add hover effects via JS for better feel
+            document.querySelectorAll('.troll-card').forEach(el => {
+                el.onmouseover = () => { el.style.borderColor = 'var(--accent)'; el.style.transform = 'translateY(-3px)'; el.style.background = 'rgba(255,0,68,0.1)'; };
+                el.onmouseout = () => { el.style.borderColor = 'var(--border)'; el.style.transform = 'translateY(0)'; el.style.background = 'rgba(255,255,255,0.03)'; };
+            });
+        }
+
+        window.filterTrolls = renderTrolls;
+        setTimeout(renderTrolls, 1000);
+
+        window.deployAnnouncement = async () => {
+            const msg = prompt("Enter announcement text (Leave empty to clear):");
+            const type = prompt("Enter type (info/error/warn):", "info");
+            
+            // 1. Sync to Database
+            if (sb) {
+                const config = { global_announcement: msg, announcement_type: type };
+                await sb.from('system_settings').upsert({ key: 'features', value: { ...cache.s, platform_config: config } });
+            }
+
+            // 2. Broadcast in Real-Time
+            ably.channels.get('site-global-config').publish('config_update', {
+                action: 'announcement',
+                value: msg
+            });
+
+            if(!msg) { ably.channels.get('site-global-config').publish('config_update', { action: 'force_reload' }); }
+
+            toast("Neural Announcement Deployed");
         }
 
         function moderationPurge(type, id, reportId) {
