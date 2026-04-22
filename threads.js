@@ -430,6 +430,22 @@ async function handleFileUpload(event) {
     // Reset the input so the same file can be re-selected after an error
     event.target.value = '';
 
+    // MIME type whitelist — reject SVG and executables to prevent XSS (bug #28 / S4)
+    const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+        alert(`File type "${file.type}" is not allowed. Please upload PNG, JPEG, WEBP, or GIF images.`);
+        elements.postBtn.disabled = !elements.composerInput.value.trim();
+        return;
+    }
+
+    // File size check — Supabase default limit is 5 MB (bug #69)
+    const MAX_SIZE_MB = 5;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        alert(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed size is ${MAX_SIZE_MB} MB.`);
+        elements.postBtn.disabled = !elements.composerInput.value.trim();
+        return;
+    }
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `threads/${fileName}`;
@@ -444,8 +460,8 @@ async function handleFileUpload(event) {
     if (error) {
         alert("Upload failed: " + error.message);
         elements.postBtn.innerText = "Broadcast";
-        // Only re-enable if there's actual text in the composer
-        elements.postBtn.disabled = !elements.composerInput.value.trim();
+        // Always re-enable the button after upload failure (bug #29)
+        elements.postBtn.disabled = false;
         return;
     }
 
