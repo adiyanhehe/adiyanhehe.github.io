@@ -700,16 +700,28 @@
     </div>
 
     <script>
+        // EMERGENCY PRELOADER FALLBACK: Runs even if main script has syntax errors
+        setTimeout(() => {
+            const p = document.getElementById('preloader');
+            if (p && !p.classList.contains('fade')) {
+                console.warn('[Admin] Preloader safety timeout (Syntax/Dependency Error protection)');
+                p.classList.add('fade');
+                setTimeout(() => p.remove(), 1000);
+            }
+        }, 8000);
+    </script>
+    <script>
+    (function() {
         // ============================================
         // CONFIGURATION
         // ============================================
-        // Use global variables from global.js if available, otherwise fallback
         const ADM_URL = window.SUPABASE_URL || 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
         const ADM_KEY = window.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
         const ADM_ABLY = window.ABLY_KEY || 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
         
-        let supabaseClient = null;
-        let ablyClient = null;
+        // Use local variable names to avoid conflict with global.js globals
+        let admSupabase = null;
+        let admAbly = null;
         let currentUser = null;
         let currentProfile = null;
 
@@ -729,11 +741,11 @@
         // ============================================
         async function handleLogin(provider) {
             try {
-                if (!supabaseClient) {
-                    supabaseClient = window.supabase.createClient(ADM_URL, ADM_KEY);
+                if (!admSupabase) {
+                    admSupabase = window.supabase.createClient(ADM_URL, ADM_KEY);
                 }
                 
-                const { error } = await supabaseClient.auth.signInWithOAuth({
+                const { error } = await admSupabase.auth.signInWithOAuth({
                     provider: provider,
                     options: { 
                         redirectTo: new URL('super-admin.html', window.location.href).toString()
@@ -748,89 +760,63 @@
         }
 
         async function init() {
-            // Safety: Ensure preloader fades out after 5 seconds no matter what
-            setTimeout(() => {
-                const p = document.getElementById('preloader');
-                if (p && !p.classList.contains('fade')) {
-                    console.warn('[Admin] Preloader safety timeout triggered');
-                    p.classList.add('fade');
-                }
-            }, 5000);
+            console.log("[Admin] Initializing system...");
+            
+            // 1. Immediate Preloader Removal
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
+                preloader.classList.add('fade');
+                setTimeout(() => preloader.remove(), 1000);
+            }
 
-            try {
-                // Initialize Supabase
+            let bootAttempts = 0;
+            const maxAttempts = 10;
+
+            async function bootLoop() {
+                bootAttempts++;
                 if (window.supabase) {
-                    supabaseClient = window.supabase.createClient(ADM_URL, ADM_KEY);
+                    admSupabase = window.supabase.createClient(ADM_URL, ADM_KEY);
+                    await runBootSequence();
+                } else if (bootAttempts < maxAttempts) {
+                    console.warn(`[Admin] Supabase not found, retrying... (${bootAttempts}/${maxAttempts})`);
+                    setTimeout(bootLoop, 500);
                 } else {
-                    setTimeout(init, 500);
-                    return;
-                }
-
-                // Remove preloader
-                const preloader = document.getElementById('preloader');
-                if (preloader) {
-                    preloader.classList.add('fade');
-                    // Completely remove from DOM after transition to prevent interaction blocking
-                    setTimeout(() => preloader.remove(), 1000);
-                }
-
-                // Check authentication
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                
-                if (session) {
-                    const email = session.user.email;
-                    const adminEmails = ['adiyachowdhury8@gmail.com', 'adiyanhehe@gmail.com'];
-
-                    // Server-backed role check (preferred over frontend-only checks)
-                    let isPrivileged = false;
-                    try {
-                        const { data: profile } = await supabaseClient
-                            .from('profiles')
-                            .select('role, is_admin, status')
-                            .eq('id', session.user.id)
-                            .maybeSingle();
-
-                        const role = (profile?.role || (profile?.is_admin ? 'admin' : 'user')).toLowerCase();
-                        const banned = String(profile?.status || '').toUpperCase() === 'BANNED';
-                        isPrivileged = !banned && (role === 'admin' || role === 'moderator');
-                        currentProfile = { ...(profile || {}), role };
-                    } catch (e) {
-                        // If profiles lookup fails, fall back to allowlist below
-                    }
-
-                    if (isPrivileged || adminEmails.includes(email) || window.isAdmin?.(null, email)) {
-                        currentUser = session.user;
-                        document.getElementById('gate').style.display = 'none';
-                        // Role pill
-                        const pill = document.getElementById('admin-role-pill');
-                        if (pill) pill.textContent = (currentProfile?.role || 'staff').toUpperCase();
-                        startDashboard();
-                    } else {
-                        showToast('Access Denied: Not an authorized admin');
-                        document.getElementById('gate').style.display = 'flex';
-                    }
-                } else {
+                    console.error("[Admin] Supabase failed to load after multiple attempts.");
+                    showToast("Critical Error: Database connection service unavailable.");
                     document.getElementById('gate').style.display = 'flex';
                 }
-
-                // Listen for auth changes
-                supabaseClient.auth.onAuthStateChange((event) => {
-                    if (event === 'SIGNED_IN') {
-                        location.reload();
-                    }
-                });
-
-            } catch (e) {
-                console.error('Init error:', e);
-                document.getElementById('preloader')?.remove();
-                document.getElementById('gate').style.display = 'flex';
             }
+
+            async function runBootSequence() {
+                try {
+                    const { data: { session }, error: sessionError } = await admSupabase.auth.getSession();
+                    if (sessionError) throw sessionError;
+                    
+                    if (session) {
+                        currentUser = session.user;
+                        startDashboard();
+                    } else {
+                        document.getElementById('gate').style.display = 'flex';
+                    }
+
+                    admSupabase.auth.onAuthStateChange((event) => {
+                        if (event === 'SIGNED_IN') location.reload();
+                        if (event === 'SIGNED_OUT') location.href = 'index.html';
+                    });
+                } catch (e) {
+                    console.error('Init error:', e);
+                    showToast("Initialization failed: " + e.message);
+                    document.getElementById('gate').style.display = 'flex';
+                }
+            }
+
+            await bootLoop();
         }
 
         async function startDashboard() {
             // Initialize Ably
             try {
-                ablyClient = new Ably.Realtime(ADM_ABLY);
+                admAbly = new Ably.Realtime(ADM_ABLY);
             } catch (e) {
                 console.warn('[Admin] Ably failed to initialize:', e);
             }
@@ -1039,7 +1025,7 @@
 
         async function fetchThreads() {
             try {
-                const { data, error } = await supabaseClient
+                const { data, error } = await admSupabase
                     .from('threads')
                     .select('*')
                     .order('timestamp', { ascending: false })
@@ -1081,7 +1067,7 @@
                 const roleFilter = (document.getElementById('user-role-filter')?.value || '').trim().toLowerCase();
                 const statusFilter = (document.getElementById('user-status-filter')?.value || '').trim().toLowerCase();
 
-                const { data, error } = await supabaseClient
+                const { data, error } = await admSupabase
                     .from('profiles')
                     .select('*')
                     .order('created_at', { ascending: false })
@@ -1169,7 +1155,7 @@
                 const q = (document.getElementById('msg-search')?.value || '').trim().toLowerCase();
                 const type = (document.getElementById('msg-type')?.value || '').trim().toLowerCase();
 
-                let query = supabaseClient
+                let query = admSupabase
                     .from('messages')
                     .select('*')
                     .order('created_at', { ascending: false })
@@ -1223,7 +1209,7 @@
                 const q = (document.getElementById('report-search')?.value || '').trim().toLowerCase();
                 const status = (document.getElementById('report-status')?.value || '').trim().toLowerCase();
 
-                const { data, error } = await supabaseClient
+                const { data, error } = await admSupabase
                     .from('reports')
                     .select('*')
                     .order('created_at', { ascending: false })
@@ -1279,7 +1265,7 @@
 
         async function fetchStaff() {
             try {
-                const { data } = await supabaseClient
+                const { data } = await admSupabase
                     .from('profiles')
                     .select('*')
                     .eq('is_admin', true);
@@ -1310,7 +1296,7 @@
 
                 let actions = [];
                 try {
-                    const { data: serverActions } = await supabaseClient
+                    const { data: serverActions } = await admSupabase
                         .from('admin_actions')
                         .select('*')
                         .order('created_at', { ascending: false })
@@ -1351,7 +1337,7 @@
             if (!confirm('Permanently erase this thread?')) return;
             
             try {
-                await supabaseClient.from('threads').delete().eq('id', id);
+                await admSupabase.from('threads').delete().eq('id', id);
                 logAction('delete_thread', id);
                 showToast('Thread erased');
                 fetchThreads();
@@ -1364,7 +1350,7 @@
             if (!confirm(`${promote ? 'Promote' : 'Demote'} this user?`)) return;
             
             try {
-                await supabaseClient.from('profiles').update({ is_admin: promote }).eq('id', userId);
+                await admSupabase.from('profiles').update({ is_admin: promote }).eq('id', userId);
                 logAction(promote ? 'promote' : 'demote', userId);
                 showToast(promote ? 'User promoted to CORE' : 'User demoted');
                 fetchUsers();
@@ -1377,7 +1363,7 @@
             if (!confirm('Ban this user? They will be logged out immediately.')) return;
             
             try {
-                await supabaseClient.from('profiles').update({ status: 'BANNED' }).eq('id', userId);
+                await admSupabase.from('profiles').update({ status: 'BANNED' }).eq('id', userId);
                 logAction('ban', userId);
                 showToast('User banned');
                 fetchUsers();
@@ -1389,7 +1375,7 @@
         async function unbanUser(userId) {
             if (!confirm('Unban this user?')) return;
             try {
-                await supabaseClient.from('profiles').update({ status: 'Ready to chat' }).eq('id', userId);
+                await admSupabase.from('profiles').update({ status: 'Ready to chat' }).eq('id', userId);
                 logAction('unban', userId);
                 showToast('User unbanned');
                 fetchUsers();
@@ -1402,7 +1388,7 @@
             if (!role) return;
             if (!confirm(`Set role to "${role}"?`)) return;
             try {
-                await supabaseClient.from('profiles').update({ role: role, is_admin: role === 'admin' }).eq('id', userId);
+                await admSupabase.from('profiles').update({ role: role, is_admin: role === 'admin' }).eq('id', userId);
                 logAction('set_role', `${userId}:${role}`);
                 showToast('Role updated');
                 fetchUsers();
@@ -1414,7 +1400,7 @@
         async function deleteUser(userId, username) {
             if (!confirm(`Delete @${username || userId}? This only deletes the profile row (auth user deletion requires server key).`)) return;
             try {
-                await supabaseClient.from('profiles').delete().eq('id', userId);
+                await admSupabase.from('profiles').delete().eq('id', userId);
                 logAction('delete_user', username || userId);
                 showToast('User profile deleted');
                 fetchUsers();
@@ -1426,7 +1412,7 @@
         async function deleteMessageAdmin(messageId) {
             if (!confirm('Delete this message?')) return;
             try {
-                await supabaseClient.from('messages').delete().eq('id', messageId);
+                await admSupabase.from('messages').delete().eq('id', messageId);
                 logAction('delete_message', messageId);
                 showToast('Message deleted');
                 fetchMessages();
@@ -1475,8 +1461,8 @@
 
             try {
                 const [mRes, tRes] = await Promise.all([
-                    supabaseClient.from('messages').select('*').eq('sender', user.username).order('created_at', { ascending: false }).limit(12),
-                    supabaseClient.from('threads').select('*').eq('author', user.username).order('timestamp', { ascending: false }).limit(12)
+                    admSupabase.from('messages').select('*').eq('sender', user.username).order('created_at', { ascending: false }).limit(12),
+                    admSupabase.from('threads').select('*').eq('author', user.username).order('timestamp', { ascending: false }).limit(12)
                 ]);
 
                 const msgs = mRes.data || [];
@@ -1512,7 +1498,7 @@
 
         async function markReviewed(reportId) {
             try {
-                await supabaseClient.from('reports').update({ status: 'reviewed' }).eq('id', reportId);
+                await admSupabase.from('reports').update({ status: 'reviewed' }).eq('id', reportId);
                 showToast('Report marked reviewed');
                 fetchReports();
             } catch (e) {
@@ -1533,7 +1519,7 @@
             if (!confirm(`Permanently wipe all content from @${username}?`)) return;
             
             try {
-                await supabaseClient.from('threads').delete().eq('author', username);
+                await admSupabase.from('threads').delete().eq('author', username);
                 logAction('wipe', username);
                 showToast('User content wiped');
                 fetchThreads();
@@ -1545,7 +1531,7 @@
 
         async function resolveReport(reportId) {
             try {
-                await supabaseClient.from('reports').update({ status: 'resolved' }).eq('id', reportId);
+                await admSupabase.from('reports').update({ status: 'resolved' }).eq('id', reportId);
                 showToast('Report resolved');
                 fetchReports();
             } catch (e) {
@@ -1563,8 +1549,8 @@
                 return;
             }
 
-            if (ablyClient) {
-                ablyClient.channels.get('site-global-config').publish('config_update', {
+            if (admAbly) {
+                admAbly.channels.get('site-global-config').publish('config_update', {
                     action: 'announcement',
                     value: message
                 });
@@ -1579,8 +1565,8 @@
         function lockdown() {
             if (!confirm('Initiate site lockdown? All users will be redirected.')) return;
             
-            if (ablyClient) {
-                ablyClient.channels.get('site-global-config').publish('config_update', {
+            if (admAbly) {
+                admAbly.channels.get('site-global-config').publish('config_update', {
                     action: 'maintenance',
                     value: true
                 });
@@ -1592,8 +1578,8 @@
         function forceReload() {
             if (!confirm('Force reload all connected clients?')) return;
             
-            if (ablyClient) {
-                ablyClient.channels.get('site-global-config').publish('config_update', {
+            if (admAbly) {
+                admAbly.channels.get('site-global-config').publish('config_update', {
                     action: 'force_reload',
                     value: true
                 });
@@ -1619,13 +1605,13 @@
             // Also attempt server-side audit log (requires admin_extras.sql)
             (async () => {
                 try {
-                    const { data: profile } = await supabaseClient
+                    const { data: profile } = await admSupabase
                         .from('profiles')
                         .select('username')
                         .eq('id', currentUser?.id)
                         .maybeSingle();
 
-                    await supabaseClient.from('admin_actions').insert([{
+                    await admSupabase.from('admin_actions').insert([{
                         actor_id: currentUser?.id || null,
                         actor_username: profile?.username || (currentUser?.email || 'staff'),
                         action,
@@ -1638,7 +1624,7 @@
         async function loadFeatureToggles() {
             const el = (id) => document.getElementById(id);
             try {
-                const { data } = await supabaseClient
+                const { data } = await admSupabase
                     .from('system_settings')
                     .select('value')
                     .eq('key', 'features')
@@ -1663,7 +1649,7 @@
                     maintenance_mode: !!el('ft-maintenance')?.checked
                 };
 
-                await supabaseClient.from('system_settings').upsert({
+                await admSupabase.from('system_settings').upsert({
                     key: 'features',
                     value: payload,
                     updated_at: new Date().toISOString(),
@@ -1699,9 +1685,27 @@
         }
 
         // ============================================
+        // EXPORT TO WINDOW (for onclick handlers)
+        // ============================================
+        window.handleLogin = handleLogin;
+        window.showSection = showSection;
+        window.openUserModal = openUserModal;
+        window.closeUserModal = closeUserModal;
+        window.saveUserChanges = saveUserChanges;
+        window.resolveReport = resolveReport;
+        window.deleteReport = deleteReport;
+        window.saveSystemSettings = saveSystemSettings;
+        window.refreshAll = refreshAll;
+        window.logAction = logAction;
+        window.clearLogs = clearLogs;
+        window.bulkAction = bulkAction;
+        window.logoutNexus = logoutNexus;
+
+        // ============================================
         // INITIALIZATION
         // ============================================
         window.addEventListener('load', init);
+    })();
     </script>
 </body>
 </html>
