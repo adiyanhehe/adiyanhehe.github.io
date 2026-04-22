@@ -112,40 +112,54 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("offline", updateConnection);
     updateConnection();
 
-    // Polling bootloader: ensures we don't proceed until Supabase is ready
-    let bootAttempts = 0;
-    const bootInterval = setInterval(async () => {
-        bootAttempts++;
-        if (window.supabaseClient) {
-            clearInterval(bootInterval);
-            console.log(`[Pulse] Booting with Supabase after ${bootAttempts * 100}ms`);
-            
-            try {
-                await initializeState();
-            } catch (error) {
-                console.error('[Pulse] Critical initialization failure:', error);
+    // Await supabaseReady promise (set by global.js) instead of polling (bug #2 / R1)
+    const bootWithSupabase = async () => {
+        try {
+            // supabaseReady resolves once window.supabaseClient is fully created
+            await (window.supabaseReady || Promise.resolve());
+        } catch (e) {
+            // Fallback: try direct init if global.js didn't set up the promise
+            if (!window.supabaseClient && window.supabase) {
+                window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
             }
-
-            // Always attempt to bind and render, even if state is partial
-            bindEvents();
-            renderApp();
-            setupRealtimeSubscriptions();
-            startPresenceHeartbeat();
-
-            // Handle deep-linking via query params (?dm=username)
-            const params = new URLSearchParams(window.location.search);
-            const dmUser = params.get('dm');
-            if (dmUser) {
-                window.openDirectMessage(dmUser);
-            }
-        } else if (bootAttempts > 50) { 
-            // Safety timeout after 5s - attempt to render whatever we can
-            clearInterval(bootInterval);
-            console.warn('[Pulse] Supabase took too long. Booting in offline mode.');
-            bindEvents();
-            renderApp();
         }
-    }, 100);
+
+        if (!window.supabaseClient) {
+            console.warn('[Pulse] Supabase unavailable. Booting in offline mode.');
+            bindEvents();
+            renderApp();
+            return;
+        }
+
+        console.log('[Pulse] Supabase ready. Initializing Pulse...');
+
+        try {
+            await initializeState();
+        } catch (error) {
+            console.error('[Pulse] Critical initialization failure:', error);
+        }
+
+        // Always attempt to bind and render, even if state is partial
+        bindEvents();
+        renderApp();
+
+        // Load draft for the initial chat (bug #33 — URL-deep-linked chat doesn't load draft)
+        if (state.activeChatId) {
+            loadDraftIntoComposer(state.activeChatId);
+        }
+
+        setupRealtimeSubscriptions();
+        startPresenceHeartbeat();
+
+        // Handle deep-linking via query params (?dm=username)
+        const params = new URLSearchParams(window.location.search);
+        const dmUser = params.get('dm');
+        if (dmUser) {
+            window.openDirectMessage(dmUser);
+        }
+    };
+
+    bootWithSupabase();
 });
 
 // Global helper for profile summary & other pages
@@ -250,7 +264,7 @@ function cacheElements() {
     elements.pinnedMessageText = document.getElementById("pinnedMessageText");
     elements.closePinnedBar = document.getElementById("closePinnedBar");
 
-    elements.membersSheet = document.getElementById("membersSheet");
+    // NOTE: membersSheet is already cached above at line 203 — do NOT re-declare here (bug #31)
     elements.sheetContent = document.getElementById("sheetContent");
     elements.sheetTabs = document.querySelectorAll(".sheet-tab");
 
@@ -818,6 +832,22 @@ async function handleFileUpload(event) {
     const activeChat = getActiveChat();
     if (!activeChat) return;
 
+    // MIME type whitelist — reject SVG and executables to prevent XSS (bug S4)
+    const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+        if (window.showTopNotification) window.showTopNotification(`File type "${file.type}" not allowed. Use PNG, JPEG, WEBP or GIF.`, 'error');
+        elements.fileInput.value = '';
+        return;
+    }
+
+    // File size guard — 5 MB default Supabase limit (bug #69)
+    const MAX_MB = 5;
+    if (file.size > MAX_MB * 1024 * 1024) {
+        if (window.showTopNotification) window.showTopNotification(`File too large (${(file.size/1024/1024).toFixed(1)} MB). Max is ${MAX_MB} MB.`, 'error');
+        elements.fileInput.value = '';
+        return;
+    }
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
     const filePath = `chat-assets/${fileName}`;
@@ -830,6 +860,8 @@ async function handleFileUpload(event) {
 
     if (uploadError) {
         console.error('Upload failed:', uploadError);
+        // Clear preview on failure (bug #37)
+        elements.fileInput.value = '';
         if (window.showTopNotification) window.showTopNotification('Upload failed. Check your storage bucket.', 'error');
         return;
     }
@@ -1267,7 +1299,8 @@ function renderPinnedBar(chat) {
     
     if (pins.length > 0) {
         elements.pinnedMessagesBar.classList.remove("hidden");
-        elements.pinnedMessageText.innerText = pins[pins.length - 1].text.substring(0, 60) + "...";
+        // Use textContent (never innerText with user HTML) to prevent XSS (bug #38)
+        elements.pinnedMessageText.textContent = (pins[pins.length - 1].text || '').substring(0, 60) + "…";
         elements.pinnedMessageText.onclick = () => scrollToMessage(pins[pins.length - 1].id);
     } else {
         elements.pinnedMessagesBar.classList.add("hidden");
@@ -1760,9 +1793,15 @@ function resetDemoData() {
     window.location.reload();
 }
 
+// Debounced search to avoid re-rendering the full list on every keystroke (bug #45)
+let _searchDebounceTimer = null;
 function handleSearch(event) {
-    state.search = event.target.value.trim().toLowerCase();
-    renderDirectory();
+    clearTimeout(_searchDebounceTimer);
+    const val = event.target.value.trim().toLowerCase();
+    _searchDebounceTimer = setTimeout(() => {
+        state.search = val;
+        renderDirectory();
+    }, 300);
 }
 
 function handleFilterClick(event) {
@@ -2117,6 +2156,9 @@ async function broadcastTyping(isTyping) {
 }
 
 function handleComposerKeydown(event) {
+    // Guard: do not intercept keypresses during IME composition (bug #36 — Asian language support)
+    if (event.isComposing || event.keyCode === 229) return;
+
     if (state.mentionQuery !== null && state.mentionPeople.length > 0) {
         if (event.key === "ArrowDown") {
             event.preventDefault();
@@ -2182,6 +2224,14 @@ function handleDocumentClick(event) {
 
 function handleDocumentKeydown(event) {
     if (event.key !== "Escape") return;
+    // Close ALL transient UI on Escape (bug #41): mention dropdown, emoji, GIF, reaction menu
+    state.mentionQuery = null;
+    state.emojiOpen = false;
+    state.gifOpen = false;
+    state.reactionMenu = null;
+    renderMentionDropdown();
+    renderEmojiPicker();
+    renderGifPicker();
     closeTransientUi();
 }
 
