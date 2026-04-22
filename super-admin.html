@@ -703,9 +703,10 @@
         // ============================================
         // CONFIGURATION
         // ============================================
-        const SUPABASE_URL = 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
-        const ABLY_KEY = 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
+        // Use global variables from global.js if available, otherwise fallback
+        const ADM_URL = window.SUPABASE_URL || 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
+        const ADM_KEY = window.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
+        const ADM_ABLY = window.ABLY_KEY || 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
         
         let supabaseClient = null;
         let ablyClient = null;
@@ -729,13 +730,12 @@
         async function handleLogin(provider) {
             try {
                 if (!supabaseClient) {
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    supabaseClient = window.supabase.createClient(ADM_URL, ADM_KEY);
                 }
                 
                 const { error } = await supabaseClient.auth.signInWithOAuth({
                     provider: provider,
                     options: { 
-                        // Works both on root domains and GitHub Pages subpaths
                         redirectTo: new URL('super-admin.html', window.location.href).toString()
                     }
                 });
@@ -748,10 +748,19 @@
         }
 
         async function init() {
+            // Safety: Ensure preloader fades out after 5 seconds no matter what
+            setTimeout(() => {
+                const p = document.getElementById('preloader');
+                if (p && !p.classList.contains('fade')) {
+                    console.warn('[Admin] Preloader safety timeout triggered');
+                    p.classList.add('fade');
+                }
+            }, 5000);
+
             try {
                 // Initialize Supabase
                 if (window.supabase) {
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    supabaseClient = window.supabase.createClient(ADM_URL, ADM_KEY);
                 } else {
                     setTimeout(init, 500);
                     return;
@@ -759,7 +768,11 @@
 
                 // Remove preloader
                 const preloader = document.getElementById('preloader');
-                if (preloader) preloader.classList.add('fade');
+                if (preloader) {
+                    preloader.classList.add('fade');
+                    // Completely remove from DOM after transition to prevent interaction blocking
+                    setTimeout(() => preloader.remove(), 1000);
+                }
 
                 // Check authentication
                 const { data: { session } } = await supabaseClient.auth.getSession();
@@ -816,7 +829,11 @@
 
         async function startDashboard() {
             // Initialize Ably
-            ablyClient = new Ably.Realtime(ABLY_KEY);
+            try {
+                ablyClient = new Ably.Realtime(ADM_ABLY);
+            } catch (e) {
+                console.warn('[Admin] Ably failed to initialize:', e);
+            }
             
             // Load all data
             await refreshAll();
@@ -1684,7 +1701,7 @@
         // ============================================
         // INITIALIZATION
         // ============================================
-        window.onload = init;
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
