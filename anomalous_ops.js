@@ -52,8 +52,9 @@ const ANOMALOUS_OPS = {
         this.config.lastExecution = now;
 
         // 5. Execution Logic (Broadcast via Ably)
-        if (window.ably) {
-            const channel = window.ably.channels.get('site-global-config');
+        const ably = window.ably || window.ablyLink;
+        if (ably) {
+            const channel = ably.channels.get('site-global-config');
             channel.publish('config_update', {
                 action: 'troll',
                 target: targetUserId.toLowerCase(),
@@ -75,7 +76,7 @@ const ANOMALOUS_OPS = {
             }
             return { success: true };
         }
-        return { success: false, error: "NETWORK_ERROR" };
+        return { success: false, error: "REALTIME_OFFLINE" };
     },
 
     getCategory(id) {
