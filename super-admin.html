@@ -1075,7 +1075,7 @@
                     list.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No threads found</td></tr>';
                 }
             } catch (e) {
-                console.error('Fetch threads error:', e);
+                console.error('[Admin] Fetch threads failed:', e);
             }
         }
 
@@ -1164,7 +1164,7 @@
                     list.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No users found</td></tr>';
                 }
             } catch (e) {
-                console.error('Fetch users error:', e);
+                console.error('[Admin] Fetch users failed:', e);
             }
         }
 
@@ -1691,6 +1691,16 @@
             if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
             if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
             return date.toLocaleDateString();
+        }
+
+        function escapeHtmlLite(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         function showToast(message) {
