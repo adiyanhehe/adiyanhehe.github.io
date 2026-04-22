@@ -106,7 +106,8 @@
 </head>
 <body>
     <div class="scanline"></div>
-    <script src="global.js"></script>
+    <!-- global.js loaded with defer so it doesn't block page render (bug #26) -->
+    <script src="global.js" defer></script>
 
     <aside class="sidebar">
         <div style="margin-bottom: 60px;">
@@ -201,36 +202,49 @@
 
         const state = { me: null, profile: null, view: 'posts' };
 
-        // BOOT SEQUENCE
+        // BOOT SEQUENCE — await supabaseReady promise instead of polling (bug R1 / #2)
         async function boot() {
-            let attempts = 0;
-            const t = setInterval(() => {
-                attempts++;
-                if (window.supabaseClient) {
-                    clearInterval(t);
-                    start();
-                } else if (!window.supabaseClient && window.supabase) {
-                    // Fail-safe init
+            try {
+                await window.supabaseReady;
+            } catch(e) {
+                // Fallback: try to init directly if supabaseReady not available
+                if (!window.supabaseClient && window.supabase) {
                     window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
-                } else if (attempts > 80) {
-                    clearInterval(t);
-                    alert("PROTOCOL ERROR: Cloud link fractured. Manual refresh required.");
                 }
-            }, 100);
+                if (!window.supabaseClient) {
+                    alert('PROTOCOL ERROR: Cloud link fractured. Manual refresh required.');
+                    return;
+                }
+            }
+            start();
         }
 
         async function start() {
             // Resolve viewing entity
             const { data: { session } } = await window.supabaseClient.auth.getSession();
+            let sessionUserId = null;
             if (session) {
+                sessionUserId = session.user.id;
                 const { data: p } = await window.supabaseClient.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
                 state.me = (p?.username || localStorage.getItem('rbx_user') || session.user.email.split('@')[0]).toLowerCase();
+                // Store session.user.id for DB writes (bug S5)
+                state.sessionId = session.user.id;
             }
 
             if (!user) {
                 if (!state.me) { location.href='index.html'; return; }
-                location.href = `profile.html?user=${state.me}`;
+                location.href = `profile.html?user=${encodeURIComponent(state.me)}`;
                 return;
+            }
+
+            // Verify requested user actually exists before rendering (bug S11)
+            if (window.checkIfUserExists) {
+                const exists = await window.checkIfUserExists(user);
+                if (!exists) {
+                    document.querySelector('.profile-container').innerHTML =
+                        `<div style="padding:100px; text-align:center; font-weight:900; opacity:0.5;">USER NOT FOUND: @${esc(user)}</div>`;
+                    return;
+                }
             }
 
             await syncProfile();
@@ -327,14 +341,34 @@
         window.closeM = () => document.getElementById('edit-modal').classList.remove('open');
 
         window.saveIdentity = async () => {
+            // Check user is authenticated before saving
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session) { alert('Not authenticated.'); return; }
+
             const upd = {
-                display_name: document.getElementById('m-name').value,
-                avatar_url: document.getElementById('m-pfp').value,
-                banner_url: document.getElementById('m-banner').value,
-                bio: document.getElementById('m-bio').value
+                display_name: document.getElementById('m-name').value.trim(),
+                avatar_url: document.getElementById('m-pfp').value.trim(),
+                banner_url: document.getElementById('m-banner').value.trim(),
+                bio: document.getElementById('m-bio').value.trim()
             };
-            const { error } = await window.supabaseClient.from('profiles').update(upd).eq('username', state.me);
-            if (!error) location.reload(); else alert("CLOUD_SYNC_FAILED: " + error.message);
+
+            // Update by session user ID, not username, to prevent account takeover (bug #51 / S5)
+            const { error } = await window.supabaseClient.from('profiles').update(upd).eq('id', session.user.id);
+            if (!error) {
+                // Update state in-place instead of reloading (bug #52)
+                state.profile = { ...state.profile, ...upd };
+                document.getElementById('name-ui').innerText = upd.display_name || user;
+                document.getElementById('bio-ui').innerText = upd.bio || 'This entity has not yet transmitted bio-data.';
+                if (upd.avatar_url) document.getElementById('pfp-ui').src = upd.avatar_url;
+                if (upd.banner_url) document.getElementById('banner-ui').style.background = `url(${upd.banner_url}) center/cover`;
+                // Update localStorage too
+                if (upd.display_name) localStorage.setItem('rbx_display_name', upd.display_name);
+                if (upd.avatar_url) localStorage.setItem('rbx_pic', upd.avatar_url);
+                closeM();
+                if (window.showTopNotification) window.showTopNotification('Identity updated successfully.', 'info');
+            } else {
+                alert('CLOUD_SYNC_FAILED: ' + error.message);
+            }
         };
 
         window.switchTab = (view, el) => {
@@ -359,9 +393,14 @@
             if (b.innerText === 'Synchronized') {
                 await window.supabaseClient.from('follows').delete().eq('follower', state.me).eq('following', user);
             } else {
-                await window.supabaseClient.from('follows').insert([{ follower: state.me, following: user }]);
+                // Use upsert to prevent duplicate-key errors (bug #56)
+                await window.supabaseClient.from('follows').upsert(
+                    [{ follower: state.me, following: user }],
+                    { onConflict: 'follower,following' }
+                );
             }
-            location.reload();
+            await syncStats();
+            checkFollow();
         }
 
         function esc(s) { return s?String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])):""; }
