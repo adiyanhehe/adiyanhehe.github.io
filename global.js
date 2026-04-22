@@ -1,6 +1,6 @@
-const SUPABASE_URL = 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
-const ABLY_KEY = 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
+window.SUPABASE_URL = 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
+window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
+window.ABLY_KEY = 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
 
 let supabaseClient = null;
 
@@ -179,7 +179,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function initializeSupabase() {
     try {
-        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
         checkGlobalAuth();
         initDatabaseSync();
     } catch (e) { console.error("Supabase Init Failed", e); }
@@ -224,13 +224,13 @@ async function initDatabaseSync() {
 
 // --- HEADER ENGINE ---
 function injectUniversalHeader() {
-    let header = document.querySelector('.header');
-    if (!header) {
-        header = document.createElement('header');
-        header.className = 'header';
-        document.body.prepend(header);
-    }
     const path = window.location.pathname.split('/').pop() || 'index.html';
+
+    // SKIP INJECTION IF SIDEBAR LAYOUT DETECTED
+    if (document.body.classList.contains('profile-layout') || document.querySelector('.sidebar')) {
+        console.log("Sidebar layout detected. Skipping universal header.");
+        return;
+    }
 
     if (path === 'discuss.html') {
         header.innerHTML = `
