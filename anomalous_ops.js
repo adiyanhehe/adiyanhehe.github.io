@@ -32,8 +32,8 @@ const ANOMALOUS_OPS = {
             return { success: false, error: "TARGET_IMMUNE" };
         }
 
-        // 2. Role Check (Only Overseer/Guardian)
-        const isAuthorized = currentUserRole === 'admin' || currentUserRole === 'moderator' || this.config.creatorIdentities.includes(currentEmail);
+        // 2. Role Check (Overseer/Guardian/Troller)
+        const isAuthorized = currentUserRole === 'admin' || currentUserRole === 'moderator' || currentUserRole === 'troller' || this.config.creatorIdentities.includes(currentEmail);
         if (!isAuthorized) {
             console.error("Nexus Sentinel: Unauthorized access to Anomalous Operations.");
             return { success: false, error: "UNAUTHORIZED" };
