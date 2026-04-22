@@ -61,13 +61,16 @@ const ANOMALOUS_OPS = {
                 executor: currentUser
             });
 
-            // Log activity to database
+            // Log activity to database (using aligned schema)
             if (window.supabaseClient) {
                 await window.supabaseClient.from('admin_audit_log').insert([{
-                    executed_by: currentUser,
-                    target_user: targetUserId,
-                    operation_name: featureId,
-                    category: this.getCategory(featureId)
+                    admin_username: currentUser,
+                    target_username: targetUserId,
+                    action_type: featureId,
+                    metadata: { 
+                        category: this.getCategory(featureId),
+                        timestamp: new Date().toISOString()
+                    }
                 }]);
             }
             return { success: true };
