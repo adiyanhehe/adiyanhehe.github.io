@@ -1418,6 +1418,7 @@ function renderMessages(chat) {
                 <div class="message-shell">
                     <div class="message-meta">
                         <strong class="message-sender" onclick="window.showProfileSummary('${message.senderId}')" style="cursor: pointer;">${escapeHtml(sender.name)}</strong>
+                        ${(sender.role === 'admin' || sender.is_admin) ? `<span class="badge blue" style="font-size:0.55rem; padding: 2px 6px; margin-left:4px; box-shadow: 0 0 10px rgba(0, 162, 255, 0.4);">OVERSEER</span>` : (sender.role === 'moderator' ? `<span class="badge" style="font-size:0.55rem; padding: 2px 6px; margin-left:4px; background:rgba(0,186,124,0.1); color:var(--success);">GUARDIAN</span>` : "")}
                         <span class="message-time">${escapeHtml(formatMessageTimestamp(message.timestamp))}</span>
                     </div>
                     ${message.isPinned ? `<div style="color:var(--accent); font-size:0.6rem; margin-bottom:4px; display:flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M12 2L15 8L22 9L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9L9 8L12 2Z"/></svg> Pinned</div>` : ""}
@@ -1449,9 +1450,11 @@ function renderMessages(chat) {
                     <button class="message-action-button" type="button" title="Pin" data-action="pin" data-chat-id="${chat.id}" data-message-id="${message.id}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15 8L22 9L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9L9 8L12 2Z"/></svg>
                     </button>
+                    ${(isOwn || state.currentUser?.role === 'admin' || state.currentUser?.is_admin || state.currentUser?.role === 'moderator') ? `
                     <button class="message-action-button delete" type="button" title="Delete" data-action="delete-message" data-chat-id="${chat.id}" data-message-id="${message.id}">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M6 7l1 12h10l1-12"></path><path d="M9 7V4h6v3"></path></svg>
                     </button>
+                    ` : ""}
                 </div>
             </article>
         `;
@@ -1579,7 +1582,10 @@ function renderMembersSheet(chat) {
                 <div class="member-row">
                     ${renderPersonAvatar(person, "member-avatar", true)}
                     <div>
-                        <strong>${escapeHtml(person.name)}</strong>
+                        <strong style="display:flex; align-items:center; gap:6px;">
+                            ${escapeHtml(person.name)}
+                            ${(person.role === 'admin' || person.is_admin) ? `<span class="badge blue" style="font-size:0.5rem; padding:1px 4px;">ADMIN</span>` : ""}
+                        </strong>
                         <span>${escapeHtml(person.role || person.statusText)}</span>
                     </div>
                 </div>
