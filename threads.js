@@ -250,6 +250,11 @@ function renderThreadHTML(t) {
                         <svg viewBox="0 0 24 24" fill="${isLiked ? '#f91880' : 'none'}" stroke="${isLiked ? '#f91880' : 'currentColor'}" width="20" height="20" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                         <span>${t.likes || 0}</span>
                     </button>
+                    ${author !== state.currentUser?.id ? `
+                    <button class="action-btn" onclick="window.reportThread('${id}')" style="color: var(--text-soft);">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                    </button>
+                    ` : ""}
                     ${(author === state.currentUser?.id || localStorage.getItem('rbx_role') === 'admin' || localStorage.getItem('rbx_role') === 'moderator') ? `
                     <button class="action-btn" onclick="window.deleteThread('${id}')" style="color: var(--text-soft); margin-left: auto;">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -399,6 +404,20 @@ window.deleteThread = async (id) => {
         renderFeed();
     } else {
         alert("Delete failed: Insufficient clearance or network error.");
+    }
+};
+
+window.reportThread = async (id) => {
+    const thread = state.threads.find(t => t.id === id);
+    if (!thread) return;
+    
+    const reason = prompt("Enter reason for reporting this transmission:");
+    if (reason) {
+        window.reportContent('threads', id, {
+            author: thread.author,
+            content: thread.content,
+            reason: reason
+        });
     }
 };
 
