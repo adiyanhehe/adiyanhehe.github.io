@@ -1,0 +1,75 @@
+================================================================================
+NEXUS NETWORK // SYSTEM MANIFEST v2.1
+================================================================================
+
+[ CORE ARCHITECTURE ]
+--------------------------------------------------------------------------------
+- Backend Sovereign: Supabase Cloud (PostgreSQL / Auth / Realtime)
+- Signal Transport: Ably Realtime Protocol (60ms Latency Target)
+- Neural Interface: Vanilla JS / GSAP Animations / CSS Glassmorphism
+- Identity Engine: Global Sync via syncIdentity()
+
+[ MODULE 01: PULSE (MESSAGING) ]
+--------------------------------------------------------------------------------
+- Context: Real-time peer-to-peer and group transmissions.
+- Features: 
+    * Klipy GIF API Integration (Visual Signal)
+    * Real-time Typing Indicators
+    * Message Replies & Character Metrics
+    * Unread Counter Sync
+    * Media Uploads (Nexus Cloud)
+
+[ MODULE 02: BROADCASTS (THREADS) ]
+--------------------------------------------------------------------------------
+- Context: Global signal broadcasting and social interaction.
+- Features:
+    * Global Transmission Feed
+    * Interaction Suite (Like / Repost / Quote)
+    * High-Fidelity Media Rendering
+    * Author Verification (Badged Identity)
+
+[ MODULE 03: IDENTITY WORKSPACE (PROFILE) ]
+--------------------------------------------------------------------------------
+- Context: Personal node data and reputation management.
+- Features:
+    * Premium Glassmorphism Interface
+    * Dynamic Banner Array Support
+    * Reputation & Connection (Follower) Metrics
+    * System Identity Card (NEXUS.ID)
+    * Real-time Presence Indication
+
+[ MODULE 04: OVERSEER (ADMIN CONTROL) ]
+--------------------------------------------------------------------------------
+- Context: Platform moderation and system-level authority.
+- Features:
+    * KPI Stream (User Flux / Interaction Density)
+    * User Management (Role/Status/Identity Override)
+    * Emergency Scrub (Keyword Purge Protocol)
+    * Incident Reports Queue
+    * System Feature Flags (On/Off Toggles)
+
+[ MODULE 05: ANOMALOUS OPERATIONS (TROLL SUITE) ]
+--------------------------------------------------------------------------------
+- Features:
+    * Matrix Rain: Neural cascade overlay.
+    * Rickroll Pulse: Remote link hijacking.
+    * UI Glitch: Color inversion & focus destabilization.
+    * Screen Shake: Physical viewport disruption.
+    * Connection Stasis (Freeze): Complete node lockout (5s).
+    * Force Illumination: Manual Light Mode override.
+
+[ SECURITY & PROTECTION ]
+--------------------------------------------------------------------------------
+- Creator Immunity: Node "Adiyan" is immune to all Troll Protocol payloads.
+- Admin Auditing: Every administrative action is logged to advanced_admin_v2.sql.
+- Role Badges: OVERSEER (Admin) and GUARDIAN (Moderator) visual verification.
+- Global Bans: Instant cloud-level session termination for BANNED status.
+
+[ DATABASE SCHEMAS ]
+--------------------------------------------------------------------------------
+- tables: profiles, threads, messages, follows, reports, system_settings, admin_audit_log
+- extensions: uuid-ossp
+
+================================================================================
+MANIFEST END // NEXUS CORE OPERATIONAL
+================================================================================
