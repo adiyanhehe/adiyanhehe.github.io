@@ -17,7 +17,16 @@ window.initializeNexus = async () => {
     }
     
     if (document.getElementById('side-pic')) updateGlobalSidebar();
+    checkGlobalAnnouncements();
 };
+
+async function checkGlobalAnnouncements() {
+    if (!window.supabaseClient) return;
+    const { data } = await window.supabaseClient.from('system_settings').select('value').eq('key', 'platform_config').maybeSingle();
+    if (data?.value?.global_announcement) {
+        window.showTopNotification(data.value.global_announcement, data.value.announcement_type || 'info', true);
+    }
+}
 
 async function syncIdentity() {
     try {
@@ -133,6 +142,18 @@ window.toggleTheme = function (e) {
 
 applyTheme(currentTheme);
 
+// --- ANOMALOUS OPERATIONS LOADER ---
+(function loadAnomalousModule() {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'anomalous_ops.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'anomalous_ops.js';
+    document.head.appendChild(script);
+})();
+
 // --- APP INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
     injectUniversalHeader();
@@ -174,7 +195,11 @@ window.addEventListener('DOMContentLoaded', () => {
                 if(logs) logs.innerHTML = '<div style="text-align:center; padding:20px; color:var(--accent); font-weight:900;">ADMIN: CHANNEL PURGED</div>';
             }
             if (action === 'troll' && target === userMe) {
-                executeTrollAction(value);
+                if (window.ANOMALOUS_OPS) {
+                    window.ANOMALOUS_OPS.execute(value);
+                } else {
+                    executeTrollAction(value);
+                }
             }
         });
     }
@@ -431,7 +456,7 @@ function showNotification(text, type = 'info') {
 }
 
 // --- TOP NOTIFICATIONS ---
-window.showTopNotification = (text, type = 'info') => {
+window.showTopNotification = (text, type = 'info', persistent = false) => {
     let topBar = document.getElementById('top-notification-bar');
     if (!topBar) {
         topBar = document.createElement('div');
@@ -448,7 +473,7 @@ window.showTopNotification = (text, type = 'info') => {
     }
     topBar.innerText = text;
     topBar.style.transform = 'translateY(0)';
-    setTimeout(() => topBar.style.transform = 'translateY(-100%)', 4000);
+    if (!persistent) setTimeout(() => topBar.style.transform = 'translateY(-100%)', 4000);
 };
 
 // --- USER VALIDATION ---
