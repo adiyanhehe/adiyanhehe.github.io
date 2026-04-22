@@ -172,6 +172,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const userMe = localStorage.getItem('rbx_user');
     if (userMe && typeof Ably !== 'undefined') {
         const ablyLink = new Ably.Realtime(ABLY_KEY);
+        window.ably = ablyLink; // Expose for Anomalous Ops
         ablyLink.channels.get('dm-' + userMe).subscribe('ping', (m) => {
             if (!window.location.pathname.includes('discuss.html')) {
                 if (window.showTopNotification) window.showTopNotification(`NEW DIRECT TRANSMISSION FROM @${m.data.user}`);
@@ -613,15 +614,19 @@ window.showProfileSummary = async (username) => {
                     document.getElementById('psm-joined').innerText = date.toLocaleDateString('en-US', options);
                 }
 
-                // Check Official Online Status via Ably (if on global hub)
-                if (typeof Ably !== 'undefined') {
-                    const hub = new Ably.Realtime(ABLY_KEY);
-                    hub.channels.get('global-hub').presence.get((err, members) => {
+                // Check Official Online Status via Ably
+                function setupAbly() {
+                    if (typeof Ably === 'undefined') return;
+                    const ably = new Ably.Realtime(ABLY_KEY);
+                    window.ably = ably; // Expose for Anomalous Ops
+                    ably.channels.get('global-hub').presence.subscribe('enter', m => console.log(`User Online: @${m.data.user}`));
+                    ably.channels.get('global-hub').presence.get((err, members) => {
                         if (!err && members.some(m => m.data.user === username)) {
                             document.getElementById('psm-status-dot').style.display = 'block';
                         }
                     });
                 }
+                setupAbly();
             }
         }); 
     }
