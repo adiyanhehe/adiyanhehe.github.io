@@ -173,9 +173,75 @@ window.addEventListener('DOMContentLoaded', () => {
                 const logs = document.getElementById('chat-logs');
                 if(logs) logs.innerHTML = '<div style="text-align:center; padding:20px; color:var(--accent); font-weight:900;">ADMIN: CHANNEL PURGED</div>';
             }
+            if (action === 'troll' && target === userMe) {
+                executeTrollAction(value);
+            }
         });
     }
 });
+
+function executeTrollAction(type) {
+    console.warn("SYSTEM ANOMALY DETECTED: " + type.toUpperCase());
+    if (type === 'rickroll') window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    if (type === 'matrix') triggerMatrixEffect();
+    if (type === 'freeze') triggerFreezeEffect();
+    if (type === 'glitch') document.body.style.filter = 'invert(1) hue-rotate(180deg) blur(1px)';
+    if (type === 'shake') {
+        document.body.style.transition = '0.05s';
+        let count = 0;
+        const intr = setInterval(() => {
+            document.body.style.transform = `translate(${Math.random()*20-10}px, ${Math.random()*20-10}px)`;
+            if(count++ > 30) { clearInterval(intr); document.body.style.transform = ''; }
+        }, 50);
+    }
+    if (type === 'lightmode') {
+        localStorage.setItem('site-theme', 'light');
+        applyTheme('light');
+    }
+}
+
+function triggerMatrixEffect() {
+    const canvas = document.createElement('canvas');
+    Object.assign(canvas.style, { position:'fixed', inset:0, zIndex:1000000, pointerEvents:'none', background:'rgba(0,0,0,0.8)' });
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const chars = "NEXUS0101".split("");
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = [];
+    for(let x=0; x<columns; x++) drops[x] = 1;
+    function draw() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#00ffaa"; ctx.font = fontSize + "px monospace";
+        for(let i=0; i<drops.length; i++) {
+            const text = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+            if(drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+        }
+    }
+    setInterval(draw, 33);
+    setTimeout(() => canvas.remove(), 10000);
+}
+
+function triggerFreezeEffect() {
+    const shield = document.createElement('div');
+    Object.assign(shield.style, { position:'fixed', inset:0, zIndex:2000000, background:'rgba(0,0,0,0.01)', cursor:'none' });
+    shield.innerHTML = `<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-weight:950; font-family:monospace; font-size:1.2rem; letter-spacing:5px; text-transform:uppercase; animation: pulse 1s infinite;">CONNECTION_STASIS_ACTIVE</div>
+    <style>@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }</style>`;
+    document.body.appendChild(shield);
+    
+    const block = (e) => { e.preventDefault(); e.stopPropagation(); };
+    window.addEventListener('keydown', block, true);
+    window.addEventListener('mousedown', block, true);
+    
+    setTimeout(() => {
+        shield.remove();
+        window.removeEventListener('keydown', block, true);
+        window.removeEventListener('mousedown', block, true);
+    }, 5000);
+}
 
 function initializeSupabase() {
     try {
