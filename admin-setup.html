@@ -313,7 +313,7 @@
 
         function checkStatus() {
             const user = localStorage.getItem('rbx_user');
-            const isAdmin = localStorage.getItem('rbx_admin') === 'true';
+            const isAdmin = localStorage.getItem('rbx_is_admin') === 'true';
 
             const currentUserEl = document.getElementById('current-user');
             const adminStatusEl = document.getElementById('admin-status');
@@ -355,7 +355,7 @@
                 return;
             }
 
-            localStorage.setItem('rbx_admin', 'true');
+            localStorage.setItem('rbx_is_admin', 'true');
             
             // Animate success
             const btn = event.target;
@@ -372,7 +372,7 @@
                 return;
             }
 
-            localStorage.removeItem('rbx_admin');
+            localStorage.removeItem('rbx_is_admin');
             
             // Animate
             const btn = event.target;
