@@ -228,8 +228,14 @@ function injectUniversalHeader() {
 
     // SKIP INJECTION IF SIDEBAR LAYOUT DETECTED
     if (document.body.classList.contains('profile-layout') || document.querySelector('.sidebar')) {
-        console.log("Sidebar layout detected. Skipping universal header.");
         return;
+    }
+
+    let header = document.querySelector('.header');
+    if (!header) {
+        header = document.createElement('header');
+        header.className = 'header';
+        document.body.prepend(header);
     }
 
     if (path === 'discuss.html') {
