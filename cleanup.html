@@ -438,8 +438,8 @@
     </div>
 
     <script>
-        // Supabase configuration
-        const SUPABASE_URL = 'https://your-project.supabase.co'; // Will be auto-detected
+        // Supabase configuration — use globally injected URL from global.js (bug #3 / S3)
+        const SUPABASE_URL = window.SUPABASE_URL || '';
         let supabaseClient = null;
 
         // Check if Supabase is available from global.js
@@ -452,9 +452,9 @@
 
         // Initialize
         window.addEventListener('DOMContentLoaded', async () => {
-            // Check if user is admin
+            // Check if user is admin — use canonical key rbx_is_admin (bug #1)
             const user = localStorage.getItem('rbx_user');
-            const isAdmin = localStorage.getItem('rbx_admin') === 'true';
+            const isAdmin = localStorage.getItem('rbx_is_admin') === 'true';
             
             if (!user) {
                 document.getElementById('login-gate').style.display = 'block';
@@ -508,8 +508,8 @@
             }
 
             try {
-                // Count posts
-                const { count: postsCount } = await supabaseClient.from('posts').select('*', { count: 'exact', head: true });
+                // Count posts — use 'threads' table (bug #4)
+                const { count: postsCount } = await supabaseClient.from('threads').select('*', { count: 'exact', head: true });
                 document.getElementById('stat-posts').textContent = postsCount || 0;
 
                 // Count reports
@@ -531,7 +531,8 @@
                 'Clear ALL Posts?',
                 'This will permanently delete ALL posts/threads from the database. This action cannot be undone. Are you absolutely sure?',
                 async () => {
-                    await clearTable('posts', 'posts');
+                    // Use 'threads' table (bug #4)
+                    await clearTable('threads', 'posts/threads');
                 }
             );
         }
@@ -665,7 +666,8 @@
                 return;
             }
 
-            const tables = ['posts', 'messages', 'reports', 'friend_requests'];
+            // Use 'threads' instead of 'posts' to match actual schema (bug #4)
+            const tables = ['threads', 'messages', 'reports', 'friend_requests'];
             
             for (let i = 0; i < tables.length; i++) {
                 const table = tables[i];
@@ -702,12 +704,13 @@
             try {
                 const backup = {
                     timestamp: new Date().toISOString(),
-                    posts: null,
+                    threads: null,
                     reports: null
                 };
 
-                const { data: postsData } = await supabaseClient.from('posts').select('*');
-                backup.posts = postsData;
+                // Use 'threads' table (bug #4)
+                const { data: threadsData } = await supabaseClient.from('threads').select('*');
+                backup.threads = threadsData;
 
                 const { data: reportsData } = await supabaseClient.from('reports').select('*');
                 backup.reports = reportsData;
