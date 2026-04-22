@@ -198,23 +198,33 @@
         
         /* Buttons */
         .btn { 
-            background: rgba(255,255,255,0.92);
-            color: #05060a;
-            border: 0;
-            padding: 10px 14px;
+            padding: 10px 18px;
             border-radius: 999px;
-            font-weight: 900;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            font-weight: 800;
             font-size: 0.72rem;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
             cursor: pointer;
-            transition: transform var(--transition), filter var(--transition), background-color var(--transition);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        .btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
-        .btn.danger { background: rgba(255,59,48,0.92); color: #fff; }
-        .btn.success { background: rgba(0,186,124,0.92); color: #fff; }
-        .btn.ghost { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.10); }
-        
+        .btn:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+        .btn.ghost { background: transparent; border-color: var(--border); }
+        .btn.danger { color: var(--danger); border-color: rgba(255,59,48,0.2); }
+        .btn.success { color: var(--success); border-color: rgba(0,186,124,0.2); }
+
+        .chart-container {
+            position: relative;
+            height: 180px;
+            width: 100%;
+            margin-top: 10px;
+        }
         /* Toast Notification */
         #toast { 
             position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); 
@@ -409,18 +419,24 @@
             <div class="grid-2">
                 <div class="card">
                     <h3>Growth (last 14 days)</h3>
-                    <canvas id="chart-growth" height="120"></canvas>
+                    <div class="chart-container">
+                        <canvas id="chart-growth"></canvas>
+                    </div>
                 </div>
                 <div class="card">
                     <h3>Traffic mix</h3>
-                    <canvas id="chart-mix" height="120"></canvas>
+                    <div class="chart-container">
+                        <canvas id="chart-mix"></canvas>
+                    </div>
                 </div>
             </div>
 
             <div class="grid-2" style="margin-top: 14px;">
                 <div class="card">
                     <h3>Moderation status</h3>
-                    <canvas id="chart-reports" height="120"></canvas>
+                    <div class="chart-container">
+                        <canvas id="chart-reports"></canvas>
+                    </div>
                 </div>
                 <div class="card">
                     <h3>Latest activity</h3>
@@ -937,6 +953,8 @@
             const messages = cacheMessages || [];
             const threads = cacheThreads || [];
             const reports = cacheReports || [];
+
+            console.log("[Admin] UI Update:", { users: users.length, msgs: messages.length, threads: threads.length, reports: reports.length });
 
             // KPIs
             const totalUsers = users.length;
