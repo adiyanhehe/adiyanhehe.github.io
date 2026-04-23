@@ -275,8 +275,13 @@
             if (state.me === user) {
                 slot.innerHTML = `<button class="btn primary" onclick="openM()">Edit Identity</button>`;
             } else if (state.me) {
-                slot.innerHTML = `<button id="follow-btn" class="btn primary" onclick="toggleFollow()">Connect</button>`;
+                slot.innerHTML = `
+                    <button id="follow-btn" class="btn primary" onclick="toggleFollow()">Connect</button>
+                    <button class="btn" onclick="location.href='discuss.html?dm=${encodeURIComponent(user)}'">Message</button>
+                `;
                 checkFollow();
+            } else {
+                slot.innerHTML = `<button class="btn primary" onclick="location.href='auth.html'">Login to Connect</button>`;
             }
         }
 
@@ -389,25 +394,43 @@
         };
 
         async function checkFollow() {
+            const b = document.getElementById('follow-btn');
+            if (!b) return;
+
             const { data } = await window.supabaseClient.from('follows').select('*').eq('follower', state.me).eq('following', user).maybeSingle();
             if (data) {
-                const b = document.getElementById('follow-btn');
                 b.innerText = 'Synchronized';
                 b.classList.remove('primary');
                 b.style.opacity = '0.5';
+            } else {
+                b.innerText = 'Connect';
+                b.classList.add('primary');
+                b.style.opacity = '1';
             }
         }
 
         async function toggleFollow() {
             const b = document.getElementById('follow-btn');
+            if (!b || !state.me) return;
+
             if (b.innerText === 'Synchronized') {
-                await window.supabaseClient.from('follows').delete().eq('follower', state.me).eq('following', user);
+                const { error } = await window.supabaseClient.from('follows').delete().eq('follower', state.me).eq('following', user);
+                if (!error) {
+                    if (window.showTopNotification) window.showTopNotification(`Link severed with @${user}`, 'info');
+                } else {
+                    console.error("Unfollow error:", error);
+                }
             } else {
                 // Use upsert to prevent duplicate-key errors (bug #56)
-                await window.supabaseClient.from('follows').upsert(
+                const { error } = await window.supabaseClient.from('follows').upsert(
                     [{ follower: state.me, following: user }],
                     { onConflict: 'follower,following' }
                 );
+                if (!error) {
+                    if (window.showTopNotification) window.showTopNotification(`Established link with @${user}`, 'info');
+                } else {
+                    console.error("Follow error:", error);
+                }
             }
             await syncStats();
             checkFollow();
