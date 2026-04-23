@@ -1759,11 +1759,6 @@ async function renderActivityHub() {
     state.activityNotifications = [];
     if (elements.activityBadge) elements.activityBadge.classList.add("hidden");
 }
-    
-    // Clear badge
-    state.activityNotifications = [];
-    if (elements.activityBadge) elements.activityBadge.classList.add("hidden");
-}
 
 function selectChatAndScroll(chatId, messageId) {
     selectChat(chatId);
