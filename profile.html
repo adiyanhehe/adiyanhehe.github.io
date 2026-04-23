@@ -199,7 +199,7 @@
         const params = new URLSearchParams(window.location.search);
         let user = params.get('user')?.toLowerCase();
 
-        const state = { me: null, profile: null, view: 'posts' };
+        const state = { me: null, profile: null, view: 'posts', sessionId: null };
 
         async function boot() {
             try {
@@ -219,6 +219,7 @@
         async function start() {
             const { data: { session } } = await window.supabaseClient.auth.getSession();
             if (session) {
+                state.sessionId = session.user.id;
                 const { data: p } = await window.supabaseClient.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
                 state.me = (p?.username || session.user.email.split('@')[0]).toLowerCase();
             }
@@ -227,6 +228,16 @@
                 if (!state.me) { location.href='index.html'; return; }
                 location.href = `profile.html?user=${encodeURIComponent(state.me)}`;
                 return;
+            }
+
+            // Verify requested user actually exists before rendering (bug S11)
+            if (window.checkIfUserExists) {
+                const exists = await window.checkIfUserExists(user);
+                if (!exists) {
+                    document.querySelector('.profile-container').innerHTML = 
+                        `<div style="padding:100px; text-align:center; font-weight:900; opacity:0.5;">USER NOT FOUND: @${esc(user)}</div>`;
+                    return;
+                }
             }
 
             await syncProfile();
@@ -356,6 +367,10 @@
                 document.getElementById('bio-ui').innerText = upd.bio || 'This entity has not yet transmitted bio-data.';
                 if (upd.avatar_url) document.getElementById('pfp-ui').src = upd.avatar_url;
                 if (upd.banner_url) document.getElementById('banner-ui').style.background = `url(${upd.banner_url}) center/cover`;
+                
+                if (upd.display_name) localStorage.setItem('rbx_display_name', upd.display_name);
+                if (upd.avatar_url) localStorage.setItem('rbx_pic', upd.avatar_url);
+
                 closeM();
                 if (window.showTopNotification) window.showTopNotification('Identity updated successfully.', 'info');
             } else {
@@ -389,9 +404,15 @@
             const b = document.getElementById('follow-btn');
             if (!b || !state.me) return;
             if (b.innerText === 'Synchronized') {
-                await window.supabaseClient.from('follows').delete().eq('follower', state.me).eq('following', user);
+                const { error } = await window.supabaseClient.from('follows').delete().eq('follower', state.me).eq('following', user);
+                if (!error) {
+                    if (window.showTopNotification) window.showTopNotification(`Link severed with @${user}`, 'info');
+                }
             } else {
-                await window.supabaseClient.from('follows').upsert([{ follower: state.me, following: user }], { onConflict: 'follower,following' });
+                const { error } = await window.supabaseClient.from('follows').upsert([{ follower: state.me, following: user }], { onConflict: 'follower,following' });
+                if (!error) {
+                    if (window.showTopNotification) window.showTopNotification(`Established link with @${user}`, 'info');
+                }
             }
             await syncStats();
             checkFollow();
