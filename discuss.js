@@ -276,6 +276,17 @@ function cacheElements() {
     elements.pollOptionsContainer = document.getElementById("pollOptionsContainer");
     
     elements.searchScopeToggle = document.getElementById("searchScopeToggle");
+    
+    // User Summary Modal elements
+    elements.userSummaryModal = document.getElementById("userSummaryModal");
+    elements.summaryName = document.getElementById("summaryName");
+    elements.summaryHandle = document.getElementById("summaryHandle");
+    elements.summaryAvatar = document.getElementById("summaryAvatar");
+    elements.summaryStatus = document.getElementById("summaryStatus");
+    elements.summaryBio = document.getElementById("summaryBio");
+    elements.summaryAddFriendBtn = document.getElementById("summaryAddFriendBtn");
+    elements.summaryMessageBtn = document.getElementById("summaryMessageBtn");
+    elements.summaryViewProfileBtn = document.getElementById("summaryViewProfileBtn");
 }
 
 async function initializeState() {
@@ -358,6 +369,7 @@ async function initializeState() {
                 avatarUrl: p.avatar_url || state.threadAvatars[id] || "jay.png",
                 presence: "online", // Simple for now
                 statusText: p.status || "Ready to chat",
+                bio: p.bio || "",
                 initials: getInitials(p.display_name || p.username),
                 toneA,
                 toneB,
@@ -779,6 +791,27 @@ function bindEvents() {
     elements.messageStream.addEventListener("scroll", updateJumpButton);
     elements.messageStream.addEventListener("click", handleMessageActions);
     elements.jumpLatestButton.addEventListener("click", () => scrollToLatest(true));
+    
+    // Summary modal actions
+    if (elements.summaryAddFriendBtn) {
+        elements.summaryAddFriendBtn.addEventListener("click", () => {
+            const username = elements.summaryHandle.textContent.replace("@", "");
+            window.sendFriendRequest(username);
+        });
+    }
+    if (elements.summaryMessageBtn) {
+        elements.summaryMessageBtn.addEventListener("click", () => {
+            const username = elements.summaryHandle.textContent.replace("@", "");
+            window.openDirectMessage(username);
+            window.closeUserSummaryModal();
+        });
+    }
+    if (elements.summaryViewProfileBtn) {
+        elements.summaryViewProfileBtn.addEventListener("click", () => {
+            const username = elements.summaryHandle.textContent.replace("@", "");
+            window.location.href = `profile.html?user=${encodeURIComponent(username)}`;
+        });
+    }
 
     elements.directRecipientInput.addEventListener("input", handleUserSearch);
     elements.userSearchResults.addEventListener("click", handleSearchResultSelection);
@@ -2268,6 +2301,8 @@ function closeTransientUi() {
     state.settingsOpen = false;
     state.membersOpen = false;
     state.reactionMenu = null;
+    window.closeUserSummaryModal?.();
+    window.closeProfileModal?.();
     renderApp();
 }
 
@@ -2421,6 +2456,7 @@ async function ensurePersonInDB(name) {
             avatarUrl: data.avatar_url || "",
             presence: "online",
             statusText: data.status || "Ready to chat",
+            bio: data.bio || "",
             initials: getInitials(data.display_name || data.username),
             toneA,
             toneB,
@@ -3025,13 +3061,49 @@ function renderChatAvatar(chat) {
     `;
 }
 
-window.showProfileSummary = (userId) => {
+window.showProfileSummary = async (userId) => {
+     if (!userId) return;
+     
      // Trigger profile edit if it's "me", else show info
      if (userId === state.currentUser.id) {
          openProfileModal();
-     } else {
-         // Existing summary logic...
+         return;
      }
+
+     const person = state.people[userId] || await ensurePersonInDB(userId);
+     if (!person) {
+         if (window.showTopNotification) window.showTopNotification(`User @${userId} not found.`, 'error');
+         return;
+     }
+
+     // Populate Modal
+     elements.summaryName.textContent = person.name || userId;
+     elements.summaryHandle.textContent = `@${userId}`;
+     elements.summaryStatus.textContent = person.statusText || "Ready to chat";
+     elements.summaryBio.textContent = person.bio || "No bio provided.";
+     
+     elements.summaryAvatar.innerHTML = renderAvatarContent(person, false);
+     elements.summaryAvatar.style.setProperty('--avatar-a', person.toneA);
+     elements.summaryAvatar.style.setProperty('--avatar-b', person.toneB);
+
+     // Check if already friends
+     if (state.friends.includes(userId)) {
+         elements.summaryAddFriendBtn.textContent = "Friends";
+         elements.summaryAddFriendBtn.disabled = true;
+         elements.summaryAddFriendBtn.classList.add("ghost-button");
+         elements.summaryAddFriendBtn.classList.remove("primary-button");
+     } else {
+         elements.summaryAddFriendBtn.textContent = "Add Friend";
+         elements.summaryAddFriendBtn.disabled = false;
+         elements.summaryAddFriendBtn.classList.add("primary-button");
+         elements.summaryAddFriendBtn.classList.remove("ghost-button");
+     }
+
+     elements.userSummaryModal.classList.remove("hidden");
+};
+
+window.closeUserSummaryModal = () => {
+    if (elements.userSummaryModal) elements.userSummaryModal.classList.add("hidden");
 };
 
 function openProfileModal() {
