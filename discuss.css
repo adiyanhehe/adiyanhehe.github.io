@@ -2087,13 +2087,84 @@ textarea:focus-visible {
 }
 
 .activity-badge {
-    color: var(--accent);
-    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.65rem;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-    display: block;
+    letter-spacing: 0.5px;
+}
+
+.badge-mention { background: rgba(123, 140, 255, 0.15); color: #7b8cff; }
+.badge-follow { background: rgba(100, 217, 255, 0.15); color: #64d9ff; }
+.badge-request { background: rgba(255, 123, 172, 0.15); color: #ff7bac; }
+.badge-message { background: rgba(151, 255, 123, 0.15); color: #97ff7b; }
+
+.activity-avatar-wrap {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+}
+
+.activity-type-icon {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-panel-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-panel-strong);
+    font-size: 10px;
+}
+
+.activity-type-icon.mention::after { content: "🏷️"; }
+.activity-type-icon.follow::after { content: "👤"; }
+.activity-type-icon.request::after { content: "📩"; }
+.activity-type-icon.message::after { content: "💬"; }
+
+.activity-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.activity-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.activity-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.activity-preview {
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: var(--bg-panel-hover);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    border-left: 3px solid var(--accent);
+}
+
+.activity-chevron {
+    align-self: center;
+    color: var(--text-muted);
+    opacity: 0.5;
+    transition: transform var(--transition);
+}
+
+.activity-item:hover .activity-chevron {
+    transform: translateX(4px);
+    opacity: 1;
 }
 
 /* Search Scope Toggle */
@@ -2207,4 +2278,78 @@ textarea:focus-visible {
     background: var(--accent);
     border-color: var(--accent);
     color: white;
+}
+/* USER SUMMARY MODAL */
+.user-summary-card {
+    max-width: 420px;
+    border-radius: 28px;
+    overflow: hidden;
+}
+
+.summary-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.large-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
+    font-size: 2.5rem;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+}
+
+.summary-meta h4 {
+    font-size: 1.4rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.status-indicator {
+    font-size: 0.95rem;
+    opacity: 0.8;
+}
+
+.summary-bio-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--bg-panel-soft);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+}
+
+.summary-bio-section label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    color: var(--accent);
+}
+
+.summary-bio-section p {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.summary-actions-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.summary-actions-row .ghost-button {
+    grid-column: span 2;
+    background: transparent;
+    border: 1px solid var(--border);
+    justify-content: center;
+}
+
+.summary-actions-row .ghost-button:hover {
+    background: var(--bg-panel-hover);
+    border-color: var(--border-strong);
 }
