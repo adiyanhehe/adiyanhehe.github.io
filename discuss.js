@@ -797,6 +797,7 @@ function bindEvents() {
         elements.summaryAddFriendBtn.addEventListener("click", () => {
             const username = elements.summaryHandle.textContent.replace("@", "");
             window.sendFriendRequest(username);
+            window.closeUserSummaryModal();
         });
     }
     if (elements.summaryMessageBtn) {
@@ -3062,6 +3063,7 @@ function renderChatAvatar(chat) {
 }
 
 window.showProfileSummary = async (userId) => {
+     console.log("[Pulse] Triggering profile summary for:", userId);
      if (!userId) return;
      
      // Trigger profile edit if it's "me", else show info
