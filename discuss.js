@@ -298,6 +298,9 @@ async function initializeState() {
         return;
     }
 
+    // Initialize notification support
+    requestNotificationPermission();
+
     const user = session.user;
     const { data: profile } = await window.supabaseClient
         .from('profiles')
@@ -613,12 +616,59 @@ function setupRealtimeSubscriptions() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, payload => {
             if (payload.new && payload.new.to_user === state.currentUser.id) {
                 fetchFriendRequests().then(() => renderApp());
+                const sender = payload.new.from_user || "Someone";
+                showActivityBadge("Friend Request", `${sender} wants to connect with you.`);
             }
         })
         .subscribe();
 
-    // 3. Per-Channel Listeners (Typing)
+    // 3. Follows channel
+    window.supabaseClient
+        .channel('realtime-follows')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'follows' }, payload => {
+            if (payload.new && payload.new.following === state.currentUser.id) {
+                const follower = payload.new.follower || "Someone";
+                showActivityBadge("New Follower", `${follower} is now following your pulse.`);
+            }
+        })
+        .subscribe();
+
+    // 4. Per-Channel Listeners (Typing)
     updatePerChannelSubscriptions();
+}
+
+function showActivityBadge(title = "New Activity", body = "Someone interacted with you on Pulse.") {
+    state.hasNewActivity = true;
+    if (elements.activityBadge) elements.activityBadge.classList.remove("hidden");
+    
+    // Desktop Notification fallback
+    showDesktopNotification(title, body);
+}
+
+async function requestNotificationPermission() {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "default") {
+        await Notification.requestPermission();
+    }
+}
+
+function showDesktopNotification(title, body, icon = "jay.png") {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    
+    // Don't show if window is focused (optional, but cleaner)
+    if (document.visibilityState === "visible" && document.hasFocus()) return;
+
+    const notification = new Notification(title, {
+        body,
+        icon,
+        badge: "jay.png",
+        silent: false
+    });
+
+    notification.onclick = () => {
+        window.focus();
+        setNavView('activity');
+    };
 }
 
 function updatePerChannelSubscriptions() {
@@ -736,6 +786,22 @@ function handleIncomingMessage(msg) {
         if (chatId !== state.activeChatId) {
             chat.unread = (chat.unread || 0) + 1;
         }
+    }
+
+    // Check for mentions in content
+    const myHandle = `@${state.currentUser.id.toLowerCase()}`;
+    if (msg.content && msg.content.toLowerCase().includes(myHandle) && msg.sender !== state.currentUser.id) {
+        const senderName = state.people[msg.sender]?.name || msg.sender;
+        showActivityBadge("New Mention", `${senderName} mentioned you in a message.`);
+    }
+
+    // Show top notification for DMs if not in active chat
+    if (isDM && msg.sender !== state.currentUser.id && chatId !== state.activeChatId) {
+        const senderName = state.people[msg.sender]?.name || msg.sender;
+        if (window.showTopNotification) {
+            window.showTopNotification(`New message from ${senderName}: "${msg.content.substring(0, 30)}..."`, 'info');
+        }
+        showDesktopNotification(`Message from ${senderName}`, msg.content.substring(0, 50));
     }
 
     renderApp();
@@ -1543,42 +1609,156 @@ function renderMessages(chat) {
 async function renderActivityHub() {
     if (!elements.activityStage) return;
     
-    // Fetch mentions from DB
-    const { data: mentions, error } = await window.supabaseClient
-        .from('message_mentions')
-        .select('*, messages(*)')
-        .eq('mentioned_username', state.currentUser.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
+    const myId = state.currentUser.id;
 
-    if (error) {
-        elements.activityStage.innerHTML = renderEmptyStateCard("Could not load activity", "Please try again later.");
-        return;
-    }
+    try {
+        // 1. Fetch Mentions
+        const { data: mentions } = await window.supabaseClient
+            .from('message_mentions')
+            .select('*, messages(*)')
+            .eq('mentioned_username', myId)
+            .order('created_at', { ascending: false })
+            .limit(10);
 
-    if (mentions.length === 0) {
-        elements.activityStage.innerHTML = renderEmptyStateCard("No new activity", "When you're mentioned in a chat, it will show up here.");
-        return;
-    }
+        // 2. Fetch Follows (who followed me)
+        const { data: follows } = await window.supabaseClient
+            .from('follows')
+            .select('*')
+            .eq('following', myId)
+            .order('created_at', { ascending: false })
+            .limit(10);
 
-    elements.activityStage.innerHTML = `
-        <div class="activity-list">
-            ${mentions.map(m => {
-                const msg = m.messages;
-                const sender = state.people[msg.sender] || { name: msg.sender };
-                return `
-                    <div class="activity-item" onclick="selectChatAndScroll('${msg.receiver}', '${msg.id}')">
-                        ${renderPersonAvatar(sender, "avatar-token", false)}
-                        <div class="activity-info">
-                            <span class="activity-badge">Mentioned You</span>
-                            <strong>${escapeHtml(sender.name)}</strong> in <strong>${escapeHtml(msg.receiver)}</strong>
-                            <p>${escapeHtml(msg.content.substring(0, 100))}...</p>
+        // 3. Fetch Friend Requests
+        const { data: requests } = await window.supabaseClient
+            .from('friend_requests')
+            .select('*')
+            .eq('to_user', myId)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        // 4. Fetch Recent DMs (optional: only the very latest from each person)
+        const { data: messages } = await window.supabaseClient
+            .from('messages')
+            .select('*')
+            .eq('receiver', myId)
+            .eq('channel_type', 'direct')
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        // Combine and Normalize
+        let events = [];
+
+        if (mentions) {
+            events.push(...mentions.map(m => ({
+                id: m.id,
+                type: 'mention',
+                timestamp: new Date(m.created_at),
+                senderId: m.messages.sender,
+                title: 'Mentioned you',
+                subtitle: `in ${m.messages.receiver}`,
+                content: m.messages.content,
+                action: () => selectChatAndScroll(m.messages.receiver, m.messages.id)
+            })));
+        }
+
+        if (follows) {
+            events.push(...follows.map(f => ({
+                id: f.id,
+                type: 'follow',
+                timestamp: new Date(f.created_at),
+                senderId: f.follower,
+                title: 'Started following you',
+                subtitle: 'Add them back to stay connected',
+                action: () => window.location.href = `profile.html?user=${encodeURIComponent(f.follower)}`
+            })));
+        }
+
+        if (requests) {
+            events.push(...requests.map(r => ({
+                id: r.id,
+                type: 'request',
+                timestamp: new Date(r.created_at),
+                senderId: r.from_user,
+                title: 'Sent you a friend request',
+                subtitle: r.status === 'pending' ? 'Click to manage requests' : `Status: ${r.status}`,
+                action: () => setNavView('requests')
+            })));
+        }
+
+        if (messages) {
+            events.push(...messages.map(msg => ({
+                id: msg.id,
+                type: 'message',
+                timestamp: new Date(msg.created_at),
+                senderId: msg.sender,
+                title: 'Sent you a message',
+                subtitle: 'Direct Transmission',
+                content: msg.content,
+                action: () => selectChat(`dm-${msg.sender}`)
+            })));
+        }
+
+        // Sort by time
+        events.sort((a, b) => b.timestamp - a.timestamp);
+        events = events.slice(0, 20);
+
+        if (events.length === 0) {
+            elements.activityStage.innerHTML = renderEmptyStateCard("Your pulse is quiet", "When people interact with you, it will show up here.");
+            return;
+        }
+
+        elements.activityStage.innerHTML = `
+            <div class="activity-list">
+                ${events.map(event => {
+                    const sender = state.people[event.senderId] || { name: event.senderId, id: event.senderId };
+                    const timeStr = formatConversationTime(event.timestamp.getTime());
+                    
+                    let badgeClass = 'badge-mention';
+                    if (event.type === 'follow') badgeClass = 'badge-follow';
+                    if (event.type === 'request') badgeClass = 'badge-request';
+                    if (event.type === 'message') badgeClass = 'badge-message';
+
+                    return `
+                        <div class="activity-item" onclick="this.dataset.action === 'true' && ${event.action.toString().replace(/\n/g, '')}()">
+                            <div class="activity-avatar-wrap">
+                                ${renderPersonAvatar(sender, "avatar-token", false)}
+                                <div class="activity-type-icon ${event.type}"></div>
+                            </div>
+                            <div class="activity-info">
+                                <div class="activity-meta-row">
+                                    <span class="activity-badge ${badgeClass}">${event.title}</span>
+                                    <span class="activity-time">${timeStr}</span>
+                                </div>
+                                <strong>${escapeHtml(sender.name || sender.id)}</strong> ${event.subtitle ? `<span class="activity-subtitle">${escapeHtml(event.subtitle)}</span>` : ''}
+                                ${event.content ? `<p class="activity-preview">${escapeHtml(event.content.substring(0, 80))}${event.content.length > 80 ? '...' : ''}</p>` : ''}
+                            </div>
+                            <div class="activity-chevron">
+                                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
                         </div>
-                    </div>
-                `;
-            }).join("")}
-        </div>
-    `;
+                    `;
+                }).join("")}
+            </div>
+        `;
+
+        // Attach event listeners manually since string interpolation of functions is messy
+        const items = elements.activityStage.querySelectorAll('.activity-item');
+        events.forEach((event, idx) => {
+            items[idx].onclick = (e) => {
+                e.preventDefault();
+                event.action();
+            };
+        });
+
+    } catch (e) {
+        console.error('[Pulse] Activity Load Fail:', e);
+        elements.activityStage.innerHTML = renderEmptyStateCard("Service Interrupted", "We couldn't reach the activity stream.");
+    }
+    
+    // Clear badge
+    state.activityNotifications = [];
+    if (elements.activityBadge) elements.activityBadge.classList.add("hidden");
+}
     
     // Clear badge
     state.activityNotifications = [];
