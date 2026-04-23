@@ -465,7 +465,11 @@ async function syncChatsWithDatabase() {
                 text: msg.content,
                 gifUrl: msg.gif_url || null,
                 timestamp: ts,
-                reactions: []
+                reactions: msg.reactions || [],
+                reply_to: msg.reply_to,
+                is_edited: msg.is_edited,
+                link_preview: msg.link_preview,
+                poll_data: msg.poll_data
             });
         }
     });
@@ -553,7 +557,11 @@ async function fetchGroups() {
                         text: msg.content,
                         gifUrl: msg.gif_url || null,
                         timestamp: new Date(msg.created_at).getTime(),
-                        reactions: []
+                        reactions: msg.reactions || [],
+                        reply_to: msg.reply_to,
+                        is_edited: msg.is_edited,
+                        link_preview: msg.link_preview,
+                        poll_data: msg.poll_data
                     });
                 }
             });
@@ -723,7 +731,11 @@ function handleIncomingMessage(msg) {
         text: msg.content,
         gifUrl: msg.gif_url || null,
         timestamp: new Date(msg.created_at).getTime(),
-        reactions: []
+        reactions: msg.reactions || [],
+        reply_to: msg.reply_to,
+        is_edited: msg.is_edited,
+        link_preview: msg.link_preview,
+        poll_data: msg.poll_data
     };
 
     // If this chat is new to us, create it
@@ -2612,7 +2624,7 @@ async function ensurePersonInDB(name) {
     const { data, error } = await window.supabaseClient
         .from('profiles')
         .select('*')
-        .or(`username.ilike.${name},display_name.ilike.${name}`)
+        .or(`username.ilike.%${name}%,display_name.ilike.%${name}%`)
         .maybeSingle();
 
     if (error || !data) {
@@ -2636,7 +2648,8 @@ async function ensurePersonInDB(name) {
             initials: getInitials(data.display_name || data.username),
             toneA,
             toneB,
-            role: "Member"
+            role: data.role || "Member",
+            is_admin: data.is_admin || false
         };
     }
     return state.people[id];
