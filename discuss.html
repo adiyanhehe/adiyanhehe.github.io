@@ -184,7 +184,7 @@
                     <span class="material-symbols-outlined">notifications</span>
                 </button>
                 <div class="w-10 h-10 rounded-xl border border-white/10 overflow-hidden cursor-pointer hover:border-primary/50 transition-all" id="settingsButton">
-                    <img id="currentUserAvatar" src="jay.png" class="w-full h-full object-cover">
+                    <div id="currentUserAvatar" class="w-full h-full"></div>
                 </div>
             </div>
         </div>
@@ -198,7 +198,7 @@
                     <div class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-on-primary transition-all shadow-inner">
                         <span class="material-symbols-outlined">forum</span>
                     </div>
-                    <div class="lg:flex flex-col items-start leading-tight">
+                    <div class="hidden lg:flex flex-col items-start leading-tight">
                         <span class="text-sm font-bold text-white">Direct</span>
                         <span class="text-[10px] text-slate-500 font-mono">Neural Stream</span>
                     </div>
@@ -210,7 +210,7 @@
                     <div class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 group-hover:bg-secondary/10 group-hover:text-secondary transition-all">
                         <span class="material-symbols-outlined">public</span>
                     </div>
-                    <div class="lg:flex flex-col items-start leading-tight">
+                    <div class="hidden lg:flex flex-col items-start leading-tight">
                         <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Global</span>
                         <span class="text-[10px] text-slate-600 font-mono">Open Pulse</span>
                     </div>
@@ -220,7 +220,7 @@
                     <div class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 group-hover:bg-secondary/10 group-hover:text-secondary transition-all">
                         <span class="material-symbols-outlined">group</span>
                     </div>
-                    <div class="lg:flex flex-col items-start leading-tight">
+                    <div class="hidden lg:flex flex-col items-start leading-tight">
                         <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">People</span>
                         <span class="text-[10px] text-slate-600 font-mono">Teammates</span>
                     </div>
@@ -231,7 +231,7 @@
                     <div class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 group-hover:bg-tertiary/10 group-hover:text-tertiary transition-all">
                         <span class="material-symbols-outlined">person_add</span>
                     </div>
-                    <div class="lg:flex flex-col items-start leading-tight">
+                    <div class="hidden lg:flex flex-col items-start leading-tight">
                         <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Invitations</span>
                         <span class="text-[10px] text-slate-600 font-mono">Pending</span>
                     </div>
@@ -242,7 +242,7 @@
                     <div class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
                         <span class="material-symbols-outlined">notifications_active</span>
                     </div>
-                    <div class="lg:flex flex-col items-start leading-tight">
+                    <div class="hidden lg:flex flex-col items-start leading-tight">
                         <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Intelligence</span>
                         <span class="text-[10px] text-slate-600 font-mono">Mentions</span>
                     </div>
@@ -252,9 +252,9 @@
             <div class="p-6 border-t border-white/5 space-y-4">
                 <div class="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
                     <div class="relative flex-shrink-0">
-                        <img src="jay.png" id="side-pic" class="w-10 h-10 rounded-xl object-cover border border-white/10">
+                        <div id="sidebarUserAvatar" class="w-10 h-10 rounded-xl object-cover border border-white/10"></div>
                     </div>
-                    <div class="flex flex-col overflow-hidden">
+                    <div class="hidden lg:flex flex-col overflow-hidden">
                         <span class="text-xs font-bold text-white truncate" id="currentUserName">User</span>
                         <span class="text-[9px] text-slate-500 font-mono uppercase tracking-widest truncate" id="currentUserStatus">Active Node</span>
                     </div>
