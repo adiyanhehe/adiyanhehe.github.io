@@ -194,6 +194,7 @@ function cacheElements() {
     elements.clearUnreadButton = document.getElementById("clearUnreadButton");
     elements.resetDemoButton = document.getElementById("resetDemoButton");
     elements.currentUserAvatar = document.getElementById("currentUserAvatar");
+    elements.sidebarUserAvatar = document.getElementById("sidebarUserAvatar");
     elements.currentUserName = document.getElementById("currentUserName");
     elements.currentUserStatus = document.getElementById("currentUserStatus");
     elements.closeSidebarButton = document.getElementById("closeSidebarButton");
@@ -826,49 +827,52 @@ function handleIncomingMessage(msg) {
 
 
 function bindEvents() {
-    elements.homeViewButton.addEventListener("click", () => setNavView("home"));
-    elements.globalViewButton.addEventListener("click", () => setNavView("global"));
-    elements.friendsViewButton.addEventListener("click", () => setNavView("friends"));
-    elements.requestsViewButton.addEventListener("click", () => setNavView("requests"));
-    elements.themeToggleButton.addEventListener("click", toggleTheme);
-    elements.settingsButton.addEventListener("click", toggleSettingsMenu);
-    elements.changeStatusButton.addEventListener("click", handleCustomStatus);
-    elements.clearUnreadButton.addEventListener("click", clearUnreadBadges);
-    elements.resetDemoButton.addEventListener("click", resetDemoData);
-    elements.openSidebarButton.addEventListener("click", () => openDrawer("sidebar"));
-    elements.openDirectoryButton.addEventListener("click", () => openDrawer("directory"));
-    elements.closeSidebarButton.addEventListener("click", closeDrawers);
-    elements.pageOverlay.addEventListener("click", closeTransientUi);
-    elements.searchInput.addEventListener("input", handleSearch);
-    elements.filterBar.addEventListener("click", handleFilterClick);
-    elements.directoryContent.addEventListener("click", handleDirectoryClick);
-    elements.newConversationButton.addEventListener("click", () => openConversationModal("direct"));
-    elements.closeModalButton.addEventListener("click", closeConversationModal);
-    elements.cancelModalButton.addEventListener("click", closeConversationModal);
-    elements.createConversationButton.addEventListener("click", createConversationFromModal);
-    elements.conversationModal.addEventListener("click", (event) => {
+    elements.homeViewButton?.addEventListener("click", () => setNavView("home"));
+    elements.globalViewButton?.addEventListener("click", () => setNavView("global"));
+    elements.friendsViewButton?.addEventListener("click", () => setNavView("friends"));
+    elements.requestsViewButton?.addEventListener("click", () => setNavView("requests"));
+    
+    const activityViewBtn = document.getElementById("activityViewButton");
+    activityViewBtn?.addEventListener("click", () => setNavView("activity"));
+    elements.themeToggleButton?.addEventListener("click", toggleTheme);
+    elements.settingsButton?.addEventListener("click", toggleSettingsMenu);
+    elements.changeStatusButton?.addEventListener("click", handleCustomStatus);
+    elements.clearUnreadButton?.addEventListener("click", clearUnreadBadges);
+    elements.resetDemoButton?.addEventListener("click", resetDemoData);
+    elements.openSidebarButton?.addEventListener("click", () => openDrawer("sidebar"));
+    elements.openDirectoryButton?.addEventListener("click", () => openDrawer("directory"));
+    elements.closeSidebarButton?.addEventListener("click", closeDrawers);
+    elements.pageOverlay?.addEventListener("click", closeTransientUi);
+    elements.searchInput?.addEventListener("input", handleSearch);
+    elements.filterBar?.addEventListener("click", handleFilterClick);
+    elements.directoryContent?.addEventListener("click", handleDirectoryClick);
+    elements.newConversationButton?.addEventListener("click", () => openConversationModal("direct"));
+    elements.closeModalButton?.addEventListener("click", closeConversationModal);
+    elements.cancelModalButton?.addEventListener("click", closeConversationModal);
+    elements.createConversationButton?.addEventListener("click", createConversationFromModal);
+    elements.conversationModal?.addEventListener("click", (event) => {
         if (event.target === elements.conversationModal) closeConversationModal();
     });
 
     document.querySelectorAll(".mode-button").forEach((button) => {
-        button.addEventListener("click", () => {
+        button?.addEventListener("click", () => {
             state.modalMode = button.dataset.mode;
             renderModalMode();
         });
     });
 
-    elements.membersToggleButton.addEventListener("click", toggleMembersSheet);
-    elements.emojiToggleButton.addEventListener("click", toggleEmojiPicker);
-    elements.emojiPicker.addEventListener("click", handleEmojiPickerClick);
+    elements.membersToggleButton?.addEventListener("click", toggleMembersSheet);
+    elements.emojiToggleButton?.addEventListener("click", toggleEmojiPicker);
+    elements.emojiPicker?.addEventListener("click", handleEmojiPickerClick);
     elements.gifToggleButton?.addEventListener("click", toggleGifPicker);
     elements.gifSearchInput?.addEventListener("input", handleGifSearch);
     elements.gifGrid?.addEventListener("click", handleGifSelection);
-    elements.messageInput.addEventListener("input", handleComposerInput);
-    elements.messageInput.addEventListener("keydown", handleComposerKeydown);
-    elements.sendButton.addEventListener("click", sendMessage);
-    elements.messageStream.addEventListener("scroll", updateJumpButton);
-    elements.messageStream.addEventListener("click", handleMessageActions);
-    elements.jumpLatestButton.addEventListener("click", () => scrollToLatest(true));
+    elements.messageInput?.addEventListener("input", handleComposerInput);
+    elements.messageInput?.addEventListener("keydown", handleComposerKeydown);
+    elements.sendButton?.addEventListener("click", sendMessage);
+    elements.messageStream?.addEventListener("scroll", updateJumpButton);
+    elements.messageStream?.addEventListener("click", handleMessageActions);
+    elements.jumpLatestButton?.addEventListener("click", () => scrollToLatest(true));
     
     // Summary modal actions
     if (elements.summaryAddFriendBtn) {
@@ -1069,9 +1073,9 @@ function renderApp() {
     if (!state.currentUser) return;
 
     applyAppTheme();
-    elements.app.classList.toggle("sidebar-open", state.drawer === "sidebar");
-    elements.app.classList.toggle("directory-open", state.drawer === "directory");
-    elements.pageOverlay.classList.toggle("hidden", !shouldShowOverlay());
+    elements.app?.classList.toggle("sidebar-open", state.drawer === "sidebar");
+    elements.app?.classList.toggle("directory-open", state.drawer === "directory");
+    elements.pageOverlay?.classList.toggle("hidden", !shouldShowOverlay());
 
     renderSidebar();
     renderDirectory();
@@ -1090,31 +1094,42 @@ function renderSidebar() {
     const homeUnread = state.chats.reduce((total, chat) => total + (chat.unread || 0), 0);
     const onlineFriends = state.friends.filter((friendId) => state.people[friendId]?.presence === "online").length;
 
-    elements.homeViewButton.setAttribute("aria-pressed", state.nav === "home");
-    elements.globalViewButton.setAttribute("aria-pressed", state.nav === "global");
-    elements.friendsViewButton.setAttribute("aria-pressed", state.nav === "friends");
-    elements.requestsViewButton.setAttribute("aria-pressed", state.nav === "requests");
+    elements.homeViewButton?.setAttribute("aria-pressed", state.nav === "home");
+    elements.globalViewButton?.setAttribute("aria-pressed", state.nav === "global");
+    elements.friendsViewButton?.setAttribute("aria-pressed", state.nav === "friends");
+    elements.requestsViewButton?.setAttribute("aria-pressed", state.nav === "requests");
+
+    const activityViewBtn = document.getElementById("activityViewButton");
+    activityViewBtn?.setAttribute("aria-pressed", state.nav === "activity");
 
     // Add visual 'active' class as well for styling redundancy
-    elements.homeViewButton.classList.toggle("active", state.nav === "home");
-    elements.globalViewButton.classList.toggle("active", state.nav === "global");
-    elements.friendsViewButton.classList.toggle("active", state.nav === "friends");
-    elements.requestsViewButton.classList.toggle("active", state.nav === "requests");
+    elements.homeViewButton?.classList.toggle("active", state.nav === "home");
+    elements.globalViewButton?.classList.toggle("active", state.nav === "global");
+    elements.friendsViewButton?.classList.toggle("active", state.nav === "friends");
+    elements.requestsViewButton?.classList.toggle("active", state.nav === "requests");
+    activityViewBtn?.classList.toggle("active", state.nav === "activity");
 
-    elements.homeUnreadBadge.textContent = homeUnread;
-    elements.homeUnreadBadge.classList.toggle("hidden", homeUnread === 0);
+    if (elements.homeUnreadBadge) {
+        elements.homeUnreadBadge.textContent = homeUnread;
+        elements.homeUnreadBadge.classList.toggle("hidden", homeUnread === 0);
+    }
     
-    elements.friendsOnlineBadge.textContent = onlineFriends;
-    elements.friendsOnlineBadge.classList.toggle("hidden", onlineFriends === 0);
+    if (elements.friendsOnlineBadge) {
+        elements.friendsOnlineBadge.textContent = onlineFriends;
+        elements.friendsOnlineBadge.classList.toggle("hidden", onlineFriends === 0);
+    }
 
     const requestCount = state.requests.length;
-    elements.requestsBadge.textContent = requestCount;
-    elements.requestsBadge.classList.toggle("hidden", requestCount === 0);
+    if (elements.requestsBadge) {
+        elements.requestsBadge.textContent = requestCount;
+        elements.requestsBadge.classList.toggle("hidden", requestCount === 0);
+    }
 
-    elements.currentUserAvatar.innerHTML = renderAvatarContent(state.currentUser, true);
-    elements.currentUserName.textContent = state.currentUser.name;
-    elements.currentUserStatus.textContent = state.currentUser.statusText;
-    elements.settingsMenu.classList.toggle("hidden", !state.settingsOpen);
+    if (elements.currentUserAvatar) elements.currentUserAvatar.innerHTML = renderAvatarContent(state.currentUser, true);
+    if (elements.sidebarUserAvatar) elements.sidebarUserAvatar.innerHTML = renderAvatarContent(state.currentUser, true);
+    if (elements.currentUserName) elements.currentUserName.textContent = state.currentUser.name;
+    if (elements.currentUserStatus) elements.currentUserStatus.textContent = state.currentUser.statusText;
+    if (elements.settingsMenu) elements.settingsMenu.classList.toggle("hidden", !state.settingsOpen);
 }
 
 function renderDirectory() {
