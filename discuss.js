@@ -2626,16 +2626,14 @@ function toggleEmojiPicker() {
 }
 
 function updateComposerMetrics() {
+    if (!elements.messageInput) return;
     const length = elements.messageInput.value.length;
-    elements.characterCount.textContent = `${length} / ${MAX_MESSAGE_LENGTH}`;
-    // Disable send when: no text typed, or no active chat selected.
-    // NOTE: Global Chat IS a valid active chat (id = 'global_chat'), so
-    // we do NOT gate on state.nav — that would permanently block Global Chat
-    // which uses nav='global' but still has a valid activeChatId.
-    elements.sendButton.disabled = length === 0 || !state.activeChatId || state.connection === "offline";
+    if (elements.characterCount) elements.characterCount.textContent = `${length} / ${MAX_MESSAGE_LENGTH}`;
+    if (elements.sendButton) elements.sendButton.disabled = length === 0 || !state.activeChatId || state.connection === "offline";
 }
 
 function autoResizeComposer() {
+    if (!elements.messageInput) return;
     elements.messageInput.style.height = "auto";
     elements.messageInput.style.height = `${Math.min(elements.messageInput.scrollHeight, 140)}px`;
 }
@@ -2902,26 +2900,26 @@ function setReply(chatId, messageId) {
 
 function cancelReply() {
     state.replyingTo = null;
-    elements.replyPreview.classList.add("hidden");
+    elements.replyPreview?.classList.add("hidden");
 }
 
 function setEdit(chatId, messageId) {
-    const msg = state.messages[chatId].find(m => String(m.id) === String(messageId));
+    const msg = state.messages[chatId]?.find(m => String(m.id) === String(messageId));
     if (!msg) return;
     state.editingMessage = msg;
     state.replyingTo = null;
     
-    elements.messageInput.value = msg.text;
-    elements.editPreview.classList.remove("hidden");
-    elements.replyPreview.classList.add("hidden");
-    elements.messageInput.focus();
+    if (elements.messageInput) elements.messageInput.value = msg.text;
+    elements.editPreview?.classList.remove("hidden");
+    elements.replyPreview?.classList.add("hidden");
+    elements.messageInput?.focus();
     autoResizeComposer();
 }
 
 function cancelEdit() {
     state.editingMessage = null;
-    elements.messageInput.value = "";
-    elements.editPreview.classList.add("hidden");
+    if (elements.messageInput) elements.messageInput.value = "";
+    elements.editPreview?.classList.add("hidden");
     autoResizeComposer();
 }
 
@@ -3038,8 +3036,8 @@ function selectChat(chatId) {
     state.activeChatId = chatId;
     state.searchQuery = ""; // Reset search content
     state.searchActive = false;
-    elements.workspaceSearchField.classList.add("hidden");
-    elements.openSearchButton.classList.remove("hidden");
+    elements.workspaceSearchField?.classList.add("hidden");
+    elements.openSearchButton?.classList.remove("hidden");
     
     state.chatFilter = "all";
     state.membersOpen = false;
