@@ -1184,29 +1184,38 @@ function renderFilterBar(filters, activeFilter) {
 
 function renderChatDirectory() {
     const visibleChats = getVisibleChats();
-    if (!visibleChats.length) return renderEmptyStateCard("No conversations found", "Try a different search term or create a new chat.");
+    if (!visibleChats.length) return renderEmptyStateCard("No connections found", "Try a different search term or initiate a new sync.");
 
     return `
-        <div class="directory-list">
+        <div class="space-y-1">
             ${visibleChats.map((chat) => {
-        const active = chat.id === state.activeChatId;
-        const lastMessage = getLastMessage(chat.id);
-        const preview = lastMessage ? formatPreviewText(lastMessage) : "No messages yet";
-        const timestamp = lastMessage ? formatConversationTime(lastMessage.timestamp) : "";
-        return `
-                    <button class="directory-item ${active ? "active" : ""}" type="button" data-chat-id="${chat.id}">
-                        ${renderChatAvatar(chat)}
-                        <div class="directory-item-meta">
-                            <span class="directory-item-title">${escapeHtml(getChatTitle(chat))}</span>
-                            <span class="directory-item-preview">${escapeHtml(preview)}</span>
+                const active = chat.id === state.activeChatId;
+                const lastMessage = getLastMessage(chat.id);
+                const preview = lastMessage ? formatPreviewText(lastMessage) : "No transmissions found";
+                const timestamp = lastMessage ? formatConversationTime(lastMessage.timestamp) : "";
+                const peerId = chat.type === 'direct' ? chat.participantIds.find(id => id !== state.currentUser.id) : null;
+                const peer = peerId ? (state.people[peerId] || createFallbackPerson(peerId)) : null;
+
+                return `
+                    <button class="directory-item w-full flex items-center gap-4 p-4 rounded-2xl transition-all relative group ${active ? 'bg-primary/10 border-primary/20' : 'hover:bg-white/5 border-transparent'}" type="button" data-chat-id="${chat.id}">
+                        <div class="relative flex-shrink-0">
+                            ${renderChatAvatar(chat)}
+                            ${(peer && peer.presence === 'online') ? '<div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-[#0c0e17]"></div>' : ''}
                         </div>
-                        <div class="directory-item-meta" style="text-align:right;">
-                            <span class="directory-item-time">${escapeHtml(timestamp)}</span>
-                            ${chat.unread ? `<span class="directory-item-badge">${chat.unread}</span>` : ""}
+                        <div class="flex-1 min-w-0 text-left">
+                            <div class="flex justify-between items-baseline mb-0.5">
+                                <span class="text-sm font-bold text-white truncate">${escapeHtml(getChatTitle(chat))}</span>
+                                <span class="text-[10px] font-mono text-slate-500 uppercase">${escapeHtml(timestamp)}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <p class="text-xs text-slate-500 truncate pr-4">${escapeHtml(preview)}</p>
+                                ${chat.unread ? `<span class="bg-primary text-on-primary text-[10px] font-black px-1.5 py-0.5 rounded-lg shadow-lg shadow-primary/20">${chat.unread}</span>` : ""}
+                            </div>
                         </div>
+                        ${active ? '<div class="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-l-full shadow-[0_0_10px_rgba(202,190,255,0.5)]"></div>' : ''}
                     </button>
                 `;
-    }).join("")}
+            }).join("")}
         </div>
     `;
 }
@@ -1231,10 +1240,10 @@ function getVisibleFriends() {
     return filtered;
 }
 
-function renderPersonAvatar(person, className = "avatar", withPresence = true) {
-    if (!person) return `<div class="${className} avatar-token"></div>`;
+function renderPersonAvatar(person, className = "w-10 h-10", withPresence = true) {
+    if (!person) return `<div class="${className} rounded-xl bg-white/5"></div>`;
     return `
-        <div class="${className}">
+        <div class="${className} relative flex-shrink-0">
             ${renderAvatarContent(person, withPresence)}
         </div>
     `;
@@ -1244,12 +1253,12 @@ function renderChatAvatar(chat) {
     if (chat.type === "direct") {
         const peerId = chat.participantIds.find(id => id !== state.currentUser.id);
         const peer = state.people[peerId] || createFallbackPerson(peerId);
-        return renderPersonAvatar(peer, "chat-avatar", true);
+        return renderPersonAvatar(peer, "w-12 h-12", true);
     }
     const initials = chat.name.split(" ").slice(0,2).map(n => n[0]).join("").toUpperCase();
     return `
-        <div class="chat-avatar avatar-token" style="--avatar-a:#444; --avatar-b:#666;">
-            <span>${escapeHtml(initials)}</span>
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 border border-white/10 flex items-center justify-center text-xs font-bold text-white uppercase tracking-widest shadow-inner">
+            ${escapeHtml(initials)}
         </div>
     `;
 }
@@ -1257,18 +1266,19 @@ function renderChatAvatar(chat) {
 function renderFriendsDirectory() {
     const visible = getVisibleFriends();
     if (visible.length === 0) {
-        return `<div class="directory-empty">No friends found</div>`;
+        return `<div class="p-8 text-center text-slate-600 font-mono text-[10px] uppercase tracking-widest">No nodes found in vicinity</div>`;
     }
 
     return visible.map(person => `
-        <button class="directory-item ${state.activeChatId === `dm-${person.id}` ? "active" : ""}" 
+        <button class="directory-item w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 transition-all group" 
                 onclick="window.openDirectMessage('${person.id}')" type="button">
-            ${renderPersonAvatar(person, "directory-avatar", true)}
-            <div class="directory-info">
-                <div class="directory-info-top">
-                    <strong>${escapeHtml(person.name)}</strong>
-                </div>
-                <p>${escapeHtml(person.statusText)}</p>
+            ${renderPersonAvatar(person, "w-12 h-12", true)}
+            <div class="flex-1 min-w-0 text-left">
+                <strong class="block text-sm font-bold text-white group-hover:text-primary transition-colors">${escapeHtml(person.name)}</strong>
+                <p class="text-[10px] text-slate-500 font-mono uppercase tracking-widest mt-0.5">${escapeHtml(person.statusText)}</p>
+            </div>
+            <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="material-symbols-outlined text-primary">chat</span>
             </div>
         </button>
     `).join("");
@@ -1282,49 +1292,52 @@ function renderFriendsStage() {
     const visible = getVisibleFriends();
 
     return `
-        <div class="friends-hero">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <strong>${onlineFriends.length}</strong>
-                    <p>Friends online now</p>
+        <div class="p-8 space-y-8 fade-up">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-panel p-6 rounded-3xl border-white/5 space-y-1">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-success">Active Nodes</span>
+                    <h4 class="text-3xl font-black text-white">${onlineFriends.length}</h4>
+                    <p class="text-xs text-slate-500">Currently broadcasting</p>
                 </div>
-                <div class="stat-card">
-                    <strong>${groupCount}</strong>
-                    <p>Active group chats</p>
+                <div class="glass-panel p-6 rounded-3xl border-white/5 space-y-1">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neural Clusters</span>
+                    <h4 class="text-3xl font-black text-white">${groupCount}</h4>
+                    <p class="text-xs text-slate-500">Active group streams</p>
                 </div>
-                <div class="stat-card">
-                    <strong>${unreadCount}</strong>
-                    <p>Unread notifications</p>
+                <div class="glass-panel p-6 rounded-3xl border-white/5 space-y-1">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-tertiary">Alert Stream</span>
+                    <h4 class="text-3xl font-black text-white">${unreadCount}</h4>
+                    <p class="text-xs text-slate-500">Unread notifications</p>
                 </div>
             </div>
 
-            <div style="margin-bottom: 40px;">
-                <h2 style="font-family: var(--font-display); font-size: 2.2rem; margin-bottom: 8px;">Stay connected to your network.</h2>
-                <p style="color:var(--text-soft); font-size: 1.1rem; max-width: 600px;">Pulse is most powerful when you are building together. Start a sync with anyone below.</p>
+            <div class="space-y-2">
+                <h2 class="text-3xl font-black text-white tracking-tighter">Your Network.</h2>
+                <p class="text-slate-500 text-sm max-w-xl">Synchronizing connections across the Nexus. Open a direct uplink with any node below to initiate a handshake.</p>
             </div>
 
-            <div class="friends-directory-grid">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 ${visible.map(person => `
-                    <div class="friend-card" onclick="window.openDirectMessage('${person.id}')">
-                        <div class="friend-card-avatar-wrap">
-                            ${renderPersonAvatar(person, "friend-card-avatar", true)}
+                    <div class="glass-panel p-6 rounded-[2rem] border-white/5 hover:border-primary/30 transition-all group cursor-pointer" onclick="window.openDirectMessage('${person.id}')">
+                        <div class="flex flex-col items-center text-center space-y-4">
+                            <div class="relative">
+                                ${renderPersonAvatar(person, "w-20 h-20", true)}
+                                ${(person.presence === 'online') ? '<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-4 border-[#1d1f29]"></div>' : ''}
+                            </div>
+                            <div class="space-y-1 min-w-0 w-full">
+                                <strong class="block text-white font-bold truncate group-hover:text-primary transition-colors">${escapeHtml(person.name)}</strong>
+                                <span class="block text-[10px] font-mono text-slate-600 uppercase tracking-widest truncate">${escapeHtml(person.statusText)}</span>
+                            </div>
+                            <button class="w-full py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:bg-primary group-hover:text-on-primary transition-all">Open Uplink</button>
                         </div>
-                        <div class="friend-card-meta">
-                            <strong>${escapeHtml(person.name)}</strong>
-                            <span>${escapeHtml(person.statusText)}</span>
-                        </div>
-                        <button class="ghost-button" style="width: 100%; margin-top: 12px; height: 40px; border-radius: 12px;">Message</button>
                     </div>
                 `).join("")}
                 ${visible.length === 0 ? `
-                    <div class="empty-state" style="grid-column: 1 / -1; padding: 60px;">
-                        <div style="font-size: 3rem; margin-bottom: 16px;">👥</div>
-                        <h3>Your circle is quiet</h3>
-                        <p>Search for teammates or invite them to Pulse to start building together.</p>
-                        <div style="display:flex; gap:12px; margin-top:24px; justify-content:center;">
-                            <button class="create-button" onclick="openConversationModal('direct')">Find Users</button>
-                            <button class="ghost-button" onclick="setNavView('home')">Back to Inbox</button>
-                        </div>
+                    <div class="col-span-full flex flex-col items-center justify-center py-20 glass-panel rounded-3xl border-dashed border-white/10">
+                        <span class="material-symbols-outlined text-slate-700 text-6xl mb-4">group_off</span>
+                        <h3 class="text-lg font-bold text-slate-500">No nodes identified</h3>
+                        <p class="text-xs text-slate-600 mt-1">Initiate search or expand your network parameters.</p>
+                        <button class="mt-6 px-6 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs uppercase tracking-widest" onclick="openConversationModal('direct')">Identify Users</button>
                     </div>
                 ` : ""}
             </div>
@@ -1463,39 +1476,38 @@ function renderWorkspaceSectionIdentity(title, copy) {
     const toneA = state.currentUser?.toneA || '#7b8cff';
     const toneB = state.currentUser?.toneB || '#64d9ff';
     return `
-        <div class="workspace-identity">
-            <div class="workspace-avatar avatar-token" style="--avatar-a:${toneA}; --avatar-b:${toneB};">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[${toneA}] to-[${toneB}] flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20">
                 <span>${escapeHtml(title.charAt(0).toUpperCase())}</span>
             </div>
-            <div class="workspace-avatar-copy">
-                <h2>${escapeHtml(title)}</h2>
-                <p>${escapeHtml(copy)}</p>
+            <div class="flex flex-col">
+                <h2 class="text-sm font-black text-white uppercase tracking-tight">${escapeHtml(title)}</h2>
+                <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">${escapeHtml(copy)}</p>
             </div>
         </div>
     `;
 }
 
 function renderWorkspaceChatIdentity(chat) {
-    const connectionLabel = state.connection === "offline" ? "Offline" : "Online";
-    const connectionDot = state.connection === "offline"
-        ? `<span style="width:8px; height:8px; border-radius:999px; background: var(--danger); display:inline-block;"></span>`
-        : `<span style="width:8px; height:8px; border-radius:999px; background: var(--success); display:inline-block;"></span>`;
+    const isOnline = state.connection !== "offline";
+    const connectionColor = isOnline ? 'bg-success shadow-[0_0_8px_#45d483]' : 'bg-error shadow-[0_0_8px_#ffb4ab]';
+    const connectionLabel = isOnline ? 'Active Link' : 'Offline Mode';
 
     if (chat.type === "global") {
-        const globalInfo = {
-            id: 'global_chat',
-            name: 'Global Chat',
-            avatarUrl: 'px-logo.png',
-            initials: 'PX',
-            toneA: '#7b8cff',
-            toneB: '#64d9ff'
-        };
         return `
-            <div class="workspace-identity">
-                ${renderPersonAvatar(globalInfo, "workspace-avatar", false)}
-                <div class="workspace-avatar-copy">
-                    <h2>Global Chat</h2>
-                    <p style="display:flex; align-items:center; gap:8px;">${connectionDot}<span>${connectionLabel}</span><span style="opacity:0.7;">·</span><span>Connecting everyone across the Pulse network</span></p>
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                    <span class="material-symbols-outlined text-on-primary">public</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-sm font-black text-white uppercase tracking-tight">Global Neural Stream</h2>
+                        <span class="bg-primary/10 text-primary text-[8px] font-black px-1.5 py-0.5 rounded border border-primary/20 uppercase tracking-widest">Platform Hub</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <div class="w-1.5 h-1.5 ${connectionColor} rounded-full"></div>
+                        <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest">${connectionLabel} · Connecting everyone across the Nexus</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -1505,36 +1517,45 @@ function renderWorkspaceChatIdentity(chat) {
         const participants = getChatParticipants(chat).filter((person) => person.id !== state.currentUser.id);
         const onlineCount = participants.filter((person) => person.presence === "online").length;
         return `
-            <div class="workspace-identity">
-                <div class="workspace-avatar-wrap">
+            <div class="flex items-center gap-4">
+                <div class="relative">
                     ${renderChatAvatar(chat)}
+                    <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-[#1d1f29] ${onlineCount > 0 ? 'block' : 'hidden'}"></div>
                 </div>
-                <div class="workspace-avatar-copy">
-                    <h2>${escapeHtml(getChatTitle(chat))}</h2>
-                    <p style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${connectionDot}<span>${connectionLabel}</span><span style="opacity:0.7;">·</span><span>${participants.length + 1} members, ${onlineCount} online right now</span></p>
+                <div class="flex flex-col min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-sm font-black text-white uppercase tracking-tight truncate">${escapeHtml(getChatTitle(chat))}</h2>
+                        <span class="bg-secondary/10 text-secondary text-[8px] font-black px-1.5 py-0.5 rounded border border-secondary/20 uppercase tracking-widest">Cluster</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <div class="w-1.5 h-1.5 ${connectionColor} rounded-full"></div>
+                        <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest">${connectionLabel} · ${participants.length + 1} members, ${onlineCount} active</span>
+                    </div>
                 </div>
             </div>
         `;
     }
 
     const person = getDirectPeer(chat);
-    const avatarHtml = `
-        <div class="message-avatar" onclick="window.showProfileSummary('${person.id}')" style="cursor: pointer;">
-            ${renderPersonAvatar(person, "message-avatar-token", false)}
-        </div>
-    `;
     return `
-        <div class="workspace-identity">
-            ${renderPersonAvatar(person, "workspace-avatar", true)}
-            <div class="workspace-avatar-copy">
-                <h2>${escapeHtml(person.name)}</h2>
-                <p style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${connectionDot}<span>${connectionLabel}</span><span style="opacity:0.7;">·</span><span>${escapeHtml(buildPresenceCopy(person))}</span></p>
+        <div class="flex items-center gap-4 cursor-pointer" onclick="window.showProfileSummary('${person.id}')">
+            <div class="relative">
+                ${renderPersonAvatar(person, "w-12 h-12", true)}
+                ${(person.presence === 'online') ? '<div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-[#1d1f29]"></div>' : ''}
+            </div>
+            <div class="flex flex-col min-w-0">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tight truncate">${escapeHtml(person.name)}</h2>
+                    ${(person.role === 'Admin') ? `<span class="bg-primary/10 text-primary text-[8px] font-black px-1.5 py-0.5 rounded border border-primary/20 uppercase tracking-widest">Overseer</span>` : ''}
+                </div>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <div class="w-1.5 h-1.5 ${connectionColor} rounded-full"></div>
+                    <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest">${connectionLabel} · ${escapeHtml(buildPresenceCopy(person))}</span>
+                </div>
             </div>
         </div>
     `;
 }
-
-
 
 function renderMessages(chat) {
     const messages = getMessages(chat.id);
@@ -1544,67 +1565,60 @@ function renderMessages(chat) {
     elements.messageStream.innerHTML = messages.map((message) => {
         const sender = state.people[message.senderId] || createFallbackPerson(message.senderId);
         const dayLabel = formatDayLabel(message.timestamp);
-        const divider = dayLabel !== currentDayLabel ? `<div class="message-day-divider">${escapeHtml(dayLabel)}</div>` : "";
+        const divider = dayLabel !== currentDayLabel ? `
+            <div class="flex items-center gap-4 my-8">
+                <div class="h-[1px] flex-1 bg-white/5"></div>
+                <span class="text-[10px] font-mono text-slate-600 uppercase tracking-[0.2em]">${escapeHtml(dayLabel)}</span>
+                <div class="h-[1px] flex-1 bg-white/5"></div>
+            </div>` : "";
         currentDayLabel = dayLabel;
         const isOwn = !!state.currentUser && message.senderId === state.currentUser.id;
         const reactions = renderMessageReactions(chat.id, message);
-        const reactionMenu = state.reactionMenu && state.reactionMenu.chatId === chat.id && state.reactionMenu.messageId === message.id
-            ? `<div class="message-reaction-menu">${QUICK_REACTIONS.map((emoji) => `
-                <button class="reaction-choice" type="button" data-action="add-reaction" data-chat-id="${chat.id}" data-message-id="${message.id}" data-emoji="${encodeURIComponent(emoji)}">
-                    ${emoji}
-                </button>
-            `).join("")}</div>`
-            : "";
-
+        
         return `
             ${divider}
-            <article class="message-item ${isOwn ? "sent" : "received"} ${message.isPinned ? "is-pinned" : ""}" data-message-id="${message.id}">
-                ${isOwn ? "" : renderPersonAvatar(sender, "member-avatar", true)}
-                <div class="message-shell">
-                    <div class="message-meta">
-                        <strong class="message-sender" onclick="window.showProfileSummary('${message.senderId}')" style="cursor: pointer;">${escapeHtml(sender.name)}</strong>
-                        ${(sender.role === 'admin' || sender.is_admin) ? `<span class="badge blue" style="font-size:0.55rem; padding: 2px 6px; margin-left:4px; box-shadow: 0 0 10px rgba(0, 162, 255, 0.4);">OVERSEER</span>` : (sender.role === 'moderator' ? `<span class="badge" style="font-size:0.55rem; padding: 2px 6px; margin-left:4px; background:rgba(0,186,124,0.1); color:var(--success);">GUARDIAN</span>` : "")}
-                        <span class="message-time">${escapeHtml(formatMessageTimestamp(message.timestamp))}</span>
+            <article class="flex flex-col ${isOwn ? 'items-end' : 'items-start'} group mb-4" data-message-id="${message.id}">
+                <div class="flex items-end gap-3 max-w-[85%] md:max-w-[70%]">
+                    ${!isOwn ? renderPersonAvatar(sender, "w-8 h-8", true) : ""}
+                    
+                    <div class="flex flex-col ${isOwn ? 'items-end' : 'items-start'}">
+                        <div class="flex items-center gap-2 mb-1 px-1">
+                            ${!isOwn ? `<span class="text-[10px] font-bold text-white/50 hover:text-primary cursor-pointer transition-colors" onclick="window.showProfileSummary('${message.senderId}')">${escapeHtml(sender.name)}</span>` : ""}
+                            <span class="text-[9px] font-mono text-slate-600 uppercase tracking-widest">${escapeHtml(formatMessageTimestamp(message.timestamp))}</span>
+                        </div>
+
+                        <div class="relative group">
+                            <div class="${isOwn ? 'msg-bubble-sent' : 'msg-bubble-received'} p-4 text-sm leading-relaxed relative z-10">
+                                ${message.reply_to ? renderReplyContext(message.reply_to, chat.id) : ""}
+                                ${message.gifUrl ? `<div class="mb-3 rounded-xl overflow-hidden border border-white/10 shadow-2xl"><img src="${escapeHtml(message.gifUrl)}" alt="Transmission Asset" class="w-full max-h-80 object-cover" loading="lazy"></div>` : ""}
+                                <div class="break-words">${renderFormattedText(message.text)}${message.is_edited ? '<span class="text-[10px] opacity-50 ml-2 italic">(edited)</span>' : ''}</div>
+                                ${message.poll_data ? renderPoll(message.id, message.poll_data, chat.id) : ""}
+                                ${reactions}
+                            </div>
+                            
+                            <!-- Message Toolbar -->
+                            <div class="absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1 z-20">
+                                <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-primary hover:bg-white/10 transition-all" title="React" data-action="toggle-reaction-menu" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                                    <span class="material-symbols-outlined text-lg">add_reaction</span>
+                                </button>
+                                <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-primary hover:bg-white/10 transition-all" title="Reply" data-action="reply" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                                    <span class="material-symbols-outlined text-lg">reply</span>
+                                </button>
+                                ${isOwn ? `
+                                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-secondary hover:bg-white/10 transition-all" title="Edit" data-action="edit" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                                        <span class="material-symbols-outlined text-lg">edit</span>
+                                    </button>
+                                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-error/10 border border-error/20 text-error hover:bg-error hover:text-on-tertiary transition-all" title="Delete" data-action="delete-message" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                                        <span class="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                ` : `
+                                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-tertiary hover:bg-white/10 transition-all" title="Report" data-action="report-message" data-chat-id="${chat.id}" data-message-id="${message.id}">
+                                        <span class="material-symbols-outlined text-lg">flag</span>
+                                    </button>
+                                `}
+                            </div>
+                        </div>
                     </div>
-                    ${message.isPinned ? `<div style="color:var(--accent); font-size:0.6rem; margin-bottom:4px; display:flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M12 2L15 8L22 9L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9L9 8L12 2Z"/></svg> Pinned</div>` : ""}
-                    ${message.reply_to ? renderReplyContext(message.reply_to, chat.id) : ""}
-                    ${message.gifUrl ? `<div class="message-attachment"><img src="${escapeHtml(message.gifUrl)}" alt="GIF attachment" loading="lazy"></div>` : ""}
-                    ${message.text ? `<div class="message-bubble">${renderFormattedText(message.text)}${message.is_edited ? '<span class="message-edited-tag">(edited)</span>' : ''}</div>` : ""}
-                    ${message.link_preview ? renderLinkPreview(message.link_preview) : ""}
-                    ${message.poll_data ? renderPoll(message.id, message.poll_data, chat.id) : ""}
-                    ${reactionMenu}
-                    ${reactions}
-                </div>
-                <div class="message-toolbar ${state.reactionMenu && state.reactionMenu.messageId === message.id ? "active" : ""}">
-                    <button class="message-action-button" type="button" title="Reply" data-action="reply" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
-                    </button>
-                    ${isOwn ? `
-                        <button class="message-action-button" type="button" title="Edit" data-action="edit" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        ${message.failed ? `
-                            <button class="message-action-button" type="button" title="Retry" data-action="retry-send" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3.2-6.9"></path><path d="M21 3v6h-6"></path></svg>
-                            </button>
-                        ` : ""}
-                    ` : ""}
-                    <button class="message-action-button" type="button" title="React" data-action="toggle-reaction-menu" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.5 10.5h.01"></path><path d="M15.5 10.5h.01"></path><path d="M8.5 14.5c.8 1.1 2 1.7 3.5 1.7s2.7-.6 3.5-1.7"></path></svg>
-                    </button>
-                    <button class="message-action-button" type="button" title="Pin" data-action="pin" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15 8L22 9L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9L9 8L12 2Z"/></svg>
-                    </button>
-                    ${(isOwn || state.currentUser?.role === 'admin' || state.currentUser?.is_admin || state.currentUser?.role === 'moderator') ? `
-                    <button class="message-action-button delete" type="button" title="Delete" data-action="delete-message" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M6 7l1 12h10l1-12"></path><path d="M9 7V4h6v3"></path></svg>
-                    </button>
-                    ` : ""}
-                    ${!isOwn ? `
-                    <button class="message-action-button" type="button" title="Report" data-action="report-message" data-chat-id="${chat.id}" data-message-id="${message.id}">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-                    </button>
-                    ` : ""}
                 </div>
             </article>
         `;
@@ -1620,156 +1634,72 @@ function renderMessages(chat) {
 
 async function renderActivityHub() {
     if (!elements.activityStage) return;
-    
     const myId = state.currentUser.id;
 
     try {
-        // 1. Fetch Mentions
-        const { data: mentions } = await window.supabaseClient
-            .from('message_mentions')
-            .select('*, messages(*)')
-            .eq('mentioned_username', myId)
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-        // 2. Fetch Follows (who followed me)
-        const { data: follows } = await window.supabaseClient
-            .from('follows')
-            .select('*')
-            .eq('following', myId)
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-        // 3. Fetch Friend Requests
-        const { data: requests } = await window.supabaseClient
-            .from('friend_requests')
-            .select('*')
-            .eq('to_user', myId)
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-        // 4. Fetch Recent DMs (optional: only the very latest from each person)
-        const { data: messages } = await window.supabaseClient
-            .from('messages')
-            .select('*')
-            .eq('receiver', myId)
-            .eq('channel_type', 'direct')
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-        // Combine and Normalize
-        let events = [];
-
-        if (mentions) {
-            events.push(...mentions.map(m => ({
-                id: m.id,
-                type: 'mention',
-                timestamp: new Date(m.created_at),
-                senderId: m.messages.sender,
-                title: 'Mentioned you',
-                subtitle: `in ${m.messages.receiver}`,
-                content: m.messages.content,
-                action: () => selectChatAndScroll(m.messages.receiver, m.messages.id)
-            })));
-        }
-
-        if (follows) {
-            events.push(...follows.map(f => ({
-                id: f.id,
-                type: 'follow',
-                timestamp: new Date(f.created_at),
-                senderId: f.follower,
-                title: 'Started following you',
-                subtitle: 'Add them back to stay connected',
-                action: () => window.location.href = `profile.html?user=${encodeURIComponent(f.follower)}`
-            })));
-        }
-
-        if (requests) {
-            events.push(...requests.map(r => ({
-                id: r.id,
-                type: 'request',
-                timestamp: new Date(r.created_at),
-                senderId: r.from_user,
-                title: 'Sent you a friend request',
-                subtitle: r.status === 'pending' ? 'Click to manage requests' : `Status: ${r.status}`,
-                action: () => setNavView('requests')
-            })));
-        }
-
-        if (messages) {
-            events.push(...messages.map(msg => ({
-                id: msg.id,
-                type: 'message',
-                timestamp: new Date(msg.created_at),
-                senderId: msg.sender,
-                title: 'Sent you a message',
-                subtitle: 'Direct Transmission',
-                content: msg.content,
-                action: () => selectChat(`dm-${msg.sender}`)
-            })));
-        }
-
-        // Sort by time
-        events.sort((a, b) => b.timestamp - a.timestamp);
-        events = events.slice(0, 20);
-
-        if (events.length === 0) {
-            elements.activityStage.innerHTML = renderEmptyStateCard("Your pulse is quiet", "When people interact with you, it will show up here.");
-            return;
-        }
+        const { data: mentions } = await window.supabaseClient.from('message_mentions').select('*, messages(*)').eq('mentioned_username', myId).order('created_at', { ascending: false }).limit(5);
+        const { data: requests } = await window.supabaseClient.from('friend_requests').select('*').eq('to_user', myId).eq('status', 'pending').order('created_at', { ascending: false }).limit(5);
 
         elements.activityStage.innerHTML = `
-            <div class="activity-list">
-                ${events.map(event => {
-                    const sender = state.people[event.senderId] || { name: event.senderId, id: event.senderId };
-                    const timeStr = formatConversationTime(event.timestamp.getTime());
-                    
-                    let badgeClass = 'badge-mention';
-                    if (event.type === 'follow') badgeClass = 'badge-follow';
-                    if (event.type === 'request') badgeClass = 'badge-request';
-                    if (event.type === 'message') badgeClass = 'badge-message';
+            <div class="p-8 space-y-8 fade-up">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-3xl font-black text-white tracking-tighter">Neural Activity.</h2>
+                    <button class="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all">Mark All Read</button>
+                </div>
 
-                    return `
-                        <div class="activity-item" onclick="this.dataset.action === 'true' && ${event.action.toString().replace(/\n/g, '')}()">
-                            <div class="activity-avatar-wrap">
-                                ${renderPersonAvatar(sender, "avatar-token", false)}
-                                <div class="activity-type-icon ${event.type}"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Mentions Bento -->
+                    <div class="glass-panel p-6 rounded-[2.5rem] border-white/5 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">alternate_email</span>
                             </div>
-                            <div class="activity-info">
-                                <div class="activity-meta-row">
-                                    <span class="activity-badge ${badgeClass}">${event.title}</span>
-                                    <span class="activity-time">${timeStr}</span>
-                                </div>
-                                <strong>${escapeHtml(sender.name || sender.id)}</strong> ${event.subtitle ? `<span class="activity-subtitle">${escapeHtml(event.subtitle)}</span>` : ''}
-                                ${event.content ? `<p class="activity-preview">${escapeHtml(event.content.substring(0, 80))}${event.content.length > 80 ? '...' : ''}</p>` : ''}
-                            </div>
-                            <div class="activity-chevron">
-                                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </div>
+                            <span class="text-sm font-bold text-white">Recent Mentions</span>
                         </div>
-                    `;
-                }).join("")}
+                        <div class="space-y-2">
+                            ${mentions?.map(m => `
+                                <div class="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all cursor-pointer" onclick="window.openDirectMessage('${m.messages.sender_id}')">
+                                    <p class="text-xs text-slate-300 line-clamp-2 italic">"${escapeHtml(m.messages.text)}"</p>
+                                    <div class="flex items-center justify-between mt-3">
+                                        <span class="text-[9px] font-mono text-primary uppercase">From @${escapeHtml(m.messages.sender_id)}</span>
+                                        <span class="text-[9px] font-mono text-slate-600">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                    </div>
+                                </div>
+                            `).join("") || '<p class="text-[10px] font-mono text-slate-600 uppercase p-4">No recent mentions</p>'}
+                        </div>
+                    </div>
+
+                    <!-- Requests Bento -->
+                    <div class="glass-panel p-6 rounded-[2.5rem] border-white/5 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+                                <span class="material-symbols-outlined">person_add</span>
+                            </div>
+                            <span class="text-sm font-bold text-white">Neural Handshakes</span>
+                        </div>
+                        <div class="space-y-2">
+                            ${requests?.map(r => `
+                                <div class="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-8 h-8 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white">
+                                            ${r.from_user.charAt(0).toUpperCase()}
+                                        </div>
+                                        <span class="text-xs font-bold text-white truncate">@${escapeHtml(r.from_user)}</span>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <button onclick="window.handleFriendRequestAction('${r.id}', 'accept')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-success/10 text-success hover:bg-success hover:text-white transition-all"><span class="material-symbols-outlined text-sm">check</span></button>
+                                        <button onclick="window.handleFriendRequestAction('${r.id}', 'decline')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-error/10 text-error hover:bg-error hover:text-white transition-all"><span class="material-symbols-outlined text-sm">close</span></button>
+                                    </div>
+                                </div>
+                            `).join("") || '<p class="text-[10px] font-mono text-slate-600 uppercase p-4">No pending handshakes</p>'}
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
-
-        // Attach event listeners manually since string interpolation of functions is messy
-        const items = elements.activityStage.querySelectorAll('.activity-item');
-        events.forEach((event, idx) => {
-            items[idx].onclick = (e) => {
-                e.preventDefault();
-                event.action();
-            };
-        });
-
     } catch (e) {
-        console.error('[Pulse] Activity Load Fail:', e);
-        elements.activityStage.innerHTML = renderEmptyStateCard("Service Interrupted", "We couldn't reach the activity stream.");
+        console.error("Activity Hub failed:", e);
     }
-    
-    // Clear badge
-    state.activityNotifications = [];
-    if (elements.activityBadge) elements.activityBadge.classList.add("hidden");
 }
 
 function selectChatAndScroll(chatId, messageId) {
@@ -1782,21 +1712,21 @@ function renderReplyContext(replyToId, chatId) {
     if (!parent) return "";
     
     return `
-        <div class="message-reply-context" onclick="scrollToMessage('${parent.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
-            <span>Replying to <strong>${escapeHtml(state.people[parent.senderId]?.name || parent.senderId)}</strong></span>
+        <div class="flex items-center gap-2 bg-white/5 p-2 rounded-lg border-l-2 border-primary mb-2 cursor-pointer hover:bg-white/10 transition-all" onclick="scrollToMessage('${parent.id}')">
+            <span class="material-symbols-outlined text-xs text-primary">reply</span>
+            <span class="text-[10px] text-slate-400">Replying to <strong class="text-white">${escapeHtml(state.people[parent.senderId]?.name || parent.senderId)}</strong></span>
         </div>
     `;
 }
 
 function renderLinkPreview(preview) {
     return `
-        <div class="link-preview-card" onclick="window.open('${escapeHtml(preview.url)}', '_blank')">
-            ${preview.image ? `<img src="${escapeHtml(preview.image)}" class="link-preview-image">` : ""}
-            <div class="link-preview-body">
-                <div class="link-preview-title">${escapeHtml(preview.title)}</div>
-                <div class="link-preview-desc">${escapeHtml(preview.desc)}</div>
-                <div class="link-preview-site">${escapeHtml(new URL(preview.url).hostname)}</div>
+        <div class="mt-3 rounded-2xl overflow-hidden glass-panel border-white/5 cursor-pointer hover:border-primary/30 transition-all" onclick="window.open('${escapeHtml(preview.url)}', '_blank')">
+            ${preview.image ? `<img src="${escapeHtml(preview.image)}" class="w-full h-32 object-cover border-b border-white/5">` : ""}
+            <div class="p-3 space-y-1">
+                <div class="text-[9px] font-mono text-primary uppercase tracking-widest">${escapeHtml(new URL(preview.url).hostname)}</div>
+                <div class="text-xs font-bold text-white line-clamp-1">${escapeHtml(preview.title)}</div>
+                <div class="text-[10px] text-slate-500 line-clamp-2">${escapeHtml(preview.desc)}</div>
             </div>
         </div>
     `;
@@ -3425,22 +3355,20 @@ function createFallbackPerson(id) {
     };
 }
 
-// Helper pick logic removed.
-
-
 function renderAvatarContent(person, withPresence = true) {
     if (!person) return "";
-    const name = person.name || "User";
-    const initials = person.initials || getInitials(name);
-    const toneA = person.toneA || "#7b8cff";
-    const toneB = person.toneB || "#64d9ff";
-    const presenceHtml = withPresence ? `<span class="presence-dot ${escapeHtml(person.presence || 'offline')}"></span>` : "";
+    const initials = getInitials(person.name || person.id);
+    const [toneA, toneB] = pickTone(person.id);
+    const avatarUrl = person.avatar_url || person.avatarUrl;
+
+    if (avatarUrl) {
+        return `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-xl border border-white/10 shadow-inner" alt="${escapeHtml(person.name)}">`;
+    }
 
     return `
-        <div class="avatar-token" style="--avatar-a:${toneA}; --avatar-b:${toneB}; width:100%; height:100%; border-radius:16px;">
-            ${person.avatarUrl ? `<img src="${escapeHtml(person.avatarUrl)}" alt="${escapeHtml(name)}">` : `<span>${escapeHtml(initials)}</span>`}
+        <div class="w-full h-full rounded-xl bg-gradient-to-br from-[${toneA}] to-[${toneB}] flex items-center justify-center text-white font-black text-xs border border-white/10 shadow-inner">
+            ${escapeHtml(initials)}
         </div>
-        ${presenceHtml}
     `;
 }
 
@@ -3475,6 +3403,24 @@ function formatDayLabel(timestamp) {
     if (date.toDateString() === today.toDateString()) return "Today";
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
     return date.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+}
+
+function renderFormattedText(text) {
+    if (!text) return "";
+    let formatted = escapeHtml(text);
+
+    // Mentions
+    formatted = formatted.replace(/(@[a-zA-Z0-9_]+)/g, '<span class="text-primary font-bold hover:underline cursor-pointer">$1</span>');
+
+    // Hashtags
+    formatted = formatted.replace(/(#[a-zA-Z0-9_]+)/g, '<span class="text-secondary font-bold hover:underline cursor-pointer">$1</span>');
+
+    // Simple markdown-ish
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-black">$1</strong>');
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+    formatted = formatted.replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 rounded font-mono text-[10px]">$1</code>');
+
+    return formatted;
 }
 
 function formatMessageText(text) {
