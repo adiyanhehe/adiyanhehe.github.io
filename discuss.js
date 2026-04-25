@@ -398,7 +398,7 @@ async function syncChatsWithDatabase() {
     const { data: messages, error: msgError } = await window.supabaseClient
         .from('messages')
         .select('*')
-        .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id},sender.eq.${uuid},receiver.eq.${uuid},receiver.eq.global_chat`)
+        .or(`sender.eq."${state.currentUser.id}",receiver.eq."${state.currentUser.id}",sender.eq."${uuid}",receiver.eq."${uuid}",receiver.eq.global_chat`)
         .order('created_at', { ascending: true });
 
     // Fetch read receipts to calculate unread counts
@@ -417,7 +417,7 @@ async function syncChatsWithDatabase() {
     const chatsMap = new Map();
 
     // Build chat objects from the mapped messages
-    messages.forEach(msg => {
+    (messages || []).forEach(msg => {
         let chatId, chatType, chatName;
         if (msg.receiver === 'global_chat') {
             chatId = 'global_chat';
@@ -1134,62 +1134,64 @@ function renderSidebar() {
 
 function renderDirectory() {
     if (state.nav === "home") {
-        elements.directoryEyebrow.textContent = "Inbox";
-        elements.directoryTitle.textContent = "Direct messages";
-        elements.directorySubtitle.textContent = "Keep up with the people building alongside you.";
-        elements.searchInput.placeholder = "Search conversations";
-        elements.newConversationButton.textContent = "New chat";
+        if (elements.directoryEyebrow) elements.directoryEyebrow.textContent = "Inbox";
+        if (elements.directoryTitle) elements.directoryTitle.textContent = "Direct messages";
+        if (elements.directorySubtitle) elements.directorySubtitle.textContent = "Keep up with the people building alongside you.";
+        if (elements.searchInput) elements.searchInput.placeholder = "Search conversations";
+        if (elements.newConversationButton) elements.newConversationButton.textContent = "New chat";
         renderFilterBar([
             { id: "all", label: "All" },
             { id: "direct", label: "Direct" },
             { id: "group", label: "Groups" }
         ], state.chatFilter);
-        elements.directoryContent.innerHTML = renderChatDirectory();
+        if (elements.directoryContent) elements.directoryContent.innerHTML = renderChatDirectory();
         return;
     }
 
     if (state.nav === "global") {
         // Show the full chat list in the directory while workspace shows Global Chat
-        elements.directoryEyebrow.textContent = "Inbox";
-        elements.directoryTitle.textContent = "All conversations";
-        elements.directorySubtitle.textContent = "Return to any direct or group chat from here.";
-        elements.searchInput.placeholder = "Search conversations";
-        elements.newConversationButton.textContent = "New chat";
+        if (elements.directoryEyebrow) elements.directoryEyebrow.textContent = "Inbox";
+        if (elements.directoryTitle) elements.directoryTitle.textContent = "All conversations";
+        if (elements.directorySubtitle) elements.directorySubtitle.textContent = "Return to any direct or group chat from here.";
+        if (elements.searchInput) elements.searchInput.placeholder = "Search conversations";
+        if (elements.newConversationButton) elements.newConversationButton.textContent = "New chat";
         renderFilterBar([
             { id: "all", label: "All" },
             { id: "direct", label: "Direct" },
             { id: "group", label: "Groups" }
         ], state.chatFilter);
-        elements.directoryContent.innerHTML = renderChatDirectory();
+        if (elements.directoryContent) elements.directoryContent.innerHTML = renderChatDirectory();
         return;
     }
 
-    if (state.nav === "requests") {
-        // No list to show in directory when viewing requests
-        elements.directoryEyebrow.textContent = "Invites";
-        elements.directoryTitle.textContent = "Friend requests";
-        elements.directorySubtitle.textContent = "Manage pending requests in the panel on the right.";
-        elements.searchInput.placeholder = "";
-        elements.newConversationButton.textContent = "New chat";
-        elements.filterBar.innerHTML = "";
-        elements.directoryContent.innerHTML = "";
+    if (state.nav === "friends") {
+        if (elements.directoryEyebrow) elements.directoryEyebrow.textContent = "Network";
+        if (elements.directoryTitle) elements.directoryTitle.textContent = "Teammates";
+        if (elements.directorySubtitle) elements.directorySubtitle.textContent = "Your trusted nodes in the network.";
+        if (elements.searchInput) elements.searchInput.placeholder = "Search people";
+        if (elements.newConversationButton) elements.newConversationButton.textContent = "Add node";
+        renderFilterBar([
+            { id: "all", label: "All" },
+            { id: "online", label: "Online" }
+        ], state.friendFilter);
+        if (elements.directoryContent) elements.directoryContent.innerHTML = renderFriendsDirectory();
         return;
     }
 
-    // nav === "friends"
-    elements.directoryEyebrow.textContent = "People";
-    elements.directoryTitle.textContent = "Friends";
-    elements.directorySubtitle.textContent = "Start a conversation with someone available right now.";
-    elements.searchInput.placeholder = "Search friends";
-    elements.newConversationButton.textContent = "New group";
-    renderFilterBar([
-        { id: "all", label: "All friends" },
-        { id: "online", label: "Online now" }
-    ], state.friendFilter);
-    elements.directoryContent.innerHTML = renderFriendsDirectory();
+    if (state.nav === "requests" || state.nav === "activity") {
+        if (elements.directoryEyebrow) elements.directoryEyebrow.textContent = state.nav === "requests" ? "Invites" : "Activity";
+        if (elements.directoryTitle) elements.directoryTitle.textContent = state.nav === "requests" ? "Friend requests" : "Intelligence";
+        if (elements.directorySubtitle) elements.directorySubtitle.textContent = "Manage pending events in the panel on the right.";
+        if (elements.searchInput) elements.searchInput.placeholder = "";
+        if (elements.newConversationButton) elements.newConversationButton.textContent = "New chat";
+        if (elements.filterBar) elements.filterBar.innerHTML = "";
+        if (elements.directoryContent) elements.directoryContent.innerHTML = "";
+        return;
+    }
 }
 
 function renderFilterBar(filters, activeFilter) {
+    if (!elements.filterBar) return;
     elements.filterBar.innerHTML = filters.map((filter) => `
         <button class="filter-chip ${filter.id === activeFilter ? "active" : ""}" type="button" data-filter="${filter.id}">
             ${escapeHtml(filter.label)}
@@ -2442,10 +2444,10 @@ function closeTransientUi() {
 function openConversationModal(mode) {
     state.modalMode = mode;
     state.modalOpen = true;
-    elements.directRecipientInput.value = "";
-    elements.groupNameInput.value = "";
-    elements.groupParticipantsInput.value = "";
-    elements.conversationMessageInput.value = "";
+    if (elements.directRecipientInput) elements.directRecipientInput.value = "";
+    if (elements.groupNameInput) elements.groupNameInput.value = "";
+    if (elements.groupParticipantsInput) elements.groupParticipantsInput.value = "";
+    if (elements.conversationMessageInput) elements.conversationMessageInput.value = "";
     renderModalMode();
 }
 
@@ -2455,10 +2457,10 @@ function closeConversationModal() {
 }
 
 async function createConversationFromModal() {
-    const firstMessage = elements.conversationMessageInput.value.trim();
+    const firstMessage = elements.conversationMessageInput?.value?.trim() || "";
 
     if (state.modalMode === "direct") {
-        const recipientName = elements.directRecipientInput.value.trim();
+        const recipientName = elements.directRecipientInput?.value?.trim();
         if (!recipientName) {
             window.alert("Add a recipient name first.");
             return;
@@ -2484,8 +2486,8 @@ async function createConversationFromModal() {
         return;
     }
 
-    const groupName = elements.groupNameInput.value.trim();
-    const participantNames = elements.groupParticipantsInput.value.split(",").map((name) => name.trim()).filter(Boolean);
+    const groupName = elements.groupNameInput?.value?.trim();
+    const participantNames = elements.groupParticipantsInput?.value?.split(",").map((name) => name.trim()).filter(Boolean) || [];
 
     if (!groupName || !participantNames.length) {
         window.alert("Add a group name and at least one participant.");
@@ -3094,20 +3096,6 @@ function getVisibleChats() {
         .sort((left, right) => getLastTimestamp(right.id) - getLastTimestamp(left.id));
 }
 
-function getVisibleFriends() {
-    return state.friends
-        .map((friendId) => state.people[friendId])
-        .filter(Boolean)
-        .filter((person) => {
-            if (state.friendFilter === "online") return person.presence === "online";
-            return true;
-        })
-        .filter((person) => {
-            if (!state.search) return true;
-            const haystack = `${person.name} ${person.statusText}`.toLowerCase();
-            return haystack.includes(state.search);
-        });
-}
 
 function getChatById(chatId) {
     return state.chats.find((chat) => chat.id === chatId) || null;
@@ -3178,22 +3166,7 @@ function buildPresenceCopy(person) {
     return `${person.statusText} · offline`;
 }
 
-function renderChatAvatar(chat) {
-    if (chat.type === "direct") {
-        return renderPersonAvatar(getDirectPeer(chat), "directory-avatar", true);
-    }
 
-    const otherPeople = getChatParticipants(chat).filter((person) => person.id !== state.currentUser.id).slice(0, 3);
-    return `
-        <div class="avatar-stack">
-            ${otherPeople.map((person) => `
-                <div class="avatar-token" style="--avatar-a:${person.toneA}; --avatar-b:${person.toneB};">
-                    <span>${escapeHtml(person.initials)}</span>
-                </div>
-            `).join("")}
-        </div>
-    `;
-}
 
 window.showProfileSummary = async (userId) => {
      console.log("[Pulse] Triggering profile summary for:", userId);
