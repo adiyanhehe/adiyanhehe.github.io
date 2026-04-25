@@ -1,486 +1,519 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pulse Messaging</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="discuss.css">
-    <!-- global.css excluded: its body.light-mode !important rules conflict with discuss.css theme vars -->
-    <!-- Supabase loaded first to guarantee it's available before global.js runs -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin></script>
-    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
-    <script src="global.js?v=3" defer></script>
-    <script src="discuss.js" defer></script>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+    <title>Nexus Network – PULSE</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#cabeff",
+                        "on-primary": "#1a1b2e",
+                        "secondary": "#bdf4ff",
+                        "on-secondary": "#111b21",
+                        "tertiary": "#ffb3b5",
+                        "on-tertiary": "#2e1a1b",
+                        "surface": "#1d1f29",
+                        "on-surface": "#e1e1ef",
+                        "surface-variant": "#2b2d3c",
+                        "on-surface-variant": "#c4c5d0",
+                        "background": "#0c0e17",
+                        "outline": "#44464f",
+                        "error": "#ffb4ab",
+                        "panel-bg": "rgba(29, 31, 41, 0.6)"
+                    },
+                    "borderRadius": {
+                        "xl": "1rem",
+                        "2xl": "1.5rem",
+                        "3xl": "2rem"
+                    },
+                    "fontFamily": {
+                        "sans": ["Inter", "sans-serif"],
+                        "mono": ["Space Grotesk", "monospace"]
+                    },
+                    "gap": {
+                        "panel-gap": "1rem"
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        body {
+            background: 
+                radial-gradient(circle at 80% 0%, rgba(147, 125, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 20% 100%, rgba(0, 218, 243, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(255, 179, 181, 0.03) 0%, transparent 50%),
+                #0c0e17;
+            background-attachment: fixed;
+            color: #e1e1ef;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(29, 31, 41, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        /* Responsive Drawer Logic */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                z-index: 100;
+            }
+            #directoryPanel {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                z-index: 90;
+            }
+            .sidebar-open #sidebar { transform: translateX(0); }
+            .directory-open #directoryPanel { transform: translateX(0); }
+        }
+
+        .active-indicator::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 16px;
+            background-color: #cabeff;
+            border-radius: 99px;
+            box-shadow: 0 0 10px #cabeff;
+        }
+
+        /* Messaging bubbles */
+        .msg-bubble-sent {
+            background: linear-gradient(135deg, #cabeff 0%, #a594ff 100%);
+            color: #1a1b2e;
+            border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
+            box-shadow: 0 4px 12px rgba(170, 150, 255, 0.2);
+        }
+        .msg-bubble-received {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e1e1ef;
+            border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
+        }
+
+        /* Animation */
+        .fade-up {
+            animation: fadeUp 0.4s ease-out forwards;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    <!-- Supabase & Global -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="global.js?v=4" defer></script>
+    <script src="discuss.js?v=4" defer></script>
 </head>
-<body>
-    <div class="messenger-app" id="app">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-top">
-                <div class="brand-lockup">
-                    <div class="brand-mark">PX</div>
-                    <div>
-                        <p class="eyebrow">Private Messaging</p>
-                        <h1>Pulse</h1>
-                    </div>
+<body class="font-sans antialiased">
+    <!-- TopAppBar -->
+    <header class="fixed top-0 w-full z-50 glass-panel border-b border-white/5 h-16 flex items-center px-6">
+        <div class="flex items-center gap-4 w-full max-w-[1800px] mx-auto">
+            <!-- Mobile Menu Toggle -->
+            <button id="openSidebarButton" class="md:hidden w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-slate-400">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+
+            <div class="flex items-center gap-3 group cursor-pointer" onclick="window.location.href='index.html'">
+                <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-on-primary text-xl">hub</span>
                 </div>
-
-                <nav class="sidebar-nav">
-                    <button class="nav-button active" id="homeViewButton" type="button" data-view="home" aria-pressed="true">
-                        <span class="nav-button-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M3 11.5L12 4l9 7.5"></path>
-                                <path d="M5 10.5V20h14v-9.5"></path>
-                            </svg>
-                        </span>
-                        <span class="nav-button-copy">
-                            <strong>Messages</strong>
-                            <small>Private & groups</small>
-                        </span>
-                        <span class="nav-badge hidden" id="homeUnreadBadge">0</span>
-                    </button>
-
-                    <button class="nav-button" id="globalViewButton" type="button" data-view="global" aria-pressed="false">
-                        <span class="nav-button-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <path d="M3.6 9h16.8"></path>
-                                <path d="M3.6 15h16.8"></path>
-                                <path d="M12 3a15.3 15.3 0 0 1 0 18"></path>
-                                <path d="M12 3a15.3 15.3 0 0 0 0 18"></path>
-                            </svg>
-                        </span>
-                        <span class="nav-button-copy">
-                            <strong>Network</strong>
-                            <small>Platform Global Chat</small>
-                        </span>
-                    </button>
-
-                    <button class="nav-button" id="friendsViewButton" type="button" data-view="friends" aria-pressed="false">
-                        <span class="nav-button-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M16 21v-2.5a3.5 3.5 0 0 0-3.5-3.5H7.5A3.5 3.5 0 0 0 4 18.5V21"></path>
-                                <circle cx="10" cy="8" r="4"></circle>
-                                <path d="M20 21v-2a3 3 0 0 0-2.2-2.9"></path>
-                                <path d="M16.5 4.2a3.8 3.8 0 0 1 0 7.2"></path>
-                            </svg>
-                        </span>
-                        <span class="nav-button-copy">
-                            <strong>Friends</strong>
-                            <small>Online teammates</small>
-                        </span>
-                        <span class="nav-badge hidden" id="friendsOnlineBadge">0</span>
-                    </button>
-
-                    <button class="nav-button" id="requestsViewButton" type="button" data-view="requests" aria-pressed="false">
-                        <span class="nav-button-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M16 21v-2.5a3.5 3.5 0 0 0-3.5-3.5H7.5A3.5 3.5 0 0 0 4 18.5V21"></path>
-                                <circle cx="10" cy="8" r="4"></circle>
-                                <line x1="19" y1="8" x2="19" y2="14"></line>
-                                <line x1="16" y1="11" x2="22" y2="11"></line>
-                            </svg>
-                        </span>
-                        <span class="nav-button-copy">
-                            <strong>Requests</strong>
-                            <small>Pending invites</small>
-                        </span>
-                        <span class="nav-badge hidden" id="requestsBadge">0</span>
-                    </button>
-
-                    <button class="nav-button" id="activityViewButton" type="button" data-view="activity" aria-pressed="false">
-                        <span class="nav-button-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V10c0-3.07-1.63-5.64-4.5-6.32V3a1.5 1.5 0 0 0-3 0v.68C7.64 4.36 6 6.92 6 10v6l-2 2v1h16v-1l-2-2z"/></svg>
-                        </span>
-                        <span class="nav-button-copy">
-                            <strong>Activity</strong>
-                            <small>Mentions & Alerts</small>
-                        </span>
-                        <span class="nav-badge hidden" id="activityBadge">0</span>
-                    </button>
-                </nav>
+                <div class="flex flex-col leading-none">
+                    <span class="text-sm font-black tracking-tighter uppercase text-white">Nexus</span>
+                    <span class="text-[10px] font-mono tracking-widest uppercase text-primary">Pulse</span>
+                </div>
+            </div>
+            
+            <div class="hidden md:flex items-center flex-1 max-w-xl bg-white/5 rounded-full border border-white/5 px-4 h-10 group focus-within:border-primary/30 transition-all">
+                <span class="material-symbols-outlined text-slate-500 text-xl group-focus-within:text-primary transition-colors">search</span>
+                <input type="text" id="searchInput" class="bg-transparent border-none focus:ring-0 text-sm text-white placeholder-slate-600 w-full ml-2" placeholder="Search neural connections...">
             </div>
 
-            <div class="sidebar-bottom">
-                <div class="utility-row">
-                    <button class="utility-button" id="themeToggleButton" type="button" aria-label="Toggle theme">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 3v2.5"></path>
-                            <path d="M12 18.5V21"></path>
-                            <path d="M4.6 4.6l1.8 1.8"></path>
-                            <path d="M17.6 17.6l1.8 1.8"></path>
-                            <path d="M3 12h2.5"></path>
-                            <path d="M18.5 12H21"></path>
-                            <path d="M4.6 19.4l1.8-1.8"></path>
-                            <path d="M17.6 6.4l1.8-1.8"></path>
-                            <circle cx="12" cy="12" r="4.5"></circle>
-                        </svg>
-                    </button>
-
-                    <button class="utility-button mobile-only" id="closeSidebarButton" type="button" aria-label="Close sidebar">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 6L6 18"></path>
-                            <path d="M6 6l12 12"></path>
-                        </svg>
-                    </button>
+            <div class="flex items-center gap-4 ml-auto">
+                <!-- Mobile Directory Toggle -->
+                <button id="openDirectoryButton" class="md:hidden w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-slate-400">
+                    <span class="material-symbols-outlined">forum</span>
+                </button>
+                
+                <button class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-primary active:scale-90">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+                <div class="w-10 h-10 rounded-xl border border-white/10 overflow-hidden cursor-pointer hover:border-primary/50 transition-all" id="settingsButton">
+                    <img id="currentUserAvatar" src="jay.png" class="w-full h-full object-cover">
                 </div>
+            </div>
+        </div>
+    </header>
 
-                <div class="current-user-card">
-                    <div class="current-user-avatar" id="currentUserAvatar"></div>
-                    <div class="current-user-meta">
-                        <strong id="currentUserName">Pulse User</strong>
-                        <span id="currentUserStatus">Ready to chat</span>
+    <div class="flex h-screen pt-16" id="app">
+        <!-- Sidebar Navigation -->
+        <aside class="flex flex-col w-64 md:w-20 lg:w-64 border-r border-white/5 bg-black/40 backdrop-blur-md z-40 transition-all duration-300" id="sidebar">
+            <div class="p-6 flex-1 space-y-2">
+                <button class="nav-button active w-full flex items-center gap-4 p-3 rounded-2xl transition-all relative group" id="homeViewButton">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-on-primary transition-all shadow-inner">
+                        <span class="material-symbols-outlined">forum</span>
                     </div>
-                    <button class="utility-button" id="settingsButton" type="button" aria-label="Open settings">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1 0 2.8l-.8.8a2 2 0 0 1-2.8 0l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V22a2 2 0 0 1-2 2h-1.2a2 2 0 0 1-2-2v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 0 1-2.8 0l-.8-.8a2 2 0 0 1 0-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H2a2 2 0 0 1-2-2v-1.2a2 2 0 0 1 2-2h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 0 1 0-2.8l.8-.8a2 2 0 0 1 2.8 0l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 9 2.2V2a2 2 0 0 1 2-2h1.2a2 2 0 0 1 2 2v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 0 1 2.8 0l.8.8a2 2 0 0 1 0 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1H22a2 2 0 0 1 2 2v1.2a2 2 0 0 1-2 2h-.2a1.7 1.7 0 0 0-1.5 1Z"></path>
-                        </svg>
-                    </button>
-                </div>
+                    <div class="lg:flex flex-col items-start leading-tight">
+                        <span class="text-sm font-bold text-white">Direct</span>
+                        <span class="text-[10px] text-slate-500 font-mono">Neural Stream</span>
+                    </div>
+                    <span id="homeUnreadBadge" class="hidden absolute top-2 right-2 bg-primary text-on-primary text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg"></span>
+                    <div class="active-indicator"></div>
+                </button>
 
-                <div class="settings-menu hidden" id="settingsMenu">
-                    <button class="settings-menu-item" onclick="window.goToMyProfile()" type="button">View Global Profile</button>
-                    <button class="settings-menu-item" id="changeStatusButton" type="button">Change custom status</button>
-                    <button class="settings-menu-item" id="clearUnreadButton" type="button">Clear unread badges</button>
-                    <button class="settings-menu-item danger" id="resetDemoButton" type="button">Reset demo data</button>
+                <button class="nav-button w-full flex items-center gap-4 p-3 rounded-2xl transition-all relative group" id="globalViewButton">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 group-hover:bg-secondary/10 group-hover:text-secondary transition-all">
+                        <span class="material-symbols-outlined">public</span>
+                    </div>
+                    <div class="lg:flex flex-col items-start leading-tight">
+                        <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Global</span>
+                        <span class="text-[10px] text-slate-600 font-mono">Open Pulse</span>
+                    </div>
+                </button>
+
+                <button class="nav-button w-full flex items-center gap-4 p-3 rounded-2xl transition-all relative group" id="friendsViewButton">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 group-hover:bg-secondary/10 group-hover:text-secondary transition-all">
+                        <span class="material-symbols-outlined">group</span>
+                    </div>
+                    <div class="lg:flex flex-col items-start leading-tight">
+                        <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">People</span>
+                        <span class="text-[10px] text-slate-600 font-mono">Teammates</span>
+                    </div>
+                    <span id="friendsOnlineBadge" class="hidden absolute top-2 right-2 bg-success text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg"></span>
+                </button>
+
+                <button class="nav-button w-full flex items-center gap-4 p-3 rounded-2xl transition-all relative group" id="requestsViewButton">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 group-hover:bg-tertiary/10 group-hover:text-tertiary transition-all">
+                        <span class="material-symbols-outlined">person_add</span>
+                    </div>
+                    <div class="lg:flex flex-col items-start leading-tight">
+                        <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Invitations</span>
+                        <span class="text-[10px] text-slate-600 font-mono">Pending</span>
+                    </div>
+                    <span id="requestsBadge" class="hidden absolute top-2 right-2 bg-tertiary text-on-tertiary text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg"></span>
+                </button>
+
+                <button class="nav-button w-full flex items-center gap-4 p-3 rounded-2xl transition-all relative group" id="activityViewButton">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                        <span class="material-symbols-outlined">notifications_active</span>
+                    </div>
+                    <div class="lg:flex flex-col items-start leading-tight">
+                        <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Intelligence</span>
+                        <span class="text-[10px] text-slate-600 font-mono">Mentions</span>
+                    </div>
+                </button>
+            </div>
+
+            <div class="p-6 border-t border-white/5 space-y-4">
+                <div class="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
+                    <div class="relative flex-shrink-0">
+                        <img src="jay.png" id="side-pic" class="w-10 h-10 rounded-xl object-cover border border-white/10">
+                    </div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="text-xs font-bold text-white truncate" id="currentUserName">User</span>
+                        <span class="text-[9px] text-slate-500 font-mono uppercase tracking-widest truncate" id="currentUserStatus">Active Node</span>
+                    </div>
                 </div>
+                <button id="closeSidebarButton" class="md:hidden w-full py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-500">Close Panel</button>
+            </div>
+
+            <!-- Settings Menu Overlay -->
+            <div id="settingsMenu" class="hidden absolute left-full bottom-24 ml-2 w-64 glass-panel rounded-2xl p-2 z-[60] border-white/10 shadow-2xl">
+                <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-slate-300 hover:text-white" onclick="window.goToMyProfile()">
+                    <span class="material-symbols-outlined text-xl">account_circle</span>
+                    <span class="text-xs font-bold">Global Profile</span>
+                </button>
+                <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-slate-300 hover:text-white" id="changeStatusButton">
+                    <span class="material-symbols-outlined text-xl">edit_note</span>
+                    <span class="text-xs font-bold">Set Custom Status</span>
+                </button>
+                <div class="h-[1px] bg-white/5 my-1"></div>
+                <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-error/10 transition-all text-error" id="resetDemoButton">
+                    <span class="material-symbols-outlined text-xl">delete_sweep</span>
+                    <span class="text-xs font-bold">Purge Local Arrays</span>
+                </button>
             </div>
         </aside>
 
-        <section class="directory-panel" id="directoryPanel">
-            <div class="directory-header">
-                <div class="directory-heading">
-                    <div class="mobile-heading-row">
-                        <button class="utility-button mobile-only" id="openSidebarButton" type="button" aria-label="Open navigation">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M4 7h16"></path>
-                                <path d="M4 12h16"></path>
-                                <path d="M4 17h16"></path>
-                            </svg>
-                        </button>
-                        <span class="eyebrow" id="directoryEyebrow">Inbox</span>
+        <!-- Directory Panel (Conversations) -->
+        <section class="flex flex-col w-full md:w-80 lg:w-96 border-r border-white/5 bg-black/10 transition-all" id="directoryPanel">
+            <div class="p-6 space-y-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-mono tracking-widest text-primary uppercase" id="directoryEyebrow">Direct Uplink</span>
+                        <h2 class="text-xl font-black text-white" id="directoryTitle">Connections</h2>
                     </div>
-                    <h2 id="directoryTitle">Direct messages</h2>
-                    <p id="directorySubtitle">Keep up with the people building alongside you.</p>
+                    <button class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-on-primary shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all" id="newConversationButton">
+                        <span class="material-symbols-outlined">add_comment</span>
+                    </button>
                 </div>
 
-                <button class="create-button" id="newConversationButton" type="button">New chat</button>
-
-                <label class="search-field">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="11" cy="11" r="6.5"></circle>
-                        <path d="M16 16l5 5"></path>
-                    </svg>
-                    <input id="searchInput" type="search" placeholder="Search conversations">
-                </label>
-
-                <div class="filter-bar" id="filterBar"></div>
+                <div class="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5" id="filterBar">
+                    <!-- Filters dynamically injected -->
+                </div>
             </div>
 
-            <div class="directory-content" id="directoryContent"></div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-1 pb-20" id="directoryContent">
+                <!-- Conversation items injected here -->
+            </div>
         </section>
 
-        <main class="workspace" id="workspace">
-            <header class="workspace-header">
-                <div class="workspace-header-main">
-                    <button class="utility-button mobile-only" id="openDirectoryButton" type="button" aria-label="Open chat list">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M4 7h16"></path>
-                            <path d="M4 12h16"></path>
-                            <path d="M4 17h16"></path>
-                        </svg>
-                    </button>
-                    <div id="workspaceIdentity"></div>
+        <!-- Workspace (Main Chat Window) -->
+        <main class="flex-1 flex flex-col min-w-0 bg-[#0c0e17]/40 relative" id="workspace">
+            <header class="h-16 flex items-center justify-between px-6 border-b border-white/5 backdrop-blur-md">
+                <div id="workspaceIdentity" class="flex items-center gap-4 min-w-0">
+                    <!-- Identity injected here -->
                 </div>
 
-                <div class="workspace-actions">
-                    <div class="workspace-search-field hidden" id="workspaceSearchField">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px; height:16px; margin-left:12px; opacity:0.5;"><path d="M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35"/></svg>
-                        <input id="workspaceSearchInput" type="text" placeholder="Search this chat...">
-                        <div class="search-scope-toggle" id="searchScopeToggle">
-                            <button class="scope-btn active" data-scope="local">Chat</button>
-                            <button class="scope-btn" data-scope="all">All</button>
-                        </div>
-                        <button class="utility-button" id="closeWorkspaceSearch" type="button" aria-label="Close search">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M18 6L6 18"></path>
-                                <path d="M6 6l12 12"></path>
-                            </svg>
+                <div class="flex items-center gap-2">
+                    <div class="hidden md:flex items-center gap-1 glass-panel px-3 h-9 rounded-xl border-white/5 mr-2" id="workspaceSearchField">
+                        <span class="material-symbols-outlined text-slate-500 text-lg">search</span>
+                        <input type="text" id="workspaceSearchInput" class="bg-transparent border-none focus:ring-0 text-xs text-white placeholder-slate-600 w-32" placeholder="Search Uplink...">
+                        <button id="closeWorkspaceSearch" class="text-slate-500 hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-sm">close</span>
                         </button>
                     </div>
-                    <button class="utility-button" id="openSearchButton" type="button" aria-label="Search this chat">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <circle cx="11" cy="11" r="6.5"></circle>
-                            <path d="M16 16l5 5"></path>
-                        </svg>
+                    
+                    <button class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-primary" id="openSearchButton">
+                        <span class="material-symbols-outlined">search</span>
                     </button>
-                    <button class="ghost-button" id="membersToggleButton" type="button">Members</button>
-                    <button class="ghost-button hidden" id="jumpLatestButton" type="button">Jump to latest</button>
+                    <button class="px-4 h-9 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all" id="membersToggleButton">
+                        Uplink Data
+                    </button>
                 </div>
             </header>
 
-            <section class="workspace-body">
-                <section class="friends-stage hidden" id="friendsStage"></section>
-                <div class="workspace-stage hidden" id="requestsStage"></div>
-                <div class="workspace-stage hidden" id="activityStage"></div>
+            <section class="flex-1 flex flex-col min-h-0 relative">
+                <!-- Special stages -->
+                <div class="absolute inset-0 z-10 overflow-y-auto custom-scrollbar bg-background hidden" id="friendsStage"></div>
+                <div class="absolute inset-0 z-10 overflow-y-auto custom-scrollbar bg-background hidden" id="requestsStage"></div>
+                <div class="absolute inset-0 z-10 overflow-y-auto custom-scrollbar bg-background hidden" id="activityStage"></div>
 
-                <section class="chat-stage" id="chatStage">
-                    <div class="pinned-messages-bar hidden" id="pinnedMessagesBar">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L15 8L22 9L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9L9 8L12 2Z"/></svg>
-                        <span id="pinnedMessageText">Pinned message</span>
-                        <button class="utility-button" id="closePinnedBar" type="button" aria-label="Dismiss pin">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                        </button>
-                    </div>
+                <!-- Chat Stream -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4 flex flex-col" id="messageStream">
+                    <!-- Messages injected here -->
+                </div>
 
-                    <div class="message-stream" id="messageStream"></div>
-
-                    <div class="typing-indicator hidden" id="typingIndicator">
-                        <div class="typing-dots" aria-hidden="true">
-                            <span></span>
-                            <span></span>
-                            <span></span>
+                <!-- Typing indicator -->
+                <div class="px-6 py-2 hidden" id="typingIndicator">
+                    <div class="flex items-center gap-2 text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                        <div class="flex gap-1">
+                            <div class="w-1 h-1 bg-primary rounded-full animate-bounce"></div>
+                            <div class="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                            <div class="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></div>
                         </div>
-                        <span id="typingLabel">Someone is typing...</span>
+                        <span id="typingLabel">Teammate is encoding...</span>
                     </div>
+                </div>
 
-                    <aside class="members-sheet hidden" id="membersSheet">
-                        <div class="sheet-tabs">
-                            <button class="sheet-tab active" data-tab="members">Members</button>
-                            <button class="sheet-tab" data-tab="gallery">Gallery</button>
-                            <button class="sheet-tab" data-tab="pinned">Pins</button>
-                        </div>
-                        <div class="sheet-content" id="sheetContent"></div>
-                    </aside>
-                </section>
+                <!-- Floating Sidebar (Members/Settings) -->
+                <aside class="absolute right-0 top-0 bottom-0 w-80 glass-panel border-l border-white/5 z-20 translate-x-full transition-transform duration-300 ease-in-out hidden flex flex-col" id="membersSheet">
+                    <div class="p-4 flex gap-2 border-b border-white/5">
+                        <button class="sheet-tab active flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-primary/10 text-primary" data-tab="members">Nodes</button>
+                        <button class="sheet-tab flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-slate-500 hover:text-white" data-tab="gallery">Media</button>
+                        <button class="sheet-tab flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-slate-500 hover:text-white" data-tab="pinned">Pins</button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto custom-scrollbar p-4" id="sheetContent"></div>
+                </aside>
             </section>
 
-        <footer class="composer" id="composer">
-            <div class="emoji-picker hidden" id="emojiPicker"></div>
-            
-            <div id="mentionDropdown" class="mention-dropdown hidden"></div>
-
-            <div class="composer-previews">
-                <div class="reply-preview hidden" id="replyPreview">
-                    <div class="reply-preview-line"></div>
-                    <div class="reply-preview-content">
-                        <small>Replying to <strong id="replyToName">User</strong></small>
-                        <p id="replyToText">Message content...</p>
+            <!-- Composer (Messenger Input) -->
+            <footer class="p-6 border-t border-white/5 bg-black/20 backdrop-blur-md" id="composer">
+                <!-- Floating elements above composer -->
+                <div class="relative">
+                    <div id="emojiPicker" class="hidden absolute bottom-full left-0 mb-4 z-50"></div>
+                    <div id="gifPicker" class="hidden absolute bottom-full left-0 mb-4 z-50 w-full max-w-sm glass-panel rounded-2xl p-4 border-white/10 shadow-2xl">
+                        <div class="flex items-center gap-2 bg-white/5 rounded-xl border border-white/5 px-3 h-10 mb-4 focus-within:border-primary/30 transition-all">
+                            <span class="material-symbols-outlined text-slate-500 text-lg">search</span>
+                            <input type="text" id="gifSearchInput" class="bg-transparent border-none focus:ring-0 text-xs text-white placeholder-slate-600 w-full" placeholder="Search visual stream...">
+                        </div>
+                        <div id="gifGrid" class="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto custom-scrollbar"></div>
                     </div>
-                    <button class="utility-button" id="cancelReplyButton" type="button">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
+                    <div id="mentionDropdown" class="hidden absolute bottom-full left-0 mb-2 w-64 glass-panel rounded-xl overflow-hidden z-[60] border-white/10 shadow-2xl"></div>
                 </div>
-                
-                <div class="edit-preview hidden" id="editPreview">
-                    <div class="reply-preview-content">
-                        <small>Editing Message</small>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-wrap gap-2 empty:hidden" id="composerPreviews">
+                        <div id="replyPreview" class="hidden flex items-center justify-between bg-primary/5 border border-primary/20 p-3 rounded-xl w-full">
+                            <div class="flex items-start gap-3">
+                                <div class="w-1 h-8 bg-primary rounded-full"></div>
+                                <div class="flex flex-col">
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-primary">Replying to <span id="replyToName"></span></span>
+                                    <p id="replyToText" class="text-xs text-slate-400 truncate max-w-md"></p>
+                                </div>
+                            </div>
+                            <button id="cancelReplyButton" class="text-slate-500 hover:text-white"><span class="material-symbols-outlined text-sm">close</span></button>
+                        </div>
+                        <div id="editPreview" class="hidden flex items-center justify-between bg-secondary/5 border border-secondary/20 p-3 rounded-xl w-full">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-secondary text-sm">edit</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-secondary">Editing Transmission</span>
+                            </div>
+                            <button id="cancelEditButton" class="text-slate-500 hover:text-white"><span class="material-symbols-outlined text-sm">close</span></button>
+                        </div>
                     </div>
-                    <button class="utility-button" id="cancelEditButton" type="button">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
+
+                    <div class="glass-panel rounded-2xl border-white/10 p-2 flex items-end gap-2 focus-within:border-primary/30 transition-all">
+                        <div class="flex items-center gap-1 mb-1 ml-1">
+                            <button class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" id="emojiToggleButton">
+                                <span class="material-symbols-outlined text-xl">sentiment_satisfied</span>
+                            </button>
+                            <button class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-secondary hover:bg-secondary/10 transition-all" id="gifToggleButton">
+                                <span class="material-symbols-outlined text-xl">gif_box</span>
+                            </button>
+                            <button class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" id="uploadButton">
+                                <span class="material-symbols-outlined text-xl">image</span>
+                            </button>
+                            <input type="file" id="fileInput" accept="image/*" hidden>
+                        </div>
+                        
+                        <textarea id="messageInput" rows="1" maxlength="400" class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-white placeholder-slate-600 resize-none max-h-32 py-2.5 px-2 custom-scrollbar" placeholder="Type an encrypted message..."></textarea>
+                        
+                        <button id="sendButton" class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-on-primary shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all mb-0.5 mr-0.5">
+                            <span class="material-symbols-outlined">send</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex justify-between items-center px-2">
+                        <span class="text-[9px] font-mono text-slate-600 uppercase tracking-widest" id="composerHint">Press Enter to Transmit</span>
+                        <span class="text-[9px] font-mono text-slate-600 uppercase tracking-widest" id="characterCount">0 / 400</span>
+                    </div>
                 </div>
-            </div>
-
-            <div class="gif-picker hidden" id="gifPicker">
-                <div class="gif-picker-header">
-                    <input type="text" id="gifSearchInput" placeholder="Search GIFs...">
-                </div>
-                <div class="gif-grid" id="gifGrid"></div>
-            </div>
-
-            <div class="composer-shell">
-                <div class="composer-icon-group">
-                    <button class="utility-button" id="emojiToggleButton" type="button" aria-label="Open emoji picker">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <circle cx="12" cy="12" r="8.5"></circle>
-                            <path d="M8.5 10.5h.01"></path>
-                            <path d="M15.5 10.5h.01"></path>
-                            <path d="M8.5 14.5c.8 1.1 2 1.7 3.5 1.7s2.7-.6 3.5-1.7"></path>
-                        </svg>
-                    </button>
-
-                    <button class="utility-button" id="gifToggleButton" type="button" aria-label="Open GIF picker">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                    </button>
-
-                    <button class="utility-button" id="uploadButton" type="button" aria-label="Upload image">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                    </button>
-                    <input type="file" id="fileInput" accept="image/*" hidden>
-                </div>
-
-                <textarea id="messageInput" rows="1" maxlength="400" placeholder="Write a message"></textarea>
-
-                <button class="send-button" id="sendButton" type="button">Send</button>
-            </div>
-
-            <div class="composer-meta">
-                <span id="composerHint">Press Enter to send. Use Shift + Enter for a new line.</span>
-                <span id="characterCount">0 / 400</span>
-            </div>
-        </footer>
+            </footer>
         </main>
     </div>
 
-    <!-- Features Modals -->
-    <div class="modal-backdrop hidden" id="profileModal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div>
-                    <p class="eyebrow">User Settings</p>
-                    <h3>Edit My Profile</h3>
-                </div>
-                <button class="utility-button" onclick="window.closeProfileModal()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <label class="modal-field">
-                    <span>Display Name</span>
-                    <input id="profileDisplayName" type="text" placeholder="Enter your name">
-                </label>
-                <label class="modal-field">
-                    <span>Avatar URL</span>
-                    <input id="profileAvatarUrl" type="text" placeholder="https://example.com/image.png">
-                </label>
-                <label class="modal-field">
-                    <span>Bio</span>
-                    <textarea id="profileBio" rows="3" placeholder="Tell us about yourself..."></textarea>
-                </label>
-                <div style="margin-top: 12px; display: flex; gap: 12px;">
-                    <button class="primary-button" id="saveProfileBtn" style="flex: 1;">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modals -->
+    <div id="pageOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden"></div>
 
-    <div class="modal-backdrop hidden" id="pollModal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div>
-                    <p class="eyebrow">Interactive Poll</p>
-                    <h3>Create a Question</h3>
+    <!-- Start Conversation Modal -->
+    <div id="conversationModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg z-[110] hidden">
+        <div class="glass-panel rounded-3xl p-8 border-white/10 shadow-2xl space-y-6">
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-mono tracking-[0.2em] text-primary uppercase">Neural Sync</span>
+                    <h3 class="text-2xl font-black text-white tracking-tight">Establish Uplink</h3>
                 </div>
-                <button class="utility-button" onclick="window.closePollModal()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <label class="modal-field">
-                    <span>Question</span>
-                    <input id="pollQuestion" type="text" placeholder="e.g. Where should we eat?">
-                </label>
-                <div id="pollOptionsContainer">
-                    <label class="modal-field">
-                        <span>Option 1</span>
-                        <input type="text" class="poll-option-input" placeholder="e.g. Pizza">
-                    </label>
-                    <label class="modal-field">
-                        <span>Option 2</span>
-                        <input type="text" class="poll-option-input" placeholder="e.g. Tacos">
-                    </label>
-                </div>
-                <button class="ghost-button" onclick="window.addPollOption()" style="margin-top: 8px;">+ Add another option</button>
-                <div style="margin-top: 20px; display: flex; gap: 12px;">
-                    <button class="primary-button" id="publishPollBtn" style="flex: 1;">Publish Poll</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="page-overlay hidden" id="pageOverlay"></div>
-
-    <div class="modal-backdrop hidden" id="conversationModal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div>
-                    <p class="eyebrow">Start Conversation</p>
-                    <h3>Create a new direct message or group chat</h3>
-                </div>
-                <button class="utility-button" id="closeModalButton" type="button" aria-label="Close modal">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6L6 18"></path>
-                        <path d="M6 6l12 12"></path>
-                    </svg>
+                <button id="closeModalButton" class="text-slate-500 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
 
-            <div class="modal-mode-switch">
-                <button class="mode-button active" type="button" data-mode="direct">Direct message</button>
-                <button class="mode-button" type="button" data-mode="group">Group chat</button>
+            <div class="flex p-1 bg-white/5 rounded-2xl border border-white/5">
+                <button class="mode-button active flex-1 py-2.5 rounded-xl text-xs font-bold transition-all bg-primary text-on-primary" data-mode="direct">Direct Node</button>
+                <button class="mode-button flex-1 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white" data-mode="group">Cluster Chat</button>
             </div>
 
-            <div class="modal-body">
-                <label class="modal-field" id="directNameField">
-                    <span>Recipient</span>
-                    <input id="directRecipientInput" type="text" placeholder="Type a teammate name" autocomplete="off">
-                    <div id="userSearchResults" class="search-results-dropdown hidden"></div>
-                </label>
-
-                <div id="groupFields" class="hidden">
-                    <label class="modal-field">
-                        <span>Group name</span>
-                        <input id="groupNameInput" type="text" placeholder="Product launch room">
-                    </label>
-
-                    <label class="modal-field">
-                        <span>Participants</span>
-                        <input id="groupParticipantsInput" type="text" placeholder="Comma-separated names">
-                    </label>
-                </div>
-
-                <label class="modal-field">
-                    <span>First message</span>
-                    <textarea id="conversationMessageInput" rows="4" placeholder="Start the conversation with context"></textarea>
-                </label>
-            </div>
-
-            <div class="modal-actions">
-                <button class="ghost-button" id="cancelModalButton" type="button">Cancel</button>
-                <button class="create-button" id="createConversationButton" type="button">Create conversation</button>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop hidden" id="userSummaryModal">
-        <div class="modal-card user-summary-card">
-            <div class="modal-header">
-                <div>
-                    <p class="eyebrow">User Identity</p>
-                    <h3 id="summaryName">User Name</h3>
-                </div>
-                <button class="utility-button" onclick="window.closeUserSummaryModal()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="summary-profile-header">
-                    <div id="summaryAvatar" class="avatar-token large-avatar"></div>
-                    <div class="summary-meta">
-                        <h4 id="summaryHandle">@username</h4>
-                        <p id="summaryStatus" class="status-indicator">Status text goes here...</p>
+            <div class="space-y-4">
+                <div id="directNameField" class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Target Node</label>
+                    <div class="relative">
+                        <input id="directRecipientInput" type="text" class="w-full bg-white/5 border border-white/5 rounded-2xl px-4 h-12 text-sm text-white focus:border-primary/30 focus:ring-0 transition-all" placeholder="Enter username..." autocomplete="off">
+                        <div id="userSearchResults" class="absolute top-full left-0 right-0 mt-2 glass-panel rounded-xl overflow-hidden hidden z-10 border-white/10 shadow-2xl"></div>
                     </div>
                 </div>
-                <div class="summary-bio-section">
-                    <label>Bio</label>
-                    <p id="summaryBio">No bio provided.</p>
+
+                <div id="groupFields" class="hidden space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Cluster Name</label>
+                        <input id="groupNameInput" type="text" class="w-full bg-white/5 border border-white/5 rounded-2xl px-4 h-12 text-sm text-white focus:border-primary/30 focus:ring-0 transition-all" placeholder="Neural Network Alpha">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Member Array</label>
+                        <input id="groupParticipantsInput" type="text" class="w-full bg-white/5 border border-white/5 rounded-2xl px-4 h-12 text-sm text-white focus:border-primary/30 focus:ring-0 transition-all" placeholder="Comma-separated nodes">
+                    </div>
                 </div>
-                <div class="summary-actions-row">
-                    <button class="primary-button" id="summaryAddFriendBtn">Add Friend</button>
-                    <button class="primary-button" id="summaryMessageBtn">Message</button>
-                    <button class="ghost-button" id="summaryViewProfileBtn">View Full Profile</button>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Inaugural Pulse</label>
+                    <textarea id="conversationMessageInput" rows="4" class="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-3 text-sm text-white focus:border-primary/30 focus:ring-0 transition-all resize-none" placeholder="Start the handshake..."></textarea>
                 </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="cancelModalButton" class="flex-1 py-3 rounded-2xl border border-white/5 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">Abort</button>
+                <button id="createConversationButton" class="flex-2 px-8 py-3 rounded-2xl bg-primary text-on-primary text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">Initialize Uplink</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Summary Modal (Bento Style) -->
+    <div id="userSummaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-[120] hidden">
+        <div class="glass-panel rounded-[2.5rem] p-8 border-white/10 shadow-2xl space-y-6 overflow-hidden">
+            <div class="relative flex flex-col items-center text-center">
+                <button onclick="window.closeUserSummaryModal()" class="absolute -top-4 -right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-all text-slate-500 hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+                
+                <div class="relative mb-4">
+                    <div class="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-primary to-secondary p-1 shadow-2xl rotate-3">
+                        <img id="summaryAvatar" src="jay.png" class="w-full h-full rounded-[1.8rem] object-cover border-4 border-[#1d1f29] -rotate-3 transition-transform hover:rotate-0 duration-500">
+                    </div>
+                    <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-success rounded-full border-4 border-[#1d1f29] shadow-lg"></div>
+                </div>
+                
+                <h3 id="summaryName" class="text-2xl font-black text-white tracking-tight">User Identity</h3>
+                <span id="summaryHandle" class="text-sm font-mono text-primary">@username</span>
+                
+                <div class="mt-4 px-4 py-1.5 bg-white/5 rounded-full border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400" id="summaryStatus">
+                    Active Handshake
+                </div>
+            </div>
+
+            <div class="bg-white/5 rounded-3xl p-6 border border-white/5 space-y-2">
+                <span class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">Neural Signature</span>
+                <p id="summaryBio" class="text-sm text-slate-300 leading-relaxed italic">No bio encoded into this node's registry.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button id="summaryAddFriendBtn" class="py-3 rounded-2xl bg-secondary text-on-secondary text-xs font-black uppercase tracking-widest shadow-lg shadow-secondary/20 hover:scale-[1.02] transition-all">Add Teammate</button>
+                <button id="summaryMessageBtn" class="py-3 rounded-2xl bg-primary text-on-primary text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">Open Uplink</button>
+                <button id="summaryViewProfileBtn" class="col-span-2 py-3 rounded-2xl border border-white/5 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">Analyze Full Profile</button>
             </div>
         </div>
     </div>
