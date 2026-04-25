@@ -431,6 +431,7 @@ async function checkGlobalAuth() {
 }
 
 async function logoutNexus() {
+    window.logoutNexus = logoutNexus;
     // Close Ably realtime connection to remove ghost presence (bug #50 / S9)
     if (window.ably) {
         try { window.ably.close(); } catch (e) { /* ignore */ }
