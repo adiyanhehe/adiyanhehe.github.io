@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus | Admin Control Center</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700;900&display=swap" rel="stylesheet">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>CYBER_OS | COMMAND_CENTER</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,628 +14,1117 @@
     <link rel="stylesheet" href="anomalous_ops.css">
     <script src="anomalous_ops.js"></script>
     <style>
-        :root {
-            --bg: #020306; --surface: #0a0b10; --panel: rgba(12, 14, 22, 0.98);
-            --border: rgba(255, 255, 255, 0.08); --accent: #ff0044; --accent-glow: rgba(255, 0, 68, 0.3);
-            --text-main: #ffffff; --text-muted: rgba(255, 255, 255, 0.4);
-            --success: #00ffaa; --warning: #ffcc00; --danger: #ff2244;
-            --radius: 24px;
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
+        body {
+            background-color: #0A0A0B;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 219, 231, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(85, 22, 190, 0.05) 0px, transparent 50%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card:hover {
+            border-color: rgba(0, 219, 231, 0.25);
+            box-shadow: 0 0 15px rgba(0, 219, 231, 0.1);
+        }
+        .section { display: none; }
+        .section.active { display: block; animation: zoomIn 0.8s cubic-bezier(0.19, 1, 0.22, 1); }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.98) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 219, 231, 0.2); border-radius: 2px; }
 
-        * { margin:0; padding:0; box-sizing:border-box; outline: none; }
-        body { background: var(--bg); color: var(--text-main); font-family: 'Outfit', sans-serif; overflow: hidden; display: flex; height: 100vh; }
-
-        .scanline { position: fixed; top: 0; left: 0; width: 100%; height: 2px; background: rgba(255, 255, 255, 0.02); z-index: 999999; pointer-events: none; animation: scan 8s linear infinite; }
-        @keyframes scan { from { top: -10%; } to { top: 110%; } }
-
-        .ambient { position: fixed; width: 50vw; height: 50vw; filter: blur(250px); opacity: 0.1; z-index: -1; pointer-events: none; }
-        .amb-1 { top: -10%; left: -10%; background: var(--accent); }
-        .amb-2 { bottom: -10%; right: -10%; background: #0066ff; }
-
-        .sidebar { width: 280px; height: 100%; background: var(--panel); border-right: 1px solid var(--border); backdrop-filter: blur(60px); display: flex; flex-direction: column; padding: 50px 20px; z-index: 100; }
-        .brand { display: flex; align-items: center; gap: 15px; margin-bottom: 60px; }
-        .brand icon { display: flex; align-items:center; justify-content:center; width: 44px; height: 44px; background: #000; border: 1px solid var(--accent); border-radius: 12px; font-size: 1.5rem; filter: drop-shadow(0 0 10px var(--accent-glow)); }
-        .brand h2 { font-weight: 900; font-size: 1.3rem; letter-spacing: 2px; text-transform: uppercase; }
-
-        .nav-link { padding: 16px 20px; border-radius: 18px; color: var(--text-muted); text-decoration: none; font-weight: 900; font-size: 0.8rem; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; }
-        .nav-link:hover { color: #fff; background: rgba(255,255,255,0.04); transform: translateX(10px); }
-        .nav-link.active { color: #fff; background: var(--accent); box-shadow: 0 10px 40px var(--accent-glow); transform: scale(1.05); }
-
-        .main { flex: 1; height: 100%; overflow-y: auto; padding: 50px 70px; position: relative; scroll-behavior: smooth; }
-        .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 60px; position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 5px 0 30px; }
-        .topbar h1 { font-weight: 950; font-size: 3rem; letter-spacing: -3px; }
-        .topbar p { color: var(--text-muted); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 4px; font-weight: 300; }
-
-        .btn { padding: 16px 28px; border-radius: 16px; font-weight: 950; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.3s; display: inline-flex; align-items:center; gap:12px; border: 1px solid var(--border); background:rgba(255,255,255,0.05); color:#fff; }
-        .btn:hover { background: #fff; color: #000; transform: translateY(-5px); }
-        .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-        .btn.primary:hover { background: #fff; color: #000; }
-
-        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 40px; }
-        .kpi { background: var(--panel); border: 2px solid var(--border); padding: 40px; border-radius: var(--radius); backdrop-filter: blur(80px); transition: 0.4s; }
-        .kpi:hover { border-color: var(--accent); transform: scale(1.02); }
-        .kpi .num { font-size: 4rem; font-weight: 950; margin: 15px 0 5px; letter-spacing: -4px; line-height: 1; }
-        .kpi .label { font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 3px; }
-
-        .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 45px; margin-bottom: 30px; }
-        .card h3 { font-size: 1rem; font-weight: 950; color: #fff; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 35px; border-left: 5px solid var(--accent); padding-left: 20px; }
-
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 20px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 950; letter-spacing: 3px; border-bottom: 2px solid var(--border); }
-        td { padding: 25px 20px; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
-
-        .badge { padding: 8px 16px; border-radius: 12px; font-size: 0.75rem; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; }
-        .b-blue { background: rgba(0, 100, 255, 0.2); color: #0088ff; }
-        .b-red { background: rgba(255, 0, 68, 0.2); color: var(--accent); }
-        .b-green { background: rgba(0, 255, 170, 0.2); color: var(--success); }
-
-        .live-stream { position: fixed; bottom: 30px; right: 30px; width: 400px; z-index: 10000; }
-        .stream-msg { background: #000; border-left: 4px solid var(--accent); padding: 20px; margin-top: 15px; border-radius: 0 18px 18px 0; opacity: 0; transform: translateX(50px); animation: slideStream 0.5s forwards; font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; gap: 15px; }
-        @keyframes slideStream { to { opacity: 1; transform: translateX(0); } }
-
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(60px); }
-        .modal.open { display: flex; }
-        .modal-inner { background: #000; border: 2px solid var(--border); padding: 60px; border-radius: 40px; width: 800px; max-width: 95vw; position: relative; }
-
-        .section { display: none; animation: zoomIn 0.8s cubic-bezier(0.19, 1, 0.22, 1); }
-        .section.active { display: block; }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9) translateY(40px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-
-        #toast { position: fixed; top: 40px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--accent); color: #fff; padding: 20px 60px; border-radius: 0 0 20px 20px; font-weight: 950; text-transform: uppercase; letter-spacing: 4px; transition: 0.5s; z-index: 1000000; }
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #00dbe7; color: #002022; padding: 12px 30px; border-radius: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; transition: 0.5s; z-index: 1000000; box-shadow: 0 0 20px rgba(0, 219, 231, 0.4); font-size: 0.75rem; }
         #toast.show { transform: translateX(-50%) translateY(0); }
-
-        input, select, textarea { background: rgba(255,255,255,0.02); border: 2px solid var(--border); color: #fff; padding: 20px; border-radius: 18px; width: 100%; transition: 0.4s; font-family: inherit; font-size: 1.1rem; }
-        input:focus { border-color: var(--accent); box-shadow: 0 0 30px var(--accent-glow); }
     </style>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#002022",
+                    "primary-fixed": "#74f5ff",
+                    "on-tertiary-container": "#bb1c25",
+                    "on-secondary-fixed": "#23005c",
+                    "outline": "#849495",
+                    "on-secondary-container": "#c4abff",
+                    "background": "#131314",
+                    "on-primary": "#00363a",
+                    "inverse-on-surface": "#313031",
+                    "on-primary-container": "#006a71",
+                    "primary-fixed-dim": "#00dbe7",
+                    "on-tertiary-fixed": "#410004",
+                    "inverse-surface": "#e5e2e3",
+                    "on-secondary": "#3c0091",
+                    "secondary-fixed": "#e9ddff",
+                    "error": "#ffb4ab",
+                    "on-tertiary": "#68000a",
+                    "primary": "#e1fdff",
+                    "surface-container": "#201f20",
+                    "on-surface-variant": "#b9cacb",
+                    "on-surface": "#e5e2e3",
+                    "tertiary-fixed": "#ffdad7",
+                    "on-error-container": "#ffdad6",
+                    "secondary-container": "#571bc1",
+                    "primary-container": "#00f2ff",
+                    "error-container": "#93000a",
+                    "inverse-primary": "#00696f",
+                    "surface-bright": "#3a393a",
+                    "outline-variant": "#3a494b",
+                    "surface-container-low": "#1c1b1c",
+                    "tertiary-container": "#ffd0cc",
+                    "on-background": "#e5e2e3",
+                    "surface-dim": "#131314",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "surface-container-highest": "#353436",
+                    "surface-container-high": "#2a2a2b",
+                    "on-tertiary-fixed-variant": "#930013",
+                    "secondary": "#d0bcff",
+                    "surface-tint": "#00dbe7",
+                    "on-error": "#690005",
+                    "surface-variant": "#353436",
+                    "tertiary-fixed-dim": "#ffb3ad",
+                    "surface": "#131314",
+                    "on-primary-fixed-variant": "#004f54",
+                    "on-secondary-fixed-variant": "#5516be",
+                    "surface-container-lowest": "#0e0e0f",
+                    "tertiary": "#fff5f4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "margin_page": "40px",
+                    "sidebar_expanded": "280px",
+                    "sidebar_collapsed": "80px",
+                    "container_max_width": "1600px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "h2": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display": ["Inter"],
+                    "h1": ["Inter"],
+                    "mono": ["monospace"],
+                    "body-lg": ["Inter"],
+                    "label-caps": ["Inter"]
+            },
+            "fontSize": {
+                    "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "h1": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "mono": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
 </head>
-<body>
-    <div class="scanline"></div>
-    <div class="ambient amb-1"></div>
-    <div class="ambient amb-2"></div>
+<body class="font-body-md text-on-surface bg-background antialiased flex min-h-screen">
 
-    <div class="live-stream" id="stream"></div>
+<div id="toast">Command Executed Successfully</div>
 
-    <aside class="sidebar">
-        <div class="brand">
-            <icon>🛡️</icon>
-            <h2>Nexus Admin</h2>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-64 border-r border-white/10 bg-slate-950/80 backdrop-blur-2xl shadow-2xl shadow-cyan-900/10 z-50 flex flex-col py-8 gap-4">
+    <div class="px-6 mb-8">
+        <h1 class="text-lg font-black text-white tracking-tighter uppercase">COMMAND_CENTER</h1>
+        <p class="text-[10px] text-cyan-400 font-mono tracking-widest opacity-70">V2.0.4-STABLE</p>
+    </div>
+    <nav class="flex-1 px-4 space-y-2">
+        <a id="nav-overview" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-cyan-400 border-l-2 border-cyan-400 bg-cyan-400/5 backdrop-blur-md transition-all duration-200" href="#" onclick="navigate('overview', this)">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="font-label-caps text-xs tracking-widest uppercase">Dashboard</span>
+        </a>
+        <a id="nav-users" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all duration-200" href="#" onclick="navigate('users', this)">
+            <span class="material-symbols-outlined">group</span>
+            <span class="font-label-caps text-xs tracking-widest uppercase">Users</span>
+        </a>
+        <a id="nav-messages" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all duration-200" href="#" onclick="navigate('messages', this)">
+            <span class="material-symbols-outlined">chat_bubble</span>
+            <span class="font-label-caps text-xs tracking-widest uppercase">Messages</span>
+        </a>
+        <a id="nav-reports" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all duration-200" href="#" onclick="navigate('reports', this)">
+            <span class="material-symbols-outlined">analytics</span>
+            <span class="font-label-caps text-xs tracking-widest uppercase">Reports</span>
+        </a>
+        <a id="nav-system" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all duration-200" href="#" onclick="navigate('system', this)">
+            <span class="material-symbols-outlined">settings_input_component</span>
+            <span class="font-label-caps text-xs tracking-widest uppercase">System</span>
+        </a>
+        <a id="nav-effects" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all duration-200" href="#" onclick="navigate('effects', this)">
+            <span class="material-symbols-outlined">auto_awesome</span>
+            <span class="font-label-caps text-xs tracking-widest uppercase">Effects</span>
+        </a>
+    </nav>
+    <div class="px-6 mt-auto">
+        <button class="w-full py-3 bg-primary-fixed text-on-primary-fixed font-bold rounded-lg text-xs tracking-widest uppercase active:scale-[0.98] transition-all" onclick="location.href='index.html'">
+            EXIT_SYSTEM
+        </button>
+    </div>
+</aside>
+
+<!-- Main Canvas -->
+<main class="flex-1 ml-64 flex flex-col">
+    <!-- TopAppBar -->
+    <header class="sticky top-0 z-40 w-full px-6 py-3 bg-slate-950/60 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex justify-between items-center">
+        <div class="flex items-center gap-6">
+            <span class="text-xl font-black tracking-tighter text-cyan-400 uppercase">CYBER_OS</span>
+            <div class="relative group">
+                <span class="absolute inset-y-0 left-3 flex items-center text-slate-500 group-focus-within:text-cyan-400 transition-colors">
+                    <span class="material-symbols-outlined text-sm">search</span>
+                </span>
+                <input id="global-search" class="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-1.5 text-sm w-64 focus:ring-1 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600" placeholder="Global system search..." type="text"/>
+            </div>
         </div>
-        <nav>
-            <div class="nav-link active" onclick="nav('overview', this)">Overview</div>
-            <div class="nav-link" onclick="nav('users', this)">User Management</div>
-            <div class="nav-link" onclick="nav('matrix', this)">Live Activity</div>
-            <div class="nav-link" onclick="nav('scrub', this)">Emergency Cleanup</div>
-            <div class="nav-link" onclick="nav('incidents', this)">Reports</div>
-            <div class="nav-link" onclick="nav('troll', this)">Troll Protocol</div>
-            <div class="nav-link" onclick="nav('settings', this)">Settings</div>
-        </nav>
-        <div style="margin-top: auto;">
-            <button class="btn danger" style="width:100%;" onclick="location.href='index.html'">Exit Dashboard</button>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-1 border-r border-white/10 pr-4 mr-2">
+                <button class="p-2 text-slate-400 hover:text-cyan-300 hover:bg-white/5 rounded-lg transition-all duration-300" onclick="sync()">
+                    <span class="material-symbols-outlined">refresh</span>
+                </button>
+                <button class="p-2 text-slate-400 hover:text-cyan-300 hover:bg-white/5 rounded-lg transition-all duration-300">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+            </div>
+            <button class="text-slate-400 font-inter text-sm font-medium hover:text-cyan-300 transition-all">Support</button>
+            <div class="h-8 w-8 rounded-full bg-cyan-900 border border-cyan-400/30 overflow-hidden">
+                <img id="admin-pfp" alt="User profile" class="w-full h-full object-cover" src="jay.png"/>
+            </div>
         </div>
-    </aside>
+    </header>
 
-    <main class="main">
-        <header class="topbar">
-            <div>
-                <h1 id="t-head">Control Center</h1>
-                <p id="t-sub">Full administrative access established.</p>
-            </div>
-            <div class="header-actions">
-                <button class="btn primary" onclick="deployAnnouncement()">Neural Announcement</button>
-                <button class="btn" onclick="sync()">Refresh Data</button>
-            </div>
-        </header>
-
-        <!-- Overview -->
-        <section id="s-overview" class="section active">
-            <div class="kpi-grid">
-                <div class="kpi"><p class="label">Total Accounts</p><h2 class="num" id="k-u">0</h2></div>
-                <div class="kpi"><p class="label">Total Interactions</p><h2 class="num" id="k-f">0</h2></div>
-                <div class="kpi"><p class="label">System Uptime</p><h2 class="num" id="k-t">99.9%</h2></div>
-                <div class="kpi"><p class="label">Security Level</p><h2 class="num" style="color:var(--success)">CLEAR</h2></div>
-            </div>
-            <div style="display:grid; grid-template-columns: 2fr 1fr; gap: 30px;">
-                <div class="card">
-                    <h3>Engagement Flux (7D)</h3>
-                    <div style="height:350px;"><canvas id="c-main"></canvas></div>
+    <!-- Dashboard Content -->
+    <div id="content-area" class="p-margin_page max-w-container_max_width mx-auto w-full space-y-gutter">
+        
+        <!-- SECTION: OVERVIEW -->
+        <section id="s-overview" class="section active space-y-gutter">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="font-h1 text-h1 text-on-surface">DASHBOARD_OVERVIEW</h2>
+                    <p class="font-body-sm text-slate-500 mt-1 uppercase tracking-widest">REAL-TIME SYSTEM MONITORING &amp; TELEMETRY</p>
                 </div>
-                <div class="card">
-                    <h3>Recent System Alerts</h3>
-                    <div id="alert-feed" style="max-height: 350px; overflow-y: auto;">
-                        <p style="text-align:center; padding:40px; color:var(--text-muted);">No recent alerts.</p>
+                <div class="flex gap-2">
+                    <div class="px-3 py-1 bg-cyan-400/10 border border-cyan-400/20 rounded-full flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                        <span class="text-[10px] font-mono text-cyan-400 tracking-tighter">NODE_ALIVE: <span id="node-latency">14ms</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+                <div class="glass-card p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+                    <span class="font-label-caps text-slate-500 tracking-widest uppercase">Active Users</span>
+                    <div class="flex items-baseline gap-2">
+                        <span id="stat-users" class="font-display text-4xl text-on-surface tracking-tighter">0</span>
+                        <span class="text-xs text-primary-fixed-dim font-mono font-bold">+12%</span>
+                    </div>
+                    <div class="w-full h-1 bg-white/5 rounded-full mt-4 overflow-hidden">
+                        <div class="h-full bg-cyan-400 shadow-[0_0_8px_rgba(0,219,231,0.5)]" style="width: 72%"></div>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+                    <span class="font-label-caps text-slate-500 tracking-widest uppercase">Message Flow</span>
+                    <div class="flex items-baseline gap-2">
+                        <span id="stat-interactions" class="font-display text-4xl text-on-surface tracking-tighter">0</span>
+                        <span class="text-xs text-slate-500 font-mono">/hr</span>
+                    </div>
+                    <div class="flex gap-1 mt-4">
+                        <div class="flex-1 h-3 bg-white/5 rounded-sm"></div>
+                        <div class="flex-1 h-5 bg-white/5 rounded-sm"></div>
+                        <div class="flex-1 h-4 bg-secondary-container rounded-sm"></div>
+                        <div class="flex-1 h-6 bg-secondary-container rounded-sm"></div>
+                        <div class="flex-1 h-2 bg-white/5 rounded-sm"></div>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+                    <span class="font-label-caps text-slate-500 tracking-widest uppercase">Reports Generated</span>
+                    <div class="flex items-baseline gap-2">
+                        <span id="stat-reports" class="font-display text-4xl text-on-surface tracking-tighter">0</span>
+                        <span class="text-xs text-error font-mono font-bold">LIVE</span>
+                    </div>
+                    <div class="mt-4 flex items-center gap-2 text-slate-500 text-[10px] font-mono">
+                        <span class="material-symbols-outlined text-xs">schedule</span> LAST SYNC: <span id="last-sync">Just now</span>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+                    <span class="font-label-caps text-slate-500 tracking-widest uppercase">System Uptime</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="font-display text-4xl text-primary-fixed-dim tracking-tighter">99.9%</span>
+                    </div>
+                    <div class="grid grid-cols-10 gap-0.5 mt-4">
+                        <div class="h-1 bg-cyan-400"></div><div class="h-1 bg-cyan-400"></div><div class="h-1 bg-cyan-400"></div><div class="h-1 bg-cyan-400"></div><div class="h-1 bg-cyan-400"></div><div class="h-1 bg-cyan-400"></div><div class="h-1 bg-cyan-400"></div><div class="h-1 bg-cyan-400"></div><div class="h-1 bg-cyan-400"></div><div class="h-1 bg-white/10"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="lg:col-span-2 space-y-gutter">
+                    <div class="glass-card rounded-xl overflow-hidden flex flex-col">
+                        <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-cyan-400">monitoring</span>
+                                <span class="font-label-caps text-xs tracking-widest text-white uppercase">System Activity</span>
+                            </div>
+                        </div>
+                        <div class="p-6 h-[400px] relative">
+                            <canvas id="c-main"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+                        <div class="glass-card p-6 rounded-xl border-t border-white/5">
+                            <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-4">Cluster Storage</span>
+                            <div class="flex items-end gap-1 h-12 mb-4">
+                                <div class="flex-1 bg-cyan-400/20 h-[40%] rounded-sm"></div>
+                                <div class="flex-1 bg-cyan-400/40 h-[70%] rounded-sm"></div>
+                                <div class="flex-1 bg-cyan-400 h-[90%] rounded-sm shadow-[0_0_10px_rgba(0,219,231,0.3)]"></div>
+                                <div class="flex-1 bg-cyan-400/30 h-[50%] rounded-sm"></div>
+                                <div class="flex-1 bg-cyan-400/10 h-[20%] rounded-sm"></div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-white">82.4 GB</span>
+                                <span class="text-[10px] font-mono text-cyan-400">USED</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 rounded-xl border-t border-white/5">
+                            <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-4">Network Latency</span>
+                            <div class="flex items-center justify-center h-12 mb-4">
+                                <svg class="w-full h-full" viewBox="0 0 100 40">
+                                    <path d="M0 35 Q 25 35, 30 15 T 60 25 T 90 5 T 100 20" fill="none" stroke="#00dbe7" stroke-width="2" />
+                                </svg>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-white" id="node-latency-v2">14ms</span>
+                                <span class="text-[10px] font-mono text-emerald-400">OPTIMAL</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 rounded-xl border-t border-white/5">
+                            <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-4">Node Distribution</span>
+                            <div class="flex items-center justify-center h-12 mb-4">
+                                <div class="relative w-12 h-12">
+                                    <div class="absolute inset-0 border-4 border-white/5 rounded-full"></div>
+                                    <div class="absolute inset-0 border-4 border-cyan-400 rounded-full border-t-transparent -rotate-45"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-white">12 Nodes</span>
+                                <span class="text-[10px] font-mono text-slate-500">GLOBAL</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-xl overflow-hidden flex flex-col">
+                    <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary-fixed-dim">list</span>
+                            <span class="font-label-caps text-xs tracking-widest text-white uppercase">Live Stream</span>
+                        </div>
+                    </div>
+                    <div id="live-activity-feed" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Activity items -->
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Users -->
-        <section id="s-users" class="section">
-            <div class="card">
-                <h3>User Directory</h3>
-                <div style="margin-bottom:30px; display:flex; gap:20px;">
-                    <input type="text" id="u-q" placeholder="Search by username or ID..." onkeyup="fU()">
-                    <button class="btn primary" onclick="sync()">Search</button>
+        <!-- SECTION: USERS -->
+        <section id="s-users" class="section space-y-gutter">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="font-h1 text-h1 text-on-surface">USER_REGISTRY</h2>
+                    <p id="user-count-label" class="font-body-sm text-slate-500 mt-1 uppercase tracking-widest">4,281 IDENTITY NODES IDENTIFIED</p>
                 </div>
-                <div class="table-container">
-                    <table>
-                        <thead><tr><th>User</th><th>Account ID</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody id="l-u"></tbody>
+                <div class="flex gap-3">
+                    <button class="px-6 py-2 bg-primary-container text-on-primary-container font-label-caps uppercase transition-all flex items-center gap-2 hover:brightness-110 active:scale-[0.98]" onclick="provisionUser()">
+                        <span class="material-symbols-outlined text-sm">person_add</span>
+                        Provision User
+                    </button>
+                    <button class="px-6 py-2 bg-primary-container text-on-primary-container font-label-caps uppercase transition-all flex items-center gap-2 hover:brightness-110 active:scale-[0.98]" onclick="deployAnnouncement()">
+                        <span class="material-symbols-outlined text-sm">campaign</span>
+                        Broadcast
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 flex flex-wrap items-center gap-4 rounded-xl">
+                <div class="flex-1 min-w-[200px] relative">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400">filter_list</span>
+                    <input id="user-search" class="w-full bg-slate-900/50 border border-white/10 px-12 py-3 text-sm focus:border-cyan-400/50 focus:ring-0 transition-all rounded-lg" placeholder="Filter by username or identity hash..." type="text" onkeyup="renderUsers()"/>
+                </div>
+            </div>
+
+            <div class="glass-card overflow-hidden rounded-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-white/10 bg-white/5">
+                                <th class="px-6 py-4 text-xs font-mono text-slate-400 uppercase tracking-widest">Subject</th>
+                                <th class="px-6 py-4 text-xs font-mono text-slate-400 uppercase tracking-widest">Identifier</th>
+                                <th class="px-6 py-4 text-xs font-mono text-slate-400 uppercase tracking-widest">Permission_Tier</th>
+                                <th class="px-6 py-4 text-xs font-mono text-slate-400 uppercase tracking-widest">Connectivity</th>
+                                <th class="px-6 py-4 text-xs font-mono text-slate-400 uppercase tracking-widest text-right">Commands</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body" class="divide-y divide-white/5">
+                            <!-- Rows injected by JS -->
+                        </tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- Emergency Cleanup -->
-        <section id="s-scrub" class="section">
-            <div class="card">
-                <h3>Bulk Signal Cleanup</h3>
-                <p style="color:var(--text-muted); margin-bottom:30px;">Search all public messages and threads for a specific word or phrase and delete them all at once.</p>
-                <div style="display:grid; gap:20px;">
-                    <input type="text" id="scrub-q" placeholder="Enter keyword to purge (Warning: This action is permanent)">
-                    <button class="btn primary" onclick="executeScrub()">Execute Bulk Delete</button>
-                </div>
-                <div id="scrub-results" style="margin-top:30px;"></div>
+        <!-- SECTION: MESSAGES (MODERATION FEED) -->
+        <section id="s-messages" class="section space-y-gutter h-[calc(100vh-180px)]">
+            <div class="flex h-full glass-card rounded-xl overflow-hidden">
+                <aside class="w-80 border-r border-white/10 flex flex-col bg-slate-900/30">
+                    <div class="p-4 border-b border-white/5">
+                        <h2 class="font-h2 text-lg text-cyan-50 uppercase tracking-tighter">Active_Feeds</h2>
+                    </div>
+                    <div id="thread-list" class="flex-1 overflow-y-auto">
+                        <!-- Thread items -->
+                    </div>
+                </aside>
+                <section class="flex-1 flex flex-col min-w-0 bg-slate-950/20">
+                    <div id="message-header" class="p-4 flex items-center justify-between border-b border-white/10 bg-white/5">
+                        <div class="text-slate-500 font-mono text-[10px] uppercase tracking-widest">Moderation Stream Active</div>
+                        <div class="flex gap-2">
+                             <button class="px-3 py-1.5 bg-white/5 border border-white/10 rounded text-[10px] font-bold text-slate-400 hover:text-white transition-all uppercase" onclick="executeScrubPrompt()">Clear Stream</button>
+                             <button class="px-3 py-1.5 bg-white/5 border border-white/10 rounded text-[10px] font-bold text-slate-400 hover:text-white transition-all uppercase" onclick="deployAnnouncement()">Broadcast</button>
+                        </div>
+                    </div>
+                    <div id="message-stream" class="flex-1 overflow-y-auto p-8 space-y-6 flex flex-col">
+                        <!-- Messages -->
+                    </div>
+                    <div class="p-6 border-t border-white/10 bg-slate-950/40">
+                        <div class="max-w-4xl mx-auto flex gap-4">
+                            <div class="flex-1 relative">
+                                <input id="admin-reply-input" class="w-full bg-slate-900 border border-white/10 rounded-xl pl-4 pr-12 py-4 text-sm font-mono text-cyan-50 focus:outline-none focus:border-cyan-400/50 transition-all shadow-inner" placeholder="ENTER_COMMAND_OR_MESSAGE..."/>
+                                <button class="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400 hover:text-cyan-300" onclick="sendAdminReply()">
+                                    <span class="material-symbols-outlined">send</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </section>
 
-        <!-- Matrix Pulse -->
-        <section id="s-matrix" class="section"><div class="card"><h3>Live Message Stream</h3><div class="table-container"><table><thead><tr><th>Sender</th><th>Content</th><th>Type</th><th>Time</th><th>Action</th></tr></thead><tbody id="l-m"></tbody></table></div></div></section>
-        
-        <!-- Reports -->
-        <section id="s-incidents" class="section"><div class="card"><h3>User Reports</h3><div id="l-i"></div></div></section>
-        
-        <!-- Settings -->
-        <section id="s-settings" class="section"><div class="card"><h3>Feature Configuration</h3><div id="l-s"></div></div></section>
+        <!-- SECTION: REPORTS -->
+        <section id="s-reports" class="section space-y-gutter">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="font-h1 text-h1 text-on-surface">INCIDENT_REPORTS</h2>
+                    <p class="font-body-sm text-slate-500 mt-1 uppercase tracking-widest">USER-GENERATED TELEMETRY &amp; MODERATION QUEUE</p>
+                </div>
+            </div>
 
-        <!-- Troll Protocol (Upgraded to Anomalous Operations) -->
-        <section id="s-troll" class="section">
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
-                    <div>
-                        <h3>Anomaly Deployment (MODULE 05)</h3>
-                        <p style="color:var(--text-muted);">Execute remote system disruptions on specific nodes (users). Creator Immunity Active.</p>
-                    </div>
-                    <div style="text-align:right;">
-                        <span class="badge b-blue" id="troll-status">SYSTEM_READY</span>
-                        <div style="font-size:0.6rem; color:var(--text-muted); margin-top:5px; letter-spacing:1px;">COOLDOWN: 5,000MS</div>
+            <div class="glass-card overflow-hidden rounded-xl">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-slate-500 font-label-caps text-xs border-b border-white/5 bg-white/5">
+                            <th class="px-6 py-4">ID_TAG</th>
+                            <th class="px-6 py-4">CONTENT_ORIGIN</th>
+                            <th class="px-6 py-4">REASON</th>
+                            <th class="px-6 py-4">STATUS</th>
+                            <th class="px-6 py-4">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reports-table-body" class="divide-y divide-white/5">
+                        <!-- Rows injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION: SYSTEM -->
+        <section id="s-system" class="section space-y-gutter">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="lg:col-span-2 glass-card p-8 rounded-xl">
+                    <h3 class="font-label-caps text-cyan-400 mb-8 uppercase tracking-[0.2em] text-xs">Environment_Configuration</h3>
+                    <div id="system-settings-list" class="space-y-8">
+                        <!-- Toggles injected by JS -->
                     </div>
                 </div>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px; margin-bottom:40px; background:rgba(255,255,255,0.02); padding:30px; border-radius:32px; border:1px solid var(--border);">
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">TARGET IDENTIFIER (@USERNAME)</label>
-                        <input type="text" id="troll-target" placeholder="Enter target username..." style="font-family:monospace; color:var(--accent);">
+                <div class="space-y-gutter">
+                    <div class="glass-card p-8 rounded-xl border-t-4 border-error bg-error/5">
+                        <h3 class="text-error font-black text-xs tracking-widest uppercase mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">report</span> DANGER_ZONE
+                        </h3>
+                        <p class="text-[10px] text-slate-400 mb-8 font-mono leading-relaxed uppercase tracking-wider">Warning: Irreversible system-level operations. Purging data streams cannot be undone. All nodes will be disconnected.</p>
+                        <div class="space-y-4">
+                            <button class="w-full py-4 border border-error text-error text-[10px] font-black uppercase tracking-widest hover:bg-error hover:text-on-error transition-all active:scale-95" onclick="executeScrubPrompt()">
+                                Purge Keyword Data
+                            </button>
+                            <button class="w-full py-4 bg-error text-on-error text-[10px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 shadow-lg shadow-error/20" onclick="toast('LOCKED_DOWN')">
+                                Global Lockdown
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">SEARCH OPERATIONS (1-100)</label>
-                        <input type="text" id="troll-search" placeholder="Search feature name or ID..." onkeyup="filterTrolls()">
-                    </div>
-                </div>
-
-                <div id="troll-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:15px; max-height:600px; overflow-y:auto; padding-right:10px;">
-                    <!-- Features injected by JS -->
                 </div>
             </div>
         </section>
-    </main>
 
-    <div class="modal" id="modal">
-        <div class="modal-inner">
-            <h2 id="m-h" style="font-weight:950; letter-spacing:-2px; margin-bottom:20px;">Edit Account</h2>
-            <div id="m-c"></div>
-            <div style="display:flex; justify-content:flex-end; gap:20px; margin-top:40px;">
-                <button class="btn" onclick="cM()">Cancel</button>
-                <button class="btn primary" id="m-s">Save Changes</button>
+        <!-- SECTION: EFFECTS (TROLL PROTOCOL) -->
+        <section id="s-effects" class="section space-y-gutter">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter">Anomalous_Ops</h2>
+                    <p class="font-body-sm text-slate-500 mt-1 uppercase tracking-widest">REMOTE NODE INTERVENTION PROTOCOLS (MODULE_05)</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-gutter mb-gutter">
+                <div class="lg:col-span-3 glass-card p-6 flex flex-wrap items-center gap-6 rounded-xl">
+                    <div class="flex-1 min-w-[200px] relative group">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400 group-focus-within:animate-pulse">person</span>
+                        <input id="troll-target" class="w-full bg-slate-900/50 border border-white/10 px-12 py-4 text-sm focus:border-cyan-400/50 focus:ring-0 transition-all rounded-lg font-mono placeholder:text-slate-600" placeholder="Target @username..." type="text"/>
+                    </div>
+                    <div class="flex-1 min-w-[200px] relative group">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">search</span>
+                        <input id="troll-search" class="w-full bg-slate-900/50 border border-white/10 px-12 py-4 text-sm focus:border-cyan-400/50 focus:ring-0 transition-all rounded-lg font-mono placeholder:text-slate-600" placeholder="Search operations..." type="text" onkeyup="renderTrollGrid()"/>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-xl flex flex-col justify-center border-l-4 border-cyan-400">
+                    <span class="text-[10px] font-mono text-cyan-400 uppercase mb-1 tracking-widest font-black">Link_State</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-black text-white tracking-tighter">STABLE</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="troll-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scroll">
+                <!-- Operation cards injected by JS -->
+            </div>
+        </section>
+
+    </div>
+
+    <!-- User Edit Modal -->
+    <div id="modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[100] hidden flex items-center justify-center p-6">
+        <div class="glass-card w-full max-w-lg rounded-2xl p-8 space-y-6">
+            <h2 id="modal-title" class="text-2xl font-black uppercase tracking-tighter text-white">Edit_Identity</h2>
+            <div id="modal-content" class="space-y-4">
+                <!-- Form -->
+            </div>
+            <div class="flex justify-end gap-4 pt-4">
+                <button class="px-6 py-2 text-slate-500 font-bold uppercase tracking-widest text-xs" onclick="closeModal()">Cancel</button>
+                <button id="modal-save-btn" class="px-6 py-2 bg-cyan-400 text-slate-950 font-black uppercase tracking-widest text-xs rounded">Commit_Changes</button>
             </div>
         </div>
     </div>
 
-    <div id="toast">Command Executed Successfully</div>
+    <!-- Footer Info -->
+    <footer class="mt-auto px-6 py-4 flex justify-between items-center text-[10px] font-mono text-slate-600 border-t border-white/5">
+        <div class="flex gap-4">
+            <span>SYSTEM_STATUS: NOMINAL</span>
+            <span>ENC: AES-256-GCM</span>
+        </div>
+        <div class="flex gap-4">
+            <span>© 2024 CYBER_OS INTELLECTUAL PROPERTY</span>
+            <span class="text-cyan-900">77.44.110.02</span>
+        </div>
+    </footer>
+</main>
 
-    <script>
-    (function() {
-        const ADM_URL = window.SUPABASE_URL || 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
-        const ADM_KEY = window.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
-        const ACCESS = ['adiyachowdhury8@gmail.com', 'adiyanhehe@gmail.com'];
-        const ABLY_KEY = 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
+<script>    const ADM_URL = window.SUPABASE_URL || 'https://qpbjxurwrzsatwfiqcdd.supabase.co';
+    const ADM_KEY = window.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYmp4dXJ3cnpzYXR3ZmlxY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNTEzNjQsImV4cCI6MjA4NjgyNzM2NH0.2fee2Tke8VDwYCl8ba7wR8iLdOleHAhtO3oP17NhEOA';
+    const ABLY_KEY = 'I2GocA.2XM7TQ:nuJQeyu7st5NRAjpGZKS00fjwc4qbCRGioyS_ERGTdc';
+    const ADMIN_EMAILS = ['adiyachowdhury8@gmail.com', 'adiyanhehe@gmail.com'];
 
-        let sb, ably, chart, cache = {u:[], m:[], t:[], r:[], s:{}};
+    let sb, ably, chart, cache = { u:[], m:[], t:[], r:[], s:{} };
+    let activeThreadId = null;
 
-        async function boot() {
-            const t = setInterval(() => { if (window.supabase) { clearInterval(t); sb = window.supabase.createClient(ADM_URL, ADM_KEY); auth(); } }, 100);
-        }
-
-        async function auth() {
-            const { data: { session } } = await sb.auth.getSession();
-            if (!session) return gGate();
-            const email = session.user.email;
-            const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-            const role = profile?.role || 'user';
-            
-            if (ACCESS.includes(email) || role === 'admin' || role === 'troller' || role === 'moderator') {
-                if (ACCESS.includes(email) && role !== 'admin') await sb.from('profiles').update({ role: 'admin', is_admin: true }).eq('id', session.user.id);
-                
-                // Set standardized flags for cross-page compatibility (bug #1)
-                localStorage.setItem('rbx_is_admin', String(role === 'admin' || profile?.is_admin === true || ACCESS.includes(email)));
-                localStorage.setItem('rbx_role', role);
-                localStorage.setItem('rbx_email', email);
-                localStorage.setItem('rbx_user', profile?.username || email.split('@')[0]);
-
-                init(role);
-            } else gGate("UNAUTHORIZED ACCESS");
-        }
-
-        function init(role) {
-            sync();
-            setupAbly();
-            setInterval(sync, 60000);
-            drawCharts();
-
-            if (role === 'troller') {
-                document.querySelectorAll('.nav-link').forEach(el => {
-                    const text = el.textContent.toLowerCase();
-                    if (text !== 'troll protocol' && text !== 'overview') {
-                        el.style.display = 'none';
-                    }
-                });
-                // Force into Troll section
-                setTimeout(() => {
-                    const trollLink = Array.from(document.querySelectorAll('.nav-link')).find(x => x.textContent.toLowerCase() === 'troll protocol');
-                    if (trollLink) trollLink.click();
-                    document.getElementById('t-head').innerText = "Troller Terminal";
-                    document.getElementById('t-sub').innerText = "Access restricted to Anomalous Operations.";
-                }, 500);
+    async function boot() {
+        const interval = setInterval(() => {
+            if (window.supabase) {
+                clearInterval(interval);
+                sb = window.supabase.createClient(ADM_URL, ADM_KEY);
+                checkAuth();
             }
+        }, 100);
+    }
+
+    async function checkAuth() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) return gGate("ACCESS DENIED: NO SESSION FOUND.");
+
+        const email = session.user.email;
+        const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+        const role = profile?.role || 'user';
+        const isAdmin = ADMIN_EMAILS.includes(email) || role === 'admin' || profile?.is_admin === true;
+
+        if (!isAdmin && role !== 'troller' && role !== 'moderator') {
+            return gGate("UNAUTHORIZED ACCESS DETECTED.");
         }
 
-        function setupAbly() {
-            if (typeof Ably === 'undefined') return;
-            ably = new Ably.Realtime(ABLY_KEY);
-            window.ably = ably; // Expose for Anomalous Ops
-            ably.channels.get('global-hub').presence.subscribe('enter', m => pulse(`User Online: @${m.data.user}`));
-            ably.channels.get('site-global-config').subscribe('config_update', m => pulse(`Subsystem: ${m.data.action.toUpperCase()}`));
-        }
+        // Standardized Identity Sync (Bug #1 Fix from legacy)
+        localStorage.setItem('rbx_is_admin', String(isAdmin));
+        localStorage.setItem('rbx_role', role);
+        localStorage.setItem('rbx_email', email);
+        localStorage.setItem('rbx_user', profile?.username || email.split('@')[0]);
+        
+        document.getElementById('admin-pfp').src = profile?.avatar_url || 'jay.png';
+        
+        init(role);
+    }
 
-        async function sync() {
-            try {
-                const [u, m, t, r, s] = await Promise.all([
-                    sb.from('profiles').select('*').order('created_at', { ascending: false }),
-                    sb.from('messages').select('*').order('created_at', { ascending: false }).limit(200),
-                    sb.from('threads').select('*').limit(200),
-                    sb.from('reports').select('*').order('created_at', { ascending: false }),
-                    sb.from('system_settings').select('*')
-                ]);
-                cache = { u:u.data, m:m.data, t:t.data, r:r.data, s:s.data?.find(x=>x.key==='features')?.value || {} };
-                updateUI();
-            } catch(e) { toast("Data Refresh Failed"); }
-        }
+    function init(role) {
+        sync();
+        setupAbly();
+        drawCharts();
+        setInterval(sync, 45000);
 
-        function updateUI() {
-            document.getElementById('k-u').textContent = cache.u.length;
-            document.getElementById('k-f').textContent = cache.m.length + cache.t.length;
-            renderU(); renderM(); renderI(); renderS();
+        if (role === 'troller') {
+            document.querySelectorAll('.nav-link').forEach(el => {
+                if (el.id !== 'nav-effects' && el.id !== 'nav-overview') el.style.display = 'none';
+            });
+            navigate('effects', document.getElementById('nav-effects'));
         }
+    }
 
-        function renderU() {
-            const q = document.getElementById('u-q').value.toLowerCase();
-            const list = document.getElementById('l-u');
-            list.innerHTML = cache.u.filter(x => (x.username||'').toLowerCase().includes(q)).map(x => `
-                <tr>
-                    <td style="display:flex; align-items:center; gap:15px;">
-                        <img src="${x.avatar_url || 'jay.png'}" style="width:36px; height:36px; border-radius:10px; background:#111;">
-                        <strong>@${esc(x.username)}</strong>
-                    </td>
-                    <td style="font-size:0.75rem; color:var(--text-muted); opacity:0.6;">${x.id.substring(0,20)}...</td>
-                    <td><span class="badge ${x.role==='admin'?'b-blue':''}">${(x.role||'user').toUpperCase()}</span></td>
-                    <td><span class="badge ${x.status==='BANNED'?'b-red':'b-green'}">${x.status==='BANNED'?'BANNED':'ACTIVE'}</span></td>
-                    <td>
-                        <button class="btn" style="padding:8px 15px; font-size:0.65rem;" onclick="mU('${x.id}')">Edit User</button>
-                        <button class="btn primary" style="padding:8px 15px; font-size:0.65rem;" onclick="pPing('${x.username}')">Send Alert</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+    function setupAbly() {
+        if (typeof Ably === 'undefined') return;
+        ably = new Ably.Realtime(ABLY_KEY);
+        window.ably = ably;
+        ably.channels.get('global-hub').presence.subscribe('enter', m => pulse(`NODE_CONNECTED: @${m.data.user}`));
+        ably.channels.get('site-global-config').subscribe('config_update', m => pulse(`SYSTEM_EVENT: ${m.data.action.toUpperCase()}`));
+    }
 
-        function renderM() {
-            const unified = [
-                ...cache.m.map(x=>({...x, k:'MSG'})), 
-                ...cache.t.map(x=>({...x, k:'THREAD', created_at: x.created_at || x.timestamp, sender: x.author}))
-            ].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+    async function sync() {
+        try {
+            const [u, m, t, r, s] = await Promise.all([
+                sb.from('profiles').select('*').order('created_at', { ascending: false }),
+                sb.from('messages').select('*').order('created_at', { ascending: false }).limit(200),
+                sb.from('threads').select('*').order('timestamp', { ascending: false }).limit(100),
+                sb.from('reports').select('*').order('created_at', { ascending: false }),
+                sb.from('system_settings').select('*')
+            ]);
             
-            document.getElementById('l-m').innerHTML = unified.map(x => `
-                <tr>
-                    <td><strong>@${esc(x.sender)}</strong></td>
-                    <td style="max-width:350px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(x.content)}</td>
-                    <td><span class="badge ${x.k==='THREAD'?'b-blue':''}">${x.k}</span></td>
-                    <td style="font-size:0.75rem; color:var(--text-muted);">${new Date(x.created_at).toLocaleTimeString()}</td>
-                    <td><button class="btn danger" style="padding:6px 12px; font-size:0.65rem;" onclick="wipe('${x.k=== 'THREAD' ? 'threads' : 'messages'}','${x.id}')">Delete</button></td>
-                </tr>
-            `).join('');
+            cache = { 
+                u: u.data || [], 
+                m: m.data || [], 
+                t: t.data || [], 
+                r: r.data || [], 
+                s: s.data?.find(x => x.key === 'features')?.value || {} 
+            };
+            
+            updateUI();
+            const latencyEl = document.getElementById('node-latency-v2');
+            if (latencyEl) latencyEl.innerText = Math.floor(Math.random() * 20 + 5) + 'ms';
+            document.getElementById('last-sync').innerText = new Date().toLocaleTimeString();
+        } catch (e) {
+            console.error(e);
+            toast("SYNC_ERROR: LINK UNSTABLE");
         }
+    }
 
-        function renderI() {
-            const list = document.getElementById('l-i');
-            const pending = cache.r.filter(x => x.status === 'pending');
-            const resolved = cache.r.filter(x => x.status !== 'pending');
+    function updateUI() {
+        document.getElementById('stat-users').innerText = cache.u.length.toLocaleString();
+        document.getElementById('stat-interactions').innerText = (cache.m.length + cache.t.length).toLocaleString();
+        document.getElementById('stat-reports').innerText = cache.r.filter(x => x.status === 'pending').length;
+        
+        renderUsers();
+        renderLiveActivity();
+        renderReports();
+        renderSettings();
+        renderThreads();
+        if (activeThreadId) renderMessages(activeThreadId);
+    }
 
-            list.innerHTML = `
-                <div style="margin-bottom:30px; display:flex; gap:10px;">
-                    <span class="badge b-red" style="font-size:0.8rem;">${pending.length} Pending Incidents</span>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Incident</th>
-                                <th>Source/Content</th>
-                                <th>Reason</th>
-                                <th>Moderation</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${pending.map(x => {
-                                let data = {};
-                                try { data = JSON.parse(x.content_data); } catch(e) {}
-                                return `
-                                <tr>
-                                    <td>
-                                        <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:5px;">REPORTED BY @${esc(x.reporter)}</div>
-                                        <strong>${esc(x.content_type.toUpperCase())} #${esc(x.content_id.substring(0,8))}</strong>
-                                    </td>
-                                    <td style="max-width:300px;">
-                                        <div style="font-size:0.8rem; background:rgba(255,255,255,0.03); padding:10px; border-radius:10px; border:1px solid var(--border);">
-                                            <div style="color:var(--accent); font-size:0.6rem; font-weight:950; margin-bottom:5px;">ORIGINAL_SIGNAL:</div>
-                                            ${esc(data.text || data.content || 'No text content available')}
-                                        </div>
-                                    </td>
-                                    <td><span class="badge b-red">${esc(x.reason || 'General Violation')}</span></td>
-                                    <td style="display:flex; flex-wrap:wrap; gap:10px;">
-                                        <button class="btn primary" style="padding:10px 15px; font-size:0.6rem;" onclick="resI('${x.id}')">DISMISS</button>
-                                        <button class="btn danger" style="padding:10px 15px; font-size:0.6rem;" onclick="moderationPurge('${x.content_type}', '${x.content_id}', '${x.id}')">PURGE CONTENT</button>
-                                        ${data.sender || data.author ? `<button class="btn" style="padding:10px 15px; font-size:0.6rem;" onclick="mUByUsername('${data.sender || data.author}')">MANAGE AUTHOR</button>` : ''}
-                                    </td>
-                                </tr>`;
-                            }).join('')}
-                            ${pending.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:60px; color:var(--text-muted);">ALL INCIDENTS RESOLVED. NO PENDING ANOMALIES.</td></tr>' : ''}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
+    // --- NAVIGATION ---
+    function navigate(id, el) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.remove('text-cyan-400', 'border-l-2', 'border-cyan-400', 'bg-cyan-400/5', 'backdrop-blur-md');
+            l.classList.add('text-slate-500');
+        });
 
-        function renderS() {
-            const f = cache.s;
-            const flags = [
-                {k:'enable_threads',n:'Threads Feature',d:'Allow users to post to the global thread feed'},
-                {k:'enable_global_chat',n:'Global Chat',d:'Allow users to send messages in the hub'},
-                {k:'maintenance_mode',n:'Maintenance Mode',d:'Put the entire site in Read-Only mode'}
-            ];
-            document.getElementById('l-s').innerHTML = flags.map(x=>`
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:25px; border-bottom:1px solid var(--border);">
-                    <div><h4 style="font-weight:950; letter-spacing:2px;">${x.n}</h4><p style="font-size:0.85rem; color:var(--text-muted);">${x.d}</p></div>
-                    <label style="position:relative; width:60px; height:32px;"><input type="checkbox" id="c-${x.k}" ${f[x.k]?'checked':''} style="display:none;"><span style="position:absolute; inset:0; background:${f[x.k]?'var(--accent)':'#222'}; border-radius:30px; transition:0.3s; cursor:pointer;" onclick="this.previousElementSibling.click(); saveS();"></span><span style="position:absolute; width:24px; height:24px; top:4px; left:${f[x.k]?'32px':'4px'}; background:#fff; border-radius:50%; transition:0.3s; pointer-events:none;"></span></label>
-                </div>
-            `).join('');
-        }
+        document.getElementById('s-' + id).classList.add('active');
+        el.classList.remove('text-slate-500');
+        el.classList.add('text-cyan-400', 'border-l-2', 'border-cyan-400', 'bg-cyan-400/5', 'backdrop-blur-md');
+        
+        if (id === 'effects') renderTrollGrid();
+    }
 
-        window.mU = (id) => {
-            const x = cache.u.find(u=>u.id===id);
-            document.getElementById('m-h').textContent = `Manage @${x.username}`;
-            document.getElementById('m-c').innerHTML = `
-                <div style="display:grid; gap:20px;">
-                    <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">ACCESS IDENTITY (USERNAME)</label><input type="text" id="ux-u" value="${x.username}"></div>
-                    <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">ACCOUNT ROLE</label><select id="ux-r"><option value="user" ${x.role==='user'?'selected':''}>Standard Member</option><option value="moderator" ${x.role==='moderator'?'selected':''}>Moderator</option><option value="admin" ${x.role==='admin'?'selected':''}>Administrator</option></select></div>
-                    <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">ACCOUNT STATUS</label><select id="ux-s"><option value="active" ${x.status!=='BANNED'?'selected':''}>Active (Unlocked)</option><option value="BANNED" ${x.status==='BANNED'?'selected':''}>Banned (Locked)</option></select></div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                        <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">SYSTEM STRIKES</label><input type="number" id="ux-st" value="${x.strikes||0}"></div>
-                        <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
-                            <label style="font-size:0.75rem; font-weight:900;">GHOST MODE</label>
-                            <input type="checkbox" id="ux-g" ${x.ghost_mode?'checked':''} style="width:25px; height:25px;">
+    // --- USERS ---
+    function renderUsers() {
+        const q = document.getElementById('user-search').value.toLowerCase();
+        const container = document.getElementById('user-table-body');
+        const filtered = cache.u.filter(u => (u.username || '').toLowerCase().includes(q) || (u.id || '').toLowerCase().includes(q));
+        
+        document.getElementById('user-count-label').innerText = `${filtered.length.toLocaleString()} IDENTITY NODES IDENTIFIED`;
+
+        container.innerHTML = filtered.map(u => `
+            <tr class="group hover:bg-white/5 transition-all">
+                <td class="px-6 py-5">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 border border-white/10 p-0.5 group-hover:border-cyan-400/40 transition-colors">
+                            <img src="${u.avatar_url || 'jay.png'}" class="w-full h-full object-cover grayscale" />
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">${esc(u.username) || 'Anonymous'}</span>
+                            <span class="text-xs text-slate-500 font-mono">${u.role || 'user'}</span>
                         </div>
                     </div>
-                    <div><label style="font-size:0.75rem; font-weight:900; color:var(--text-muted); margin-bottom:10px; display:block;">MODERATOR NOTES</label><textarea id="ux-n" style="height:100px;" placeholder="Add internal notes about this user...">${x.internal_notes || ''}</textarea></div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:950; letter-spacing:2px; font-size:0.8rem;">VERIFIED STATUS</span>
-                        <input type="checkbox" id="ux-v" ${x.is_verified?'checked':''} style="width:30px; height:30px; cursor:pointer;">
+                </td>
+                <td class="px-6 py-5 font-mono text-[10px] text-slate-400 uppercase">#${u.id.substring(0, 12)}</td>
+                <td class="px-6 py-5">
+                    <span class="px-3 py-1 bg-white/5 text-slate-300 text-[10px] font-bold uppercase tracking-widest border border-white/10">
+                        ${(u.role || 'user').toUpperCase()}
+                    </span>
+                </td>
+                <td class="px-6 py-5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full ${u.status === 'BANNED' ? 'bg-error animate-pulse' : 'bg-cyan-400 shadow-[0_0_8px_rgba(0,219,231,0.6)]'}"></span>
+                        <span class="text-xs font-mono ${u.status === 'BANNED' ? 'text-error' : 'text-cyan-400'}">${u.status === 'BANNED' ? 'BANNED' : 'ACTIVE'}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-5 text-right">
+                    <div class="flex justify-end gap-2">
+                        <button class="w-8 h-8 flex items-center justify-center border border-white/10 text-slate-400 hover:text-cyan-400 hover:border-cyan-400/30 transition-all" onclick="openUserEdit('${u.id}')" title="Edit User">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                        </button>
+                        <button class="w-8 h-8 flex items-center justify-center border border-white/10 text-slate-400 hover:text-primary-fixed-dim hover:border-cyan-400/30 transition-all" onclick="pPing('${u.username}')" title="Send Alert">
+                            <span class="material-symbols-outlined text-sm">campaign</span>
+                        </button>
+                        <button class="w-8 h-8 flex items-center justify-center border border-white/10 text-slate-400 hover:text-error hover:border-error/30 transition-all" onclick="toggleBan('${u.id}', '${u.status}')" title="Toggle Ban">
+                            <span class="material-symbols-outlined text-sm">block</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- MESSAGES ---
+    function renderThreads() {
+        const list = document.getElementById('thread-list');
+        list.innerHTML = cache.t.map(t => `
+            <div class="p-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-all ${activeThreadId === t.id ? 'bg-cyan-400/5 border-l-2 border-cyan-400' : ''}" onclick="selectThread('${t.id}')">
+                <div class="flex justify-between items-start mb-1">
+                    <span class="text-cyan-400 font-mono text-[10px] font-bold tracking-tighter">THREAD_ID: ${t.id.substring(0, 8)}</span>
+                    <span class="text-slate-600 font-mono text-[10px]">${new Date(t.timestamp || t.created_at).toLocaleTimeString()}</span>
+                </div>
+                <div class="flex gap-3">
+                    <div class="w-10 h-10 rounded border border-white/10 overflow-hidden">
+                        <img src="${t.avatar || 'jay.png'}" class="w-full h-full object-cover grayscale" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-bold text-cyan-50 truncate">@${esc(t.author || t.sender)}</div>
+                        <div class="text-xs text-slate-400 truncate">${esc(t.content)}</div>
                     </div>
                 </div>
-            `;
-            document.getElementById('m-s').onclick = () => saveU(id);
-            document.getElementById('modal').classList.add('open');
-        }
+            </div>
+        `).join('');
+    }
 
-        async function saveU(id) {
-            const username = document.getElementById('ux-u').value.toLowerCase().replace(/\s/g, '');
-            const role = document.getElementById('ux-r').value;
-            const status = document.getElementById('ux-s').value;
-            const notes = document.getElementById('ux-n').value;
-            const ver = document.getElementById('ux-v').checked;
-            const strikes = parseInt(document.getElementById('ux-st').value) || 0;
-            const ghost_mode = document.getElementById('ux-g').checked;
-            
-            await sb.from('profiles').update({ username, role, status, internal_notes:notes, is_verified:ver, is_admin:role==='admin', strikes, ghost_mode }).eq('id', id);
-            toast("Identity Re-Serialized Successfully"); cM(); sync();
-        }
-
-        window.executeScrub = async () => {
-            const raw = document.getElementById('scrub-q').value.trim();
-            if (!raw) return;
-            if (!confirm(`Are you sure you want to delete EVERY message and thread containing "${raw}"? This cannot be undone.`)) return;
-            
-            // Escape SQL LIKE wildcards so a query of e.g. "100%" doesn't match everything (SQL wildcard injection)
-            const q = raw.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
-            
-            toast("Purging Data...");
-            const [t, m] = await Promise.all([
-                sb.from('threads').delete().ilike('content', `%${q}%`),
-                sb.from('messages').delete().ilike('content', `%${q}%`)
-            ]);
-            const tErr = t.error, mErr = m.error;
-            if (tErr || mErr) { toast("Partial Failure — check console"); console.error(tErr, mErr); }
-            else { toast("Bulk Delete Complete"); }
-            sync();
-        }
-
-        window.pPing = async (user) => {
-            const msg = prompt(`Enter system message for @${user}:`);
-            if (!msg) return;
-            await sb.from('messages').insert([{ sender:'SYSTEM', receiver:user, content:msg, channel_type:'direct' }]);
-            toast("Ping Sent");
-        }
-
-        window.execTroll = async (type) => {
-            const target = document.getElementById('troll-target').value;
-            if (!target) { toast("Please enter a Target Username!"); return; }
-            
-            if (window.ANOMALOUS_OPS) {
-                const res = await window.ANOMALOUS_OPS.triggerTroll(type, target);
-                if (res.success) {
-                    toast(`Anomaly Transmitted: ${type}`);
-                    pulse(`TRIGGER: ${type} -> @${target}`);
-                } else {
-                    toast(`Access Error: ${res.error}`);
-                    if (res.error === 'TARGET_IMMUNE') pulse(`BLOCKED: Creator Immunity Active`);
-                }
-            } else {
-                toast("Anomalous Module Offline");
-            }
-        }
-
-        const TROLL_FEATURES = [
-            {id:1, name:'Quantum Blur Pulse', cat:'Visual'}, {id:2, name:'Pixel Drift', cat:'Visual'}, {id:3, name:'RGB Split Glitch', cat:'Visual'},
-            {id:4, name:'Inversion Flash', cat:'Visual'}, {id:5, name:'Neon Overdrive', cat:'Visual'}, {id:6, name:'Ghost Frames', cat:'Visual'},
-            {id:7, name:'Screen Melt', cat:'Visual'}, {id:8, name:'Static Noise Overlay', cat:'Visual'}, {id:9, name:'Warp Tunnel', cat:'Visual'},
-            {id:10, name:'Frame Skip', cat:'Visual'}, {id:11, name:'Glass Fracture', cat:'Visual'}, {id:12, name:'Scanline Sweep', cat:'Visual'},
-            {id:13, name:'Depth Collapse', cat:'Visual'}, {id:14, name:'UI Echo Clone', cat:'Visual'}, {id:15, name:'Color Cycle Storm', cat:'Visual'},
-            {id:16, name:'Vignette Lock', cat:'Visual'}, {id:17, name:'Aspect Warp', cat:'Visual'}, {id:18, name:'Flash Freeze Frame', cat:'Visual'},
-            {id:19, name:'Hologram Flicker', cat:'Visual'}, {id:20, name:'Matrix Cascade', cat:'Visual'}, {id:21, name:'Echo Burst', cat:'Audio'},
-            {id:22, name:'Glitch Clicks', cat:'Audio'}, {id:23, name:'Reverse Ping', cat:'Audio'}, {id:24, name:'Frequency Sweep', cat:'Audio'},
-            {id:31, name:'Cursor Drift', cat:'Input'}, {id:32, name:'Click Delay', cat:'Input'}, {id:35, name:'Cursor Trail', cat:'Input'},
-            {id:36, name:'Reverse Scroll', cat:'Input'}, {id:37, name:'Input Freeze Spike', cat:'Input'}, {id:38, name:'Button Dodge', cat:'Input'},
-            {id:46, name:'Fake Reconnect', cat:'Network'}, {id:52, name:'Loading Loop', cat:'Network'}, {id:60, name:'Reaction Flood', cat:'Social'},
-            {id:68, name:'Fake System Alert', cat:'Social'}, {id:71, name:'Dark Mode Pulse', cat:'Env'}, {id:75, name:'Fog Overlay', cat:'Env'},
-            {id:79, name:'Horizon Tilt', cat:'Env'}, {id:81, name:'Button Bounce', cat:'Micro'}, {id:84, name:'Icon Spin', cat:'Micro'},
-            {id:91, name:'Slow Motion Mode', cat:'Cinema'}, {id:95, name:'Focus Spotlight', cat:'Cinema'}, {id:98, name:'Cinematic Bars', cat:'Cinema'},
-            {id:100, name:'Reality Glitch Event', cat:'Cinema'}
-        ];
-
-        // Fill in the rest of the 100 features
-        for(let i=1; i<=100; i++) {
-            if(!TROLL_FEATURES.find(f => f.id === i)) {
-                TROLL_FEATURES.push({id:i, name:`Operation ${i.toString().padStart(3, '0')}`, cat:'Standard'});
-            }
-        }
-        TROLL_FEATURES.sort((a,b) => a.id - b.id);
-
-        function renderTrolls() {
-            const grid = document.getElementById('troll-grid');
-            if(!grid) return;
-            const q = (document.getElementById('troll-search')?.value || '').toLowerCase();
-            
-            grid.innerHTML = TROLL_FEATURES.filter(f => f.name.toLowerCase().includes(q) || f.id.toString() === q).map(f => `
-                <div class="troll-card" onclick="execTroll('${f.id}')" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); padding:20px; border-radius:20px; cursor:pointer; transition:0.3s; position:relative; overflow:hidden;">
-                    <div style="font-size:0.6rem; font-weight:950; color:var(--text-muted); text-transform:uppercase; margin-bottom:5px;">ID: ${f.id.toString().padStart(3, '0')} | ${f.cat}</div>
-                    <div style="font-weight:800; font-size:0.85rem; letter-spacing:0.5px;">${f.name}</div>
-                    <div style="position:absolute; bottom:10px; right:15px; font-size:1rem; opacity:0.2;">⚡</div>
+    async function selectThread(id) {
+        activeThreadId = id;
+        renderThreads();
+        const thread = cache.t.find(x => x.id === id);
+        document.getElementById('message-header').innerHTML = `
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 border border-cyan-400/30 rounded overflow-hidden">
+                    <img src="${thread.avatar || 'jay.png'}" class="w-full h-full object-cover" />
                 </div>
-            `).join('');
-            
-            // Add hover effects via JS for better feel
-            document.querySelectorAll('.troll-card').forEach(el => {
-                el.onmouseover = () => { el.style.borderColor = 'var(--accent)'; el.style.transform = 'translateY(-3px)'; el.style.background = 'rgba(255,0,68,0.1)'; };
-                el.onmouseout = () => { el.style.borderColor = 'var(--border)'; el.style.transform = 'translateY(0)'; el.style.background = 'rgba(255,255,255,0.03)'; };
-            });
+                <div>
+                    <h3 class="text-white font-bold">@${esc(thread.author || thread.sender)}</h3>
+                    <p class="text-[10px] text-slate-500 font-mono">NODE: ${thread.id}</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button class="px-4 py-2 bg-error/10 text-error text-[10px] font-bold uppercase tracking-widest border border-error/20" onclick="wipe('threads', '${id}')">Purge Thread</button>
+            </div>
+        `;
+        renderMessages(id);
+    }
+
+    function renderMessages(threadId) {
+        const stream = document.getElementById('message-stream');
+        const thread = cache.t.find(x => x.id === threadId);
+        
+        stream.innerHTML = `
+            <div class="flex gap-4 max-w-2xl">
+                <div class="flex-shrink-0 w-8 h-8 rounded border border-white/10 overflow-hidden">
+                    <img src="${thread.avatar || 'jay.png'}" class="w-full h-full object-cover" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs font-bold text-cyan-400">@${esc(thread.author || thread.sender)}</span>
+                        <span class="text-[10px] text-slate-600 font-mono">${new Date(thread.timestamp || thread.created_at).toLocaleString()}</span>
+                    </div>
+                    <div class="glass-card p-3 rounded-tr-xl rounded-b-xl text-sm leading-relaxed text-cyan-50">
+                        ${esc(thread.content)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // --- REPORTS ---
+    function renderReports() {
+        const body = document.getElementById('reports-table-body');
+        body.innerHTML = cache.r.map(r => {
+            let data = {};
+            try { data = JSON.parse(r.content_data); } catch(e) {}
+            return `
+                <tr class="hover:bg-white/[0.02] transition-colors group">
+                    <td class="px-6 py-4 font-mono text-cyan-400 text-xs">#${r.id.substring(0, 8)}</td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm font-medium text-white">${r.content_type.toUpperCase()}</p>
+                        <p class="text-[10px] text-slate-500 font-mono">By @${esc(r.reporter)}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-xs text-error font-bold uppercase">${esc(r.reason || 'GENERAL_VIOLATION')}</span>
+                        <p class="text-[10px] text-slate-500 truncate max-w-[200px]">${esc(data.text || data.content || 'No text content')}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${r.status === 'pending' ? 'bg-amber-400/10 text-amber-400' : 'bg-cyan-400/10 text-cyan-400'} text-[10px] font-bold uppercase tracking-wider">
+                            <span class="w-1 h-1 ${r.status === 'pending' ? 'bg-amber-400' : 'bg-cyan-400'} rounded-full"></span>
+                            ${r.status.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <button class="material-symbols-outlined text-slate-500 hover:text-white transition-colors text-sm" onclick="resolveReport('${r.id}')" title="Resolve">done_all</button>
+                            <button class="material-symbols-outlined text-slate-500 hover:text-cyan-400 transition-colors text-sm" onclick="mUByUsername('${esc(data.sender || data.author || r.reporter)}')" title="Manage Author">person</button>
+                            <button class="material-symbols-outlined text-slate-500 hover:text-error transition-colors text-sm" onclick="moderationPurge('${r.content_type}', '${r.content_id}', '${r.id}')" title="Purge Content">delete_forever</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        if (cache.r.length === 0) {
+            body.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-600 font-mono text-xs uppercase tracking-[0.2em]">All Systems Clear_ No Incidents Logged</td></tr>`;
         }
+    }
 
-        window.filterTrolls = renderTrolls;
-        setTimeout(renderTrolls, 1000);
+    // --- SETTINGS ---
+    function renderSettings() {
+        const list = document.getElementById('system-settings-list');
+        const f = cache.s;
+        const flags = [
+            {k:'enable_threads',n:'Threads Protocol',d:'Allow hierarchical data streams'},
+            {k:'enable_global_chat',n:'Global Uplink',d:'Real-time broadcast communication'},
+            {k:'maintenance_mode',n:'Stasis Mode',d:'Restrict core access to administrative nodes'}
+        ];
+        
+        list.innerHTML = flags.map(x => `
+            <div class="flex items-center justify-between group">
+                <div>
+                    <p class="font-inter font-bold text-sm tracking-tight text-white group-hover:text-cyan-400 transition-colors">${x.n}</p>
+                    <p class="text-xs text-slate-500">${x.d}</p>
+                </div>
+                <button class="relative w-12 h-6 flex items-center ${f[x.k] ? 'bg-cyan-400/20 border-cyan-400/40' : 'bg-white/5 border-white/10'} border rounded-full transition-colors" onclick="toggleSetting('${x.k}', ${!f[x.k]})">
+                    <span class="absolute ${f[x.k] ? 'right-1' : 'left-1'} w-4 h-4 ${f[x.k] ? 'bg-cyan-400 shadow-[0_0_8px_rgba(0,219,231,0.6)]' : 'bg-slate-600'} rounded-full"></span>
+                </button>
+            </div>
+        `).join('');
+    }
 
-        window.deployAnnouncement = async () => {
-            const msg = prompt("Enter announcement text (Leave empty to clear):");
-            const type = prompt("Enter type (info/error/warn):", "info");
-            
-            // 1. Sync to Database
-            if (sb) {
-                const config = { global_announcement: msg, announcement_type: type };
-                await sb.from('system_settings').upsert({ key: 'features', value: { ...cache.s, platform_config: config } });
+    // --- EFFECTS (TROLL PROTOCOL) ---
+    const TROLL_FEATURES = [
+        {id:1, name:'Quantum Blur Pulse', cat:'Visual'}, {id:2, name:'Pixel Drift', cat:'Visual'}, {id:3, name:'RGB Split Glitch', cat:'Visual'},
+        {id:4, name:'Inversion Flash', cat:'Visual'}, {id:5, name:'Neon Overdrive', cat:'Visual'}, {id:6, name:'Ghost Frames', cat:'Visual'},
+        {id:7, name:'Screen Melt', cat:'Visual'}, {id:8, name:'Static Noise Overlay', cat:'Visual'}, {id:9, name:'Warp Tunnel', cat:'Visual'},
+        {id:10, name:'Frame Skip', cat:'Visual'}, {id:11, name:'Glass Fracture', cat:'Visual'}, {id:12, name:'Scanline Sweep', cat:'Visual'},
+        {id:13, name:'Depth Collapse', cat:'Visual'}, {id:14, name:'UI Echo Clone', cat:'Visual'}, {id:15, name:'Color Cycle Storm', cat:'Visual'},
+        {id:16, name:'Vignette Lock', cat:'Visual'}, {id:17, name:'Aspect Warp', cat:'Visual'}, {id:18, name:'Flash Freeze Frame', cat:'Visual'},
+        {id:19, name:'Hologram Flicker', cat:'Visual'}, {id:20, name:'Matrix Cascade', cat:'Visual'}, {id:21, name:'Echo Burst', cat:'Audio'},
+        {id:22, name:'Glitch Clicks', cat:'Audio'}, {id:23, name:'Reverse Ping', cat:'Audio'}, {id:24, name:'Frequency Sweep', cat:'Audio'},
+        {id:31, name:'Cursor Drift', cat:'Input'}, {id:32, name:'Click Delay', cat:'Input'}, {id:35, name:'Cursor Trail', cat:'Input'},
+        {id:36, name:'Reverse Scroll', cat:'Input'}, {id:37, name:'Input Freeze Spike', cat:'Input'}, {id:38, name:'Button Dodge', cat:'Input'},
+        {id:46, name:'Fake Reconnect', cat:'Network'}, {id:52, name:'Loading Loop', cat:'Network'}, {id:60, name:'Reaction Flood', cat:'Social'},
+        {id:68, name:'Fake System Alert', cat:'Social'}, {id:71, name:'Dark Mode Pulse', cat:'Env'}, {id:75, name:'Fog Overlay', cat:'Env'},
+        {id:79, name:'Horizon Tilt', cat:'Env'}, {id:81, name:'Button Bounce', cat:'Micro'}, {id:84, name:'Icon Spin', cat:'Micro'},
+        {id:91, name:'Slow Motion Mode', cat:'Cinema'}, {id:95, name:'Focus Spotlight', cat:'Cinema'}, {id:98, name:'Cinematic Bars', cat:'Cinema'},
+        {id:100, name:'Reality Glitch Event', cat:'Cinema'}
+    ];
+    for(let i=1; i<=100; i++) if(!TROLL_FEATURES.find(f=>f.id===i)) TROLL_FEATURES.push({id:i, name:`Operation_${i.toString().padStart(3,'0')}`, cat:'Standard'});
+    TROLL_FEATURES.sort((a,b) => a.id - b.id);
+
+    function renderTrollGrid() {
+        const q = (document.getElementById('troll-search')?.value || '').toLowerCase();
+        const grid = document.getElementById('troll-grid');
+        grid.innerHTML = TROLL_FEATURES.filter(f => f.name.toLowerCase().includes(q) || f.id.toString() === q).map(f => `
+            <div class="glass-card p-4 rounded-xl cursor-pointer hover:border-cyan-400 transition-all flex flex-col gap-2 group" onclick="executeTroll('${f.id}')">
+                <span class="text-[8px] font-mono text-slate-500 uppercase tracking-tighter">ID_${f.id.toString().padStart(3,'0')} | ${f.cat}</span>
+                <span class="text-[10px] font-bold text-white group-hover:text-cyan-400 transition-colors truncate">${f.name}</span>
+            </div>
+        `).join('');
+    }
+
+    async function executeTroll(id) {
+        const target = document.getElementById('troll-target').value;
+        if (!target) return toast("TARGET_REQUIRED");
+        
+        if (window.ANOMALOUS_OPS) {
+            const res = await window.ANOMALOUS_OPS.triggerTroll(id, target);
+            if (res.success) {
+                toast(`ANOMALY_SENT: ${id}`);
+                pulse(`TRIGGER: ${id} -> @${target}`);
+            } else {
+                toast(`ERROR: ${res.error}`);
+                if (res.error === 'TARGET_IMMUNE') pulse(`BLOCKED: Creator Immunity Active`);
             }
+        } else toast("ANOMALOUS MODULE OFFLINE");
+    }
 
-            // 2. Broadcast in Real-Time
-            ably.channels.get('site-global-config').publish('config_update', {
-                action: 'announcement',
-                value: msg
-            });
+    // --- ACTIVITY FEED ---
+    function renderLiveActivity() {
+        const feed = document.getElementById('live-activity-feed');
+        const unified = [
+            ...cache.m.map(x=>({...x, type:'MSG'})),
+            ...cache.t.map(x=>({...x, type:'THREAD', sender: x.author || x.sender, created_at: x.timestamp || x.created_at}))
+        ].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 15);
 
-            if(!msg) { ably.channels.get('site-global-config').publish('config_update', { action: 'force_reload' }); }
+        feed.innerHTML = unified.map(x => `
+            <div class="flex gap-4 group">
+                <div class="flex-shrink-0 w-8 h-8 rounded ${x.type==='THREAD'?'bg-cyan-400/10 text-cyan-400':'bg-secondary-container/10 text-secondary-fixed-dim'} flex items-center justify-center">
+                    <span class="material-symbols-outlined text-sm">${x.type==='THREAD'?'dns':'chat_bubble'}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs text-on-surface leading-tight">
+                        <span class="font-bold ${x.type==='THREAD'?'text-cyan-400':'text-secondary-fixed-dim'}">@${esc(x.sender)}</span> ${x.type==='THREAD'?'launched thread':'sent message'}
+                    </p>
+                    <p class="text-[10px] text-slate-500 font-mono mt-1">${new Date(x.created_at).toLocaleTimeString()} • ${x.id.substring(0,8)}</p>
+                </div>
+            </div>
+        `).join('');
+    }
 
-            toast("Neural Announcement Deployed");
+    // --- HELPERS & ACTIONS ---
+    function toast(m) {
+        const t = document.getElementById('toast');
+        t.innerText = m;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function pulse(m) {
+        const feed = document.getElementById('live-activity-feed');
+        const n = document.createElement('div');
+        n.className = 'flex gap-4 group animate-pulse';
+        n.innerHTML = `
+            <div class="flex-shrink-0 w-8 h-8 rounded bg-primary-container/10 text-primary-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-sm">notifications</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs text-white leading-tight font-black">${m}</p>
+                <p class="text-[10px] text-slate-500 font-mono mt-1">JUST NOW • SYSTEM_REALTIME</p>
+            </div>
+        `;
+        feed.prepend(n);
+        setTimeout(() => n.classList.remove('animate-pulse'), 2000);
+    }
+
+    function gGate(m) { alert(m || "ACCESS DENIED"); location.href='index.html'; }
+    function esc(s) { return s?String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])):""; }
+
+    window.openUserEdit = (id) => {
+        const u = cache.u.find(x => x.id === id);
+        document.getElementById('modal-title').innerText = `Manage @${u.username}`;
+        document.getElementById('modal-content').innerHTML = `
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block">Identity_Hash (Username)</label>
+                    <input id="ux-u" type="text" class="w-full bg-slate-900 border-white/10 text-white rounded-lg p-3 text-sm" value="${u.username}"/>
+                </div>
+                <div class="col-span-2">
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block">Permission_Tier</label>
+                    <select id="ux-role" class="w-full bg-slate-900 border-white/10 text-white rounded-lg p-3 text-sm">
+                        <option value="user" ${u.role==='user'?'selected':''}>User</option>
+                        <option value="moderator" ${u.role==='moderator'?'selected':''}>Moderator</option>
+                        <option value="troller" ${u.role==='troller'?'selected':''}>Troller</option>
+                        <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block">Identity_Status</label>
+                    <select id="ux-status" class="w-full bg-slate-900 border-white/10 text-white rounded-lg p-3 text-sm">
+                        <option value="active" ${u.status!=='BANNED'?'selected':''}>Active</option>
+                        <option value="BANNED" ${u.status==='BANNED'?'selected':''}>Banned</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block">System_Strikes</label>
+                    <input id="ux-strikes" type="number" class="w-full bg-slate-900 border-white/10 text-white rounded-lg p-3 text-sm" value="${u.strikes || 0}"/>
+                </div>
+                <div class="col-span-2 space-y-3">
+                    <div class="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
+                        <input id="ux-verified" type="checkbox" class="w-5 h-5 rounded border-white/10 bg-slate-900 text-cyan-400" ${u.is_verified?'checked':''}/>
+                        <label class="text-xs font-bold text-white uppercase tracking-widest">Verified Badge</label>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
+                        <input id="ux-ghost" type="checkbox" class="w-5 h-5 rounded border-white/10 bg-slate-900 text-cyan-400" ${u.ghost_mode?'checked':''}/>
+                        <label class="text-xs font-bold text-white uppercase tracking-widest">Ghost Mode</label>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label class="text-[10px] font-mono text-slate-500 uppercase mb-2 block">Internal_Notes</label>
+                    <textarea id="ux-notes" class="w-full bg-slate-900 border-white/10 text-white rounded-lg p-3 text-sm h-24">${u.internal_notes || ''}</textarea>
+                </div>
+            </div>
+        `;
+        document.getElementById('modal-save-btn').onclick = () => saveUser(id);
+        document.getElementById('modal').classList.remove('hidden');
+    };
+
+    async function saveUser(id) {
+        const username = document.getElementById('ux-u').value.toLowerCase().replace(/\s/g, '');
+        const role = document.getElementById('ux-role').value;
+        const status = document.getElementById('ux-status').value;
+        const strikes = parseInt(document.getElementById('ux-strikes').value) || 0;
+        const ver = document.getElementById('ux-verified').checked;
+        const ghost = document.getElementById('ux-ghost').checked;
+        const notes = document.getElementById('ux-notes').value;
+
+        const { error } = await sb.from('profiles').update({ 
+            username, role, status, strikes, is_verified: ver, is_admin: role === 'admin', ghost_mode: ghost, internal_notes: notes
+        }).eq('id', id);
+
+        if (!error) { toast("IDENTITY_UPDATED"); closeModal(); sync(); }
+        else toast("COMMIT_FAILED");
+    }
+
+    window.closeModal = () => document.getElementById('modal').classList.add('hidden');
+
+    window.toggleBan = async (id, currentStatus) => {
+        const newStatus = currentStatus === 'BANNED' ? 'active' : 'BANNED';
+        await sb.from('profiles').update({ status: newStatus }).eq('id', id);
+        toast(`USER_${newStatus.toUpperCase()}`);
+        sync();
+    };
+
+    window.resolveReport = async (id) => {
+        await sb.from('reports').update({ status: 'resolved', auditor: localStorage.getItem('rbx_user'), resolved_at: new Date().toISOString() }).eq('id', id);
+        toast("INCIDENT_RESOLVED");
+        sync();
+    };
+
+    window.moderationPurge = async (type, contentId, reportId) => {
+        const table = (type === 'thread' || type === 'threads') ? 'threads' : 'messages';
+        if (!confirm(`PURGE_${type.toUpperCase()}_PERMANENTLY?`)) return;
+        await sb.from(table).delete().eq('id', contentId);
+        await sb.from('reports').update({ status: 'resolved', internal_notes: 'Content Purged' }).eq('id', reportId);
+        toast("CONTENT_PRUNED");
+        sync();
+    };
+
+    window.toggleSetting = async (key, val) => {
+        const flags = { ...cache.s, [key]: val };
+        await sb.from('system_settings').upsert({ key: 'features', value: flags });
+        toast(`${key.toUpperCase()}_UPDATED`);
+        sync();
+    };
+
+    window.deployAnnouncement = async () => {
+        const msg = prompt("ENTER_BROADCAST_MESSAGE:");
+        if (!msg) return;
+        const type = prompt("ENTER_TYPE (info/warn/error):", "info") || 'info';
+        
+        const config = { global_announcement: msg, announcement_type: type };
+        await sb.from('system_settings').upsert({ key: 'features', value: { ...cache.s, platform_config: config } });
+        
+        ably.channels.get('site-global-config').publish('config_update', { action: 'announcement', value: msg });
+        toast("BROADCAST_SENT");
+    };
+
+    window.provisionUser = async () => {
+        const email = prompt("ENTER_USER_EMAIL_TO_PROVISION:");
+        if (!email) return;
+        toast("PROVISIONING_IDENTITY...");
+        const { data, error } = await sb.auth.admin.inviteUserByEmail(email);
+        if (error) {
+            console.error(error);
+            toast("PROVISIONING_FAILED: Check Admin Privileges");
+        } else {
+            toast("INVITATION_SENT: IDENTITY_PENDING");
         }
+    };
 
-        function moderationPurge(type, id, reportId) {
-            if (!confirm("This will delete the content and dismiss the report. Proceed?")) return;
-            sb.from(type).delete().eq('id', id).then(() => {
-                resI(reportId);
-                toast("Content Purged");
-            });
-        }
+    window.executeScrubPrompt = async () => {
+        const raw = prompt("ENTER_KEYWORD_TO_PURGE:");
+        if (!raw) return;
+        if (!confirm(`PURGE_ALL_CONTENT_CONTAINING: "${raw}"?`)) return;
+        
+        // SQL Wildcard Protection
+        const q = raw.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+        
+        toast("PURGING_DATA_STREAM...");
+        await Promise.all([
+            sb.from('threads').delete().ilike('content', `%${q}%`),
+            sb.from('messages').delete().ilike('content', `%${q}%`)
+        ]);
+        toast("STREAM_CLEANSED");
+        sync();
+    };
 
-        async function wipe(table, id) {
-            if(!confirm("Purge signal permanently?")) return;
-            const { error } = await sb.from(table).delete().eq('id', id);
-            if(!error) { toast("Signal Pruned"); sync(); }
-        }
+    window.mUByUsername = async (username) => {
+        const { data } = await sb.from('profiles').select('*').eq('username', username).maybeSingle();
+        if (data) openUserEdit(data.id);
+        else toast("AUTHOR_NOT_FOUND");
+    };
 
-        async function resI(id) {
-            await sb.from('reports').update({ status: 'resolved', auditor: localStorage.getItem('rbx_user') }).eq('id', id);
-            toast("Incident Dismissed"); sync();
-        }
+    window.pPing = async (user) => {
+        const msg = prompt(`ENTER_SYSTEM_MESSAGE_FOR_@${user}:`);
+        if (!msg) return;
+        await sb.from('messages').insert([{ sender:'SYSTEM', receiver:user, content:msg, channel_type:'direct' }]);
+        toast("PING_SENT");
+    };
 
-        async function saveS() {
-            const flags = {};
-            document.querySelectorAll('#l-s input').forEach(el=>flags[el.id.replace('c-','')] = el.checked);
-            await sb.from('system_settings').upsert([{ key:'features', value:flags }]);
-            sync();
-        }
+    window.wipe = async (table, id) => {
+        if (!confirm(`PURGE_SIGNAL_${id}_PERMANENTLY?`)) return;
+        const { error } = await sb.from(table).delete().eq('id', id);
+        if (!error) { toast("SIGNAL_PRUNED"); sync(); }
+    };
 
-        window.resI = async (id) => {
-            await sb.from('reports').update({ status: 'resolved', resolved_at: new Date().toISOString() }).eq('id', id);
-            toast("Incident Resolved");
-            sync();
-        }
+    function drawCharts() {
+        const ctx = document.getElementById('c-main');
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'],
+                datasets: [{
+                    label: 'System Load',
+                    data: [12, 19, 3, 5, 2, 3, 10],
+                    borderColor: '#00dbe7',
+                    backgroundColor: 'rgba(0, 219, 231, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666' } },
+                    x: { grid: { display: false }, ticks: { color: '#666' } }
+                }
+            }
+        });
+    }
 
-        window.moderationPurge = async (type, contentId, reportId) => {
-            const table = type === 'thread' || type === 'threads' ? 'threads' : 'messages';
-            if (!confirm(`Are you sure you want to purge this ${type}?`)) return;
-            
-            const [del, res] = await Promise.all([
-                sb.from(table).delete().eq('id', contentId),
-                sb.from('reports').update({ status: 'resolved', internal_notes: 'Content Purged' }).eq('id', reportId)
-            ]);
-
-            toast("Content Purged & Incident Resolved");
-            sync();
-        }
-
-        window.mUByUsername = async (username) => {
-            const { data } = await sb.from('profiles').select('*').eq('username', username).maybeSingle();
-            if (data) mU(data.id);
-            else toast("Author not found in database");
-        }
-
-        window.wipe = async (t,id) => { if (confirm(`Are you sure you want to delete this ${t.slice(0,-1)}?`)) { await sb.from(t).delete().eq('id',id); toast("Message Deleted"); sync(); } }
-        window.nav = (n,b) => { document.querySelectorAll('.section, .nav-link').forEach(x=>x.classList.remove('active')); document.getElementById('s-'+n).classList.add('active'); b.classList.add('active'); }
-        window.sync = sync; window.cM = () => document.getElementById('modal').classList.remove('open');
-        function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
-        function pulse(m) { const f = document.getElementById('stream'); const n = document.createElement('div'); n.className = 'stream-msg'; n.innerHTML = `<span>🔔</span><span>${m}</span>`; f.prepend(n); setTimeout(()=> { n.style.opacity = '0'; setTimeout(()=>n.remove(),500); }, 5000); }
-        function gGate(m) { alert(m || "ACCESS DENIED"); location.href='index.html'; }
-        function esc(s) { return s?String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])):""; }
-        function drawCharts() {
-            if (chart) chart.destroy();
-            chart = new Chart(document.getElementById('c-main'), { type:'line', data:{ labels:['M','T','W','T','F','S','S'], datasets:[{label:'Engagement', data:[10,15,12,25,20,40,35], borderColor:'#ff0044', fill:true, backgroundColor:'rgba(255,0,68,0.05)', tension:0.4}] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} } });
-        }
-        boot();
-    })();
-    </script>
+    boot();
+</script>
 </body>
 </html>
