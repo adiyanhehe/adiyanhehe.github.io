@@ -2,36 +2,69 @@
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
-    <title>Nexus Network – THREAD</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>Broadcast // CYBER_OS</title>
     
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
-    <!-- Tailwind -->
+    <!-- Scripts -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="global.js" defer></script>
+    
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     "colors": {
-                        "primary": "#8B5CF6", // Purple from Future Human
-                        "primary-container": "#a078ff",
-                        "on-primary": "#ffffff",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary-fixed": "#d8e2ff",
+                        "tertiary-fixed-dim": "#3cddc7",
+                        "tertiary-fixed": "#62fae3",
+                        "on-surface-variant": "#cfc2d6",
+                        "on-error": "#690005",
+                        "inverse-primary": "#842bd2",
+                        "on-primary": "#490080",
+                        "surface-bright": "#3a3939",
+                        "on-secondary-fixed-variant": "#004395",
+                        "surface-container-lowest": "#0e0e0e",
+                        "outline-variant": "#4d4354",
+                        "primary": "#ddb7ff",
+                        "on-secondary": "#002e6a",
+                        "on-tertiary-fixed-variant": "#005047",
+                        "on-tertiary": "#003731",
+                        "surface": "#131313",
+                        "secondary-container": "#0566d9",
+                        "on-tertiary-fixed": "#00201c",
+                        "surface-dim": "#131313",
+                        "primary-fixed-dim": "#ddb7ff",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#b76dff",
+                        "surface-container-high": "#2a2a2a",
+                        "on-primary-fixed": "#2c0051",
+                        "surface-container": "#201f1f",
+                        "inverse-on-surface": "#313030",
+                        "on-tertiary-container": "#00302a",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-secondary-container": "#e6ecff",
+                        "on-primary-container": "#400071",
+                        "tertiary-container": "#00a392",
+                        "on-primary-fixed-variant": "#6900b3",
+                        "tertiary": "#3cddc7",
+                        "on-secondary-fixed": "#001a42",
+                        "background": "#131313",
+                        "error": "#ffb4ab",
+                        "on-background": "#e5e2e1",
+                        "primary-fixed": "#f0dbff",
+                        "surface-tint": "#ddb7ff",
+                        "surface-variant": "#353534",
+                        "surface-container-low": "#1c1b1b",
+                        "outline": "#988d9f",
+                        "on-surface": "#e5e2e1",
+                        "error-container": "#93000a",
                         "secondary": "#adc6ff",
-                        "surface": "#131314",
-                        "background": "#0A0A0B",
-                        "on-background": "#e5e2e3",
-                        "on-surface": "#e5e2e3",
-                        "on-surface-variant": "#cbc3d7",
-                        "outline": "#958ea0",
-                        "outline-variant": "#494454",
-                        "surface-container": "#201f20",
-                        "surface-container-high": "#2a2a2b",
-                        "surface-container-highest": "#353436",
-                        "error": "#ffb4ab"
+                        "surface-container-highest": "#353436"
                     },
                     "borderRadius": {
                         "DEFAULT": "0.25rem",
@@ -40,280 +73,317 @@
                         "full": "9999px"
                     },
                     "spacing": {
+                        "sm": "12px",
+                        "base": "8px",
+                        "xl": "80px",
+                        "lg": "48px",
                         "gutter": "24px",
-                        "margin": "48px"
+                        "xs": "4px",
+                        "margin": "32px",
+                        "md": "24px"
                     },
                     "fontFamily": {
-                        "sans": ["Inter", "sans-serif"],
-                        "mono": ["Space Grotesk", "monospace"]
+                        "body-sm": ["Inter"],
+                        "label-caps": ["Space Grotesk"],
+                        "headline-xl": ["Space Grotesk"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "1.5", "letterSpacing": "0.01em", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-xl": ["40px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600" }]
                     }
-                }
-            }
+                },
+            },
         }
     </script>
-
     <style>
-        body {
-            background-color: #0A0A0B;
-            color: #e5e2e3;
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .glass-surface {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .inner-glow {
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15);
-        }
-        .thread-rail {
-            background: linear-gradient(to bottom, #8B5CF6 0%, #00DBE7 100%);
-            width: 2px;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-        }
-        .active-indicator::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            width: 4px;
-            height: 4px;
-            background-color: #8B5CF6;
-            border-radius: 9999px;
-        }
-        .loader {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #8B5CF6;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        /* Hide scrollbar but keep functionality */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { background-color: #000000; color: #e5e2e1; min-height: 100dvh; overflow: hidden; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(17, 17, 17, 0.7); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .neon-glow { box-shadow: 0 0 15px rgba(168, 85, 247, 0.15); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
-
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="font-sans custom-scrollbar">
-    <!-- TopNavBar -->
-    <header class="fixed top-0 w-full z-50 bg-[#0A0A0B]/60 backdrop-blur-[40px] border-b border-white/10 shadow-2xl">
-        <div class="flex justify-between items-center px-6 md:px-8 h-16 md:h-20 w-full max-w-screen-2xl mx-auto">
-            <div class="flex items-center gap-4 md:gap-8">
-                <div class="text-xl font-black tracking-tighter text-primary uppercase">CYBER_OS</div>
-                <div class="hidden md:flex items-center bg-white/5 border border-white/10 px-4 py-2 rounded-full w-64 lg:w-96 group focus-within:border-primary/50 transition-all">
-                    <span class="material-symbols-outlined text-white/40 group-focus-within:text-primary text-sm">search</span>
-                    <input class="bg-transparent border-none focus:ring-0 text-sm text-on-background placeholder-white/20 w-full ml-2" placeholder="Search neural stream..." type="text"/>
-                </div>
+<body class="font-body-md selection:bg-primary-container selection:text-on-primary-container">
+    <!-- TopAppBar -->
+    <header class="header fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-black/70 backdrop-blur-md border-b border-white/10 shadow-[0_4px_30px_rgba(168,85,247,0.1)]">
+        <div class="flex items-center gap-4 md:gap-8">
+            <span class="text-xl font-black text-white tracking-tighter font-label-caps uppercase">CYBER_OS</span>
+            <div class="hidden md:relative md:flex items-center">
+                <span class="material-symbols-outlined absolute left-3 text-zinc-500 text-sm">search</span>
+                <input class="bg-[#050505] border-b border-purple-500/30 focus:border-purple-500 text-body-sm px-10 py-1.5 w-64 focus:outline-none transition-all placeholder:text-zinc-700 font-label-caps" placeholder="QUERY NETWORK..." type="text"/>
             </div>
-            <div class="flex items-center gap-4 md:gap-6">
-                <button class="material-symbols-outlined text-white/40 hover:bg-white/5 hover:text-primary transition-colors p-2 rounded-full active:scale-95">notifications</button>
-                <div class="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:scale-105 transition-transform cursor-pointer">
-                    <img alt="User Profile" class="w-full h-full object-cover" id="my-pic" src="jay.png"/>
+        </div>
+        <div class="flex items-center gap-4 md:gap-6">
+            <div class="flex gap-2 md:gap-4">
+                <button class="p-2 text-purple-500 hover:text-purple-300 transition-colors duration-200 active:scale-95">
+                    <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                </button>
+                <button class="p-2 text-purple-500 hover:text-purple-300 transition-colors duration-200 active:scale-95" onclick="window.location.href='discuss.html'">
+                    <span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+                </button>
+                <button class="hidden md:block p-2 text-zinc-500 hover:text-purple-300 transition-colors cursor-pointer" onclick="window.location.href='profile.html'">
+                    <span class="material-symbols-outlined" data-icon="settings">settings</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-3 pl-4 border-l border-white/10 cursor-pointer" onclick="window.location.href='profile.html'">
+                <div class="text-right hidden lg:block">
+                    <div id="header-user-name" class="text-body-sm font-bold text-white leading-none">AWAITING_SYNC</div>
+                    <div class="text-[10px] text-purple-400 font-label-caps">LEVEL 4 ACCESS</div>
+                </div>
+                <div class="w-10 h-10 rounded-lg border border-purple-500/50 overflow-hidden">
+                    <img id="my-pic" alt="User Profile" class="w-full h-full object-cover" src="jay.png"/>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="flex min-h-screen pt-16 md:pt-20 max-w-screen-2xl mx-auto">
-        <!-- SideNavBar (Desktop) -->
-        <aside class="sidebar fixed left-0 top-16 md:top-20 bottom-0 w-64 lg:w-72 hidden md:flex flex-col z-40 bg-[#0A0A0B]/40 backdrop-blur-md border-r border-white/5 shadow-2xl">
-            <div class="p-6 border-b border-white/5">
-                <div class="flex items-center gap-3">
+    <div class="flex h-screen pt-16 overflow-hidden">
+        <!-- SideNavBar (Desktop Left) -->
+        <aside class="fixed left-0 top-16 h-full w-72 border-r border-white/10 bg-[#111111]/70 backdrop-blur-2xl hidden md:flex flex-col pb-8 z-40">
+            <div class="p-6 border-b border-white/10">
+                <div class="flex items-center gap-3 mb-4">
                     <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30 overflow-hidden">
                         <img id="side-pic" src="jay.png" class="w-full h-full object-cover">
                     </div>
                     <div>
-                        <p class="text-white font-bold text-sm truncate" id="side-name">...</p>
-                        <p class="text-primary text-[10px] opacity-70 font-mono">NODE_ACTIVE</p>
+                        <p class="text-white font-bold text-sm truncate uppercase tracking-tighter" id="side-name">Awaiting Sync...</p>
+                        <p class="text-purple-400 text-[10px] font-label-caps">NODE_ACTIVE</p>
                     </div>
                 </div>
-                <div class="mt-4 flex gap-4 text-[10px] font-mono text-white/40 uppercase">
+                <div class="flex gap-4 text-[10px] font-label-caps text-zinc-500 uppercase tracking-widest">
                     <div><span class="text-white" id="stat-followers">0</span> Follows</div>
                     <div><span class="text-white" id="stat-posts">0</span> Posts</div>
                 </div>
             </div>
             
-            <nav class="flex-1 py-6 px-4 space-y-2 font-mono text-xs uppercase tracking-widest">
-                <a class="bg-primary/10 text-primary border-l-2 border-primary px-4 py-4 flex items-center gap-4 hover:bg-white/5 transition-all" href="threads.html">
-                    <span class="material-symbols-outlined">language</span>
-                    <span>Global Stream</span>
+            <nav class="flex-1 py-6 space-y-1">
+                <a class="flex items-center gap-4 bg-gradient-to-r from-purple-500/10 to-transparent text-purple-400 border-l-2 border-purple-500 py-3 px-6 transition-all group active:translate-x-1" href="threads.html">
+                    <span class="material-symbols-outlined text-xl">hub</span>
+                    <span class="font-label-caps text-sm font-medium uppercase tracking-wider">Global Stream</span>
                 </a>
-                <a class="text-white/40 px-4 py-4 flex items-center gap-4 hover:bg-white/5 hover:text-white transition-all" href="discuss.html">
-                    <span class="material-symbols-outlined">hub</span>
-                    <span>Pulse Network</span>
+                <a class="flex items-center gap-4 text-zinc-500 py-3 px-6 hover:bg-white/5 hover:text-white transition-all group active:translate-x-1" href="discuss.html">
+                    <span class="material-symbols-outlined text-xl">sensors</span>
+                    <span class="font-label-caps text-sm font-medium uppercase tracking-wider">Pulse Network</span>
                 </a>
-                <a class="text-white/40 px-4 py-4 flex items-center gap-4 hover:bg-white/5 hover:text-white transition-all" href="#" onclick="window.goToMyProfile()">
-                    <span class="material-symbols-outlined">person</span>
-                    <span>My Identity</span>
+                <a class="flex items-center gap-4 text-zinc-500 py-3 px-6 hover:bg-white/5 hover:text-white transition-all group active:translate-x-1" href="profile.html">
+                    <span class="material-symbols-outlined text-xl">fingerprint</span>
+                    <span class="font-label-caps text-sm font-medium uppercase tracking-wider">My Identity</span>
                 </a>
             </nav>
-
-            <div class="p-6 border-t border-white/5">
-                <button class="w-full bg-primary text-white font-bold py-4 rounded-2xl text-[11px] tracking-[0.2em] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20">
-                    NEW TRANSMISSION
+            
+            <div class="px-6 mt-8">
+                <button class="w-full py-4 bg-gradient-to-r from-primary-container to-secondary-container text-white font-label-caps text-xs rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-purple-500/20 uppercase tracking-widest" onclick="document.getElementById('post-in').focus()">
+                    Broadcast Now
+                </button>
+            </div>
+            
+            <div class="mt-auto space-y-1">
+                <a class="flex items-center gap-4 text-zinc-500 py-3 px-6 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <span class="material-symbols-outlined text-xl">security</span>
+                    <span class="font-label-caps text-xs uppercase tracking-widest">Security</span>
+                </a>
+                <button onclick="window.logoutNexus()" class="w-full flex items-center gap-4 text-zinc-500 py-3 px-6 hover:bg-error/10 hover:text-error transition-all cursor-pointer">
+                    <span class="material-symbols-outlined text-xl">logout</span>
+                    <span class="font-label-caps text-xs uppercase tracking-widest">Terminate</span>
                 </button>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 md:ml-64 lg:ml-72 flex flex-col lg:flex-row">
-            <!-- Feed Column -->
-            <section class="flex-1 border-r border-white/5 min-h-screen">
-                <!-- Composer -->
-                <div class="sticky top-16 md:top-20 z-30 p-4 md:p-6 glass-surface border-b border-white/10">
-                    <div class="flex gap-4">
-                        <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
-                            <img alt="User avatar" class="w-full h-full object-cover" id="my-pic-composer" src="jay.png"/>
-                        </div>
-                        <div class="flex-1">
-                            <textarea id="post-in" class="w-full bg-transparent border-none focus:ring-0 text-base md:text-lg placeholder:text-white/10 resize-none h-12 md:h-16 custom-scrollbar" placeholder="Broadcast to the neural network..."></textarea>
-                            
-                            <!-- Media Preview -->
-                            <div id="media-preview" class="hidden mt-4 relative rounded-2xl overflow-hidden border border-white/10 group">
-                                <div id="media-preview-content"></div>
-                                <button onclick="window.removePreview()" class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span class="material-symbols-outlined text-sm">close</span>
-                                </button>
+        <!-- Main Workspace -->
+        <div class="flex-1 flex flex-col md:ml-72 lg:mr-80 h-full overflow-hidden relative">
+            <main class="flex-1 overflow-y-auto custom-scrollbar pt-6 md:pt-12 pb-32 md:pb-12">
+                <div class="max-w-md md:max-w-4xl mx-auto px-4 md:px-gutter space-y-lg">
+                    
+                    <!-- Broadcast Composer -->
+                    <section class="relative group">
+                        <div class="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl blur opacity-20 group-focus-within:opacity-40 transition duration-500"></div>
+                        <div class="relative bg-[#111111]/70 backdrop-blur-2xl border border-white/10 rounded-xl p-md">
+                            <div class="flex items-center gap-sm mb-4">
+                                <div class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#3cddc7]"></div>
+                                <h2 class="font-label-caps text-label-caps text-on-surface uppercase tracking-widest">Neural Broadcast</h2>
                             </div>
+                            <div class="flex gap-4">
+                                <img id="my-pic-composer" src="jay.png" class="hidden md:block w-12 h-12 rounded-lg border border-white/10 shrink-0 object-cover">
+                                <div class="flex-1">
+                                    <textarea id="post-in" class="w-full bg-[#050505] border-b border-primary/30 focus:border-primary focus:ring-0 text-body-md font-body-md text-on-surface placeholder:text-zinc-600 rounded-none py-2 px-0 resize-none h-24 transition-all" placeholder="Sync your thoughts to the stream..."></textarea>
+                                    
+                                    <!-- Media Preview -->
+                                    <div id="media-preview" class="hidden mt-4 relative rounded-xl overflow-hidden border border-white/10">
+                                        <div id="media-preview-content"></div>
+                                        <button onclick="window.removePreview()" class="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white p-1 rounded-full hover:bg-error transition-colors">
+                                            <span class="material-symbols-outlined text-sm">close</span>
+                                        </button>
+                                    </div>
 
-                            <div class="flex justify-between items-center mt-4 pt-4 border-t border-white/5">
-                                <div class="flex gap-1 md:gap-2">
-                                    <button onclick="document.getElementById('fileInput').click()" class="p-2 text-white/20 hover:text-primary transition-colors">
-                                        <span class="material-symbols-outlined text-xl">image</span>
-                                    </button>
-                                    <button onclick="window.toggleGifPicker()" class="p-2 text-white/20 hover:text-primary transition-colors">
-                                        <span class="material-symbols-outlined text-xl">gif_box</span>
-                                    </button>
-                                    <button class="p-2 text-white/20 hover:text-primary transition-colors">
-                                        <span class="material-symbols-outlined text-xl">sentiment_satisfied</span>
-                                    </button>
+                                    <div class="flex justify-between items-center mt-4">
+                                        <div class="flex gap-2">
+                                            <button onclick="document.getElementById('fileInput').click()" class="p-2 text-zinc-500 hover:text-primary transition-colors">
+                                                <span class="material-symbols-outlined" data-icon="add_photo_alternate">add_photo_alternate</span>
+                                            </button>
+                                            <button onclick="window.toggleGifPicker()" class="p-2 text-zinc-500 hover:text-primary transition-colors">
+                                                <span class="material-symbols-outlined" data-icon="gif_box">gif_box</span>
+                                            </button>
+                                            <button class="p-2 text-zinc-500 hover:text-primary transition-colors">
+                                                <span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+                                            </button>
+                                        </div>
+                                        <input type="file" id="fileInput" hidden accept="image/*">
+                                        <button id="post-btn" disabled class="px-6 py-2 bg-gradient-to-r from-primary-container to-secondary-container text-on-primary-container font-label-caps text-label-caps rounded-lg shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale uppercase tracking-widest font-bold">
+                                            BROADCAST
+                                        </button>
+                                    </div>
                                 </div>
-                                <input type="file" id="fileInput" hidden accept="image/*">
-                                <button id="post-btn" disabled class="bg-primary text-white px-6 md:px-8 py-2 rounded-full font-bold text-xs uppercase tracking-widest disabled:opacity-30 disabled:grayscale transition-all hover:scale-105 active:scale-95">Transmit</button>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </section>
 
-                <!-- Feed Container -->
-                <div id="feed" class="p-4 md:p-6 space-y-6 md:space-y-8">
-                    <!-- Loading State -->
-                    <div class="flex flex-col items-center justify-center py-20 text-white/20">
-                        <div class="loader mb-4"></div>
-                        <p class="font-mono text-xs uppercase tracking-widest">Synchronizing Transmissions...</p>
-                    </div>
-                </div>
-            </section>
+                    <!-- Neural Trends (Mobile View) -->
+                    <section class="flex md:hidden flex-col gap-md">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-label-caps text-label-caps text-zinc-500 tracking-widest uppercase">Neural Trends</h3>
+                            <span class="text-[10px] text-tertiary-fixed font-mono">LIVE_FEED</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-base">
+                            <div class="bg-[#111111]/70 backdrop-blur-md border border-white/10 rounded-lg p-sm flex flex-col gap-xs">
+                                <span class="text-primary text-[10px] font-bold">#CYBER_PUNK</span>
+                                <span class="text-white font-headline-lg text-[18px]">2.4M</span>
+                            </div>
+                            <div class="bg-[#111111]/70 backdrop-blur-md border border-white/10 rounded-lg p-sm flex flex-col gap-xs">
+                                <span class="text-tertiary text-[10px] font-bold">#NEURAL_SYNC</span>
+                                <span class="text-white font-headline-lg text-[18px]">842K</span>
+                            </div>
+                        </div>
+                    </section>
 
-            <!-- Intelligence Panel (Desktop Right) -->
-            <aside class="hidden lg:block w-80 p-6 space-y-6 sticky top-20 h-fit">
+                    <!-- Uplink Activity Feed -->
+                    <section class="flex flex-col gap-gutter">
+                        <div class="flex items-center gap-sm">
+                            <span class="material-symbols-outlined text-primary">hub</span>
+                            <h3 class="font-label-caps text-label-caps text-zinc-500 tracking-widest uppercase">Uplink Activity</h3>
+                        </div>
+                        
+                        <div id="feed" class="space-y-gutter">
+                            <!-- Loading State -->
+                            <div class="flex flex-col items-center justify-center py-20 space-y-4">
+                                <div class="relative w-16 h-16">
+                                    <div class="absolute inset-0 border-2 border-purple-500/20 rounded-full"></div>
+                                    <div class="absolute inset-0 border-t-2 border-purple-500 rounded-full animate-spin"></div>
+                                </div>
+                                <div class="text-center">
+                                    <p class="font-label-caps text-purple-400 text-sm tracking-widest animate-pulse">Synchronizing network array...</p>
+                                    <p class="font-body-sm text-zinc-600 mt-1">Downloading encrypted data blocks (4.2MB/s)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            <!-- Mobile Bottom Nav -->
+            <nav class="md:hidden fixed bottom-0 w-full z-50 px-6 h-20 bg-black/70 backdrop-blur-md border-t border-white/10 flex justify-between items-center shadow-[0_-4px_30px_rgba(0,0,0,0.5)]">
+                <a class="flex flex-col items-center gap-1 group text-purple-400 font-bold transition-all" href="threads.html">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">hub</span>
+                    <span class="text-[10px] font-space-grotesk tracking-widest uppercase">Stream</span>
+                </a>
+                <a class="flex flex-col items-center gap-1 group text-zinc-500 hover:text-purple-300 transition-all active:scale-95" href="discuss.html">
+                    <span class="material-symbols-outlined">sensors</span>
+                    <span class="text-[10px] font-space-grotesk tracking-widest uppercase">Pulse</span>
+                </a>
+                <button class="bg-gradient-to-tr from-purple-600 to-blue-500 text-white w-12 h-12 rounded-full -mt-10 flex items-center justify-center shadow-lg shadow-purple-500/40 active:scale-90 transition-transform border border-white/20" onclick="document.getElementById('post-in').focus()">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
+                <a class="flex flex-col items-center gap-1 group text-zinc-500 hover:text-purple-300 transition-all active:scale-95 cursor-pointer" onclick="alert('Network Trends available in Desktop Intel Panel')">
+                    <span class="material-symbols-outlined">trending_up</span>
+                    <span class="text-[10px] font-space-grotesk tracking-widest uppercase">Trends</span>
+                </a>
+                <a class="flex flex-col items-center gap-1 group text-zinc-500 hover:text-purple-300 transition-all active:scale-95" href="profile.html">
+                    <span class="material-symbols-outlined">fingerprint</span>
+                    <span class="text-[10px] font-space-grotesk tracking-widest uppercase">Identity</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Intelligence Panel (Desktop Right) -->
+        <aside class="fixed right-0 top-16 h-full w-80 border-l border-white/10 bg-[#111111]/70 backdrop-blur-2xl hidden lg:flex flex-col pt-8 pb-8 px-6 z-40 overflow-y-auto custom-scrollbar">
+            <div class="space-y-xl">
                 <!-- System Metrics -->
-                <div class="flex justify-between items-center mb-8 px-2">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] font-mono text-white/40 mb-1">LATENCY</span>
-                        <span class="text-xs font-mono text-primary">14MS</span>
+                <section class="space-y-gutter">
+                    <h4 class="font-label-caps text-zinc-500 text-[10px] tracking-widest border-b border-white/5 pb-2">SYSTEM_METRICS</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass-panel p-4 rounded-lg bg-white/5">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="material-symbols-outlined text-purple-400 text-sm">speed</span>
+                                <span class="text-[10px] text-green-400 font-label-caps">STABLE</span>
+                            </div>
+                            <div class="text-headline-lg font-bold text-white leading-none">12ms</div>
+                            <div class="text-[10px] text-zinc-500 font-label-caps mt-1">Latency</div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-lg bg-white/5">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="material-symbols-outlined text-blue-400 text-sm">signal_cellular_4_bar</span>
+                                <span class="text-[10px] text-green-400 font-label-caps">98%</span>
+                            </div>
+                            <div class="text-headline-lg font-bold text-white leading-none">MAX</div>
+                            <div class="text-[10px] text-zinc-500 font-label-caps mt-1">Signal</div>
+                        </div>
                     </div>
-                    <div class="flex flex-col items-end">
-                        <span class="text-[10px] font-mono text-white/40 mb-1">SIGNAL_STRENGTH</span>
-                        <span class="text-xs font-mono text-secondary">92%</span>
-                    </div>
-                </div>
+                </section>
 
-                <!-- Trends -->
-                <div class="glass-panel rounded-3xl p-6 border border-white/5">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-[10px] font-mono text-white font-bold tracking-widest">NEURAL_TRENDS</h3>
+                <!-- Neural Trends -->
+                <section class="space-y-gutter">
+                    <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                        <h4 class="font-label-caps text-zinc-500 text-[10px] tracking-widest">NEURAL_TRENDS</h4>
                         <span class="material-symbols-outlined text-primary text-sm">trending_up</span>
                     </div>
-                    <div id="trend-list" class="space-y-5">
+                    <div id="trend-list" class="space-y-4">
                         <div class="animate-pulse space-y-4">
                             <div class="h-4 bg-white/5 rounded w-3/4"></div>
                             <div class="h-4 bg-white/5 rounded w-1/2"></div>
                             <div class="h-4 bg-white/5 rounded w-2/3"></div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- Activity -->
-                <div class="glass-panel rounded-3xl p-6 border border-white/5">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-[10px] font-mono text-white font-bold tracking-widest">UPLINK_ACTIVITY</h3>
-                        <span class="material-symbols-outlined text-secondary text-sm">sensors</span>
-                    </div>
+                <!-- Uplink Activity -->
+                <section class="space-y-gutter">
+                    <h4 class="font-label-caps text-zinc-500 text-[10px] tracking-widest border-b border-white/5 pb-2">UPLINK_ACTIVITY</h4>
                     <div class="space-y-4">
-                        <div class="flex items-center gap-3">
-                            <div class="relative w-1.5 h-1.5">
-                                <div class="absolute inset-0 bg-primary rounded-full animate-ping opacity-40"></div>
-                                <div class="relative w-full h-full bg-primary rounded-full"></div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 animate-pulse"></div>
+                            <div>
+                                <div class="text-[11px] text-white">Handshake established <span class="text-purple-400 font-bold">NODE_0012</span></div>
+                                <div class="text-[10px] text-zinc-600 font-label-caps">JUST NOW</div>
                             </div>
-                            <span class="text-[11px] text-white/60">Satellite Relay L-12 active</span>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="w-1.5 h-1.5 bg-error rounded-full"></div>
-                            <span class="text-[11px] text-white/60">Core Buffer overflow in Sect. 4</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                            <span class="text-[11px] text-white/60">Encryption handshake verified</span>
+                        <div class="flex items-start gap-3">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5"></div>
+                            <div>
+                                <div class="text-[11px] text-white">Sync complete</div>
+                                <div class="text-[10px] text-zinc-600 font-label-caps">2 MIN AGO</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </aside>
-        </main>
+                </section>
+            </div>
+        </aside>
     </div>
 
-    <!-- Mobile Bottom Nav -->
-    <nav class="md:hidden fixed bottom-0 w-full z-50 bg-[#0A0A0B]/80 backdrop-blur-xl border-t border-white/10 flex justify-around items-center h-16 px-4">
-        <a href="threads.html" class="flex flex-col items-center text-primary relative">
-            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
-            <span class="text-[8px] font-mono uppercase mt-1">Stream</span>
-            <div class="absolute -bottom-2 w-1 h-1 bg-primary rounded-full"></div>
-        </a>
-        <a href="discuss.html" class="flex flex-col items-center text-white/40">
-            <span class="material-symbols-outlined">hub</span>
-            <span class="text-[8px] font-mono uppercase mt-1">Network</span>
-        </a>
-        <button class="bg-primary text-white w-12 h-12 rounded-full -mt-10 flex items-center justify-center shadow-lg shadow-primary/40 active:scale-90 transition-transform">
-            <span class="material-symbols-outlined">add</span>
-        </button>
-        <a href="#" class="flex flex-col items-center text-white/40">
-            <span class="material-symbols-outlined">trending_up</span>
-            <span class="text-[8px] font-mono uppercase mt-1">Trends</span>
-        </a>
-        <a href="#" onclick="window.goToMyProfile()" class="flex flex-col items-center text-white/40">
-            <span class="material-symbols-outlined">person</span>
-            <span class="text-[8px] font-mono uppercase mt-1">Self</span>
-        </a>
-    </nav>
-
     <!-- GIF Picker Overlay -->
-    <div id="gif-picker" class="glass-surface hidden fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-8 md:w-96 z-[60] rounded-3xl overflow-hidden shadow-2xl p-4 inner-glow">
+    <div id="gif-picker" class="glass-panel hidden fixed bottom-24 right-4 md:right-8 md:w-96 z-[60] rounded-3xl overflow-hidden shadow-2xl p-4">
         <div class="p-2 flex items-center gap-3 border-b border-white/10 mb-4">
             <span class="material-symbols-outlined text-primary">search</span>
-            <input id="gif-search-in" class="bg-transparent border-none focus:ring-0 w-full text-white placeholder:text-white/20 text-sm" placeholder="Search decrypted GIFs..." type="text"/>
+            <input id="gif-search-in" class="bg-transparent border-none focus:ring-0 w-full text-white placeholder:text-white/20 text-sm font-label-caps" placeholder="SEARCH GIFS..." type="text"/>
         </div>
         <div id="gif-grid" class="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
-            <!-- GIFs go here -->
+            <!-- GIFs injected via JS -->
         </div>
     </div>
 
