@@ -211,7 +211,7 @@ function cacheElements() {
     elements.workspace = document.getElementById("workspace");
     elements.friendsStage = document.getElementById("friendsStage");
     elements.requestsStage = document.getElementById("requestsStage");
-    elements.chatStage = document.getElementById("chatStage");
+    elements.activityStage = document.getElementById("activityStage");
     elements.messageStream = document.getElementById("messageStream");
     elements.typingIndicator = document.getElementById("typingIndicator");
     elements.typingLabel = document.getElementById("typingLabel");
@@ -333,6 +333,7 @@ async function initializeState() {
 
     state.currentUser = {
         id: activeProfile?.username || user.email.split('@')[0],
+        authId: user.id,
         name: activeProfile?.display_name || fallbackName,
         avatarUrl: activeProfile?.avatar_url || fallbackPic,
         presence: "online",
@@ -720,7 +721,11 @@ function handleIncomingMessage(msg) {
     const isDM = msg.channel_type === 'direct' || !msg.channel_type;
     const isGlobal = msg.receiver === 'global_chat';
     const isGroupForMe = msg.channel_type === 'group' && knownGroupIds.includes(msg.receiver);
-    const isDMForMe = isDM && (msg.sender === state.currentUser.id || msg.receiver === state.currentUser.id);
+    const isDMForMe = isDM && (
+        msg.sender === state.currentUser.id || 
+        msg.receiver === state.currentUser.id ||
+        (state.currentUser.authId && (msg.sender === state.currentUser.authId || msg.receiver === state.currentUser.authId))
+    );
 
     if (!isDMForMe && !isGroupForMe && !isGlobal) return;
 
@@ -728,7 +733,8 @@ function handleIncomingMessage(msg) {
     if (msg.channel_type === 'group' || isGlobal) {
         chatId = msg.receiver;
     } else {
-        const otherUser = msg.sender === state.currentUser.id ? msg.receiver : msg.sender;
+        const isMe = msg.sender === state.currentUser.id || (state.currentUser.authId && msg.sender === state.currentUser.authId);
+        const otherUser = isMe ? msg.receiver : msg.sender;
         chatId = `dm-${otherUser}`;
     }
 
