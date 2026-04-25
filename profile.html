@@ -101,10 +101,10 @@
       }
     </script>
     <style>
-        body { background-color: #000000; color: #e5e2e1; min-height: 100dvh; overflow-x: hidden; }
+        body { background-color: #000000; color: #e5e2e1; min-height: 100dvh; overflow: hidden; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .neon-border { box-shadow: 0 0 5px rgba(0, 170, 255, 0.3); }
-        .scanline { background: linear-gradient(to bottom, transparent 50%, rgba(0, 170, 255, 0.05) 50%); background-size: 100% 4px; }
+        .scanline { background: linear-gradient(to bottom, transparent 50%, rgba(0, 170, 255, 0.05) 50%); background-size: 100% 4px; pointer-events: none; position: fixed; inset: 0; z-index: 99; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 170, 255, 0.2); border-radius: 10px; }
@@ -118,172 +118,173 @@
         }
     </style>
 </head>
-<body class="font-body-lg antialiased flex flex-col md:flex-row h-screen">
-    <!-- Desktop Sidebar -->
-    <aside class="hidden md:flex flex-col w-64 lg:w-72 bg-black border-r border-zinc-900 h-screen sticky top-0 flex-shrink-0 z-50">
-        <div class="p-8 border-b border-zinc-900">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
-                <span class="material-symbols-outlined text-cyan-400 text-3xl">terminal</span>
-                <span class="text-2xl font-black text-cyan-400 tracking-tighter font-headline-lg">SYSTEM_ID</span>
-            </div>
-            <p class="text-[10px] font-data-mono text-zinc-500 mt-2 uppercase tracking-widest">Neural Link v4.2.0</p>
+<body class="font-body-lg antialiased">
+    <div class="scanline"></div>
+
+    <!-- Global Header -->
+    <header class="fixed top-0 w-full z-[100] bg-black/80 backdrop-blur-md text-cyan-400 font-headline-md uppercase tracking-widest font-bold border-b border-zinc-900 shadow-[0_0_10px_rgba(0,170,255,0.1)] flex justify-between items-center px-4 h-16">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
+            <span class="material-symbols-outlined text-cyan-400">terminal</span>
+            <span class="text-xl font-black text-cyan-400 tracking-tighter">SYSTEM_ID</span>
         </div>
-        
-        <nav class="flex-1 py-8 px-4 space-y-2">
-            <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='index.html'">
-                <span class="material-symbols-outlined">hub</span>
-                <span>Network Hub</span>
-            </button>
-            <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='discuss.html'">
-                <span class="material-symbols-outlined">sensors</span>
-                <span>Pulse Links</span>
-            </button>
-            <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='threads.html'">
-                <span class="material-symbols-outlined">rss_feed</span>
-                <span>Broadcasts</span>
-            </button>
-            <button class="w-full sidebar-nav-btn active flex items-center gap-4 p-4 rounded-xl font-label-caps uppercase tracking-widest text-xs">
-                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
-                <span>Identity</span>
-            </button>
-        </nav>
-
-        <div class="p-6 border-t border-zinc-900 space-y-4">
-            <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-zinc-500 hover:text-white" onclick="window.openM()">
-                <span class="material-symbols-outlined text-xl">settings</span>
-                <span class="text-xs font-bold uppercase tracking-widest font-label-caps">Settings</span>
-            </button>
-            <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-error/10 transition-all text-zinc-500 hover:text-error" onclick="window.logoutNexus()">
-                <span class="material-symbols-outlined text-xl">logout</span>
-                <span class="text-xs font-bold uppercase tracking-widest font-label-caps">Terminate</span>
-            </button>
+        <div class="flex items-center gap-4">
+            <button onclick="window.logoutNexus()" class="material-symbols-outlined text-zinc-500 hover:text-error transition-colors">logout</button>
+            <span class="material-symbols-outlined text-zinc-500 hover:text-cyan-300 transition-colors cursor-pointer" onclick="window.openM()">settings</span>
         </div>
-    </aside>
+    </header>
 
-    <!-- Main Wrapper -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden">
-        <!-- Mobile Header -->
-        <header class="flex md:hidden bg-black text-cyan-400 font-headline-md uppercase tracking-widest font-bold border-b border-zinc-900 shadow-[0_0_10px_rgba(0,170,255,0.1)] justify-between items-center w-full px-4 h-16 sticky top-0 z-50 flex-shrink-0">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
-                <span class="material-symbols-outlined text-cyan-400">terminal</span>
-                <span class="text-xl font-black text-cyan-400 tracking-tighter">SYSTEM_ID</span>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="window.logoutNexus()" class="material-symbols-outlined text-zinc-500 hover:text-error transition-colors">logout</button>
-                <span class="material-symbols-outlined text-zinc-500 hover:text-cyan-300 transition-colors cursor-pointer" onclick="window.openM()">settings</span>
-            </div>
-        </header>
-
-        <!-- Scrollable Content -->
-        <main class="flex-1 overflow-y-auto custom-scrollbar relative scanline pb-32 md:pb-12">
-            <div class="max-w-md md:max-w-4xl mx-auto md:px-8 md:pt-12">
-                <!-- Profile Header Card (Combined Banner & Identity) -->
-                <div class="bg-surface-container-lowest md:border md:border-zinc-900 md:rounded-3xl overflow-hidden shadow-2xl relative">
-                    <!-- Profile Banner -->
-                    <div class="relative h-40 md:h-64 w-full overflow-hidden">
-                        <div id="banner-ui" class="w-full h-full bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center">
-                            <img id="banner-img" class="w-full h-full object-cover opacity-60" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_LpvEWLVgvL3MwYJqA-dV5yxBqq28vD4DuUq1sk2yGsG4Mk6jAquMYt5p18RK3YTgaKFacc-EJFBDzRz648VCq_fh8_rw9u1DG2rbkXz5YgaQBzGS2TbyB2GZFvbUf6ah74Qtelfy8izGm2ot7vHVzqgJ_jxjI9JWMutkcpHK38YbmWY6eI4xEbO5FLXJ33tmG5UKuJMrPz6nxhrj_4nNhXAYJB5SMXgny0a0ZDi9piRrrNkCD0U4CIfIUDCto6HkQYv1C4rBBAo3" alt="Banner"/>
-                        </div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-black md:from-black/80 via-transparent to-transparent"></div>
-                        <div class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-2 py-1 border border-cyan-400/30 text-[10px] font-data-mono text-cyan-400 uppercase tracking-tighter" id="system-link">
-                            LINK_ESTABLISHED: 0x82...F2
-                        </div>
-                    </div>
-
-                    <!-- Identity Section -->
-                    <div class="px-6 pb-8 -mt-12 md:-mt-16 relative z-10 flex flex-col md:flex-row md:items-end md:gap-8">
-                        <div class="relative group mx-auto md:mx-0">
-                            <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black bg-zinc-900 overflow-hidden ring-2 ring-cyan-400/50 shadow-[0_0_20px_rgba(0,170,255,0.2)]">
-                                <img id="pfp-ui" class="w-full h-full object-cover" src="jay.png" alt="Profile Picture"/>
-                            </div>
-                            <div id="online-indicator" class="absolute bottom-1 right-1 bg-cyan-400 w-4 h-4 md:w-6 md:h-6 rounded-full border-2 border-black animate-pulse hidden"></div>
-                        </div>
-
-                        <div class="text-center md:text-left mt-4 md:mt-0 flex-1">
-                            <div class="flex flex-col md:flex-row md:items-center gap-2">
-                                <h1 id="name-ui" class="font-headline-md text-3xl md:text-5xl text-on-surface uppercase tracking-tighter">Awaiting Sync...</h1>
-                                <div id="role-badge" class="flex justify-center md:justify-start"></div>
-                            </div>
-                            <p id="handle-ui" class="font-data-mono text-cyan-400/60 text-sm mt-1 uppercase tracking-widest">@nexus_node</p>
-                        </div>
-
-                        <div id="action-slot" class="mt-6 md:mt-0 w-full md:w-auto">
-                            <!-- Dynamic Buttons -->
-                        </div>
-                    </div>
-
-                    <div class="px-6 pb-8 grid md:grid-cols-3 gap-6">
-                        <!-- Bio -->
-                        <div class="md:col-span-2 bg-black/20 border border-zinc-900/50 p-6 rounded-2xl">
-                            <p class="font-label-caps text-[10px] text-zinc-500 uppercase tracking-[0.2em] mb-3">Bio-Data Transmission</p>
-                            <p id="bio-ui" class="font-body-lg text-on-surface leading-relaxed italic">Identifying status within the network...</p>
-                        </div>
-
-                        <!-- Stats -->
-                        <div class="grid grid-cols-3 md:grid-cols-1 gap-px bg-zinc-900/50 border border-zinc-900 rounded-2xl overflow-hidden">
-                            <div class="flex flex-col items-center justify-center py-4 bg-black/40 md:border-b md:border-zinc-900/50">
-                                <span id="stat-followers" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
-                                <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Followers</span>
-                            </div>
-                            <div class="flex flex-col items-center justify-center py-4 bg-black/40 border-x md:border-x-0 md:border-b md:border-zinc-900/50 border-zinc-900/50">
-                                <span id="stat-following" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
-                                <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Following</span>
-                            </div>
-                            <div class="flex flex-col items-center justify-center py-4 bg-black/40">
-                                <span id="stat-reputation" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
-                                <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Reputation</span>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Content Layout -->
+    <div class="flex h-screen pt-16 overflow-hidden">
+        <!-- Desktop Sidebar -->
+        <aside class="hidden md:flex flex-col w-64 lg:w-72 bg-black border-r border-zinc-900 h-full flex-shrink-0">
+            <div class="p-8 border-b border-zinc-900">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
+                    <span class="material-symbols-outlined text-cyan-400 text-3xl">terminal</span>
+                    <span class="text-2xl font-black text-cyan-400 tracking-tighter font-headline-lg">SYSTEM_ID</span>
                 </div>
+                <p class="text-[10px] font-data-mono text-zinc-500 mt-2 uppercase tracking-widest">Neural Link v4.2.0</p>
+            </div>
+            
+            <nav class="flex-1 py-8 px-4 space-y-2">
+                <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='index.html'">
+                    <span class="material-symbols-outlined">hub</span>
+                    <span>Network Hub</span>
+                </button>
+                <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='discuss.html'">
+                    <span class="material-symbols-outlined">sensors</span>
+                    <span>Pulse Links</span>
+                </button>
+                <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='threads.html'">
+                    <span class="material-symbols-outlined">rss_feed</span>
+                    <span>Broadcasts</span>
+                </button>
+                <button class="w-full sidebar-nav-btn active flex items-center gap-4 p-4 rounded-xl font-label-caps uppercase tracking-widest text-xs">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
+                    <span>Identity</span>
+                </button>
+            </nav>
 
-                <!-- Content Tabs -->
-                <section class="mt-8 md:mt-12">
-                    <div class="flex border-b border-zinc-900 px-4 md:px-0">
-                        <button id="tab-posts" class="flex-1 md:flex-none md:px-12 py-4 text-cyan-400 border-b-2 border-cyan-400 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] bg-cyan-400/5 active-tab" onclick="switchTab('posts', this)">
-                            Transmissions
-                        </button>
-                        <button id="tab-connections" class="flex-1 md:flex-none md:px-12 py-4 text-zinc-500 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] hover:text-white transition-colors" onclick="switchTab('connections', this)">
-                            Connections
-                        </button>
-                        <button id="tab-data" class="flex-1 md:flex-none md:px-12 py-4 text-zinc-500 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] hover:text-white transition-colors" onclick="switchTab('about', this)">
-                            System Data
-                        </button>
-                    </div>
+            <div class="p-6 border-t border-zinc-900 space-y-4">
+                <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-zinc-500 hover:text-white" onclick="window.openM()">
+                    <span class="material-symbols-outlined text-xl">settings</span>
+                    <span class="text-xs font-bold uppercase tracking-widest font-label-caps">Settings</span>
+                </button>
+                <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-error/10 transition-all text-zinc-500 hover:text-error" onclick="window.logoutNexus()">
+                    <span class="material-symbols-outlined text-xl">logout</span>
+                    <span class="text-xs font-bold uppercase tracking-widest font-label-caps">Terminate</span>
+                </button>
+            </div>
+        </aside>
 
-                    <!-- Feed Root -->
-                    <div id="feed-root" class="min-h-[300px] mt-6">
-                        <div class="flex flex-col items-center justify-center py-20 px-6 text-center opacity-40">
-                            <span class="material-symbols-outlined text-5xl text-zinc-600 mb-4 animate-pulse">wifi_off</span>
-                            <p class="font-data-mono text-xs uppercase tracking-[0.2em] text-zinc-500">Scanning for signals...</p>
+        <!-- Main Workspace -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+            <main class="flex-1 overflow-y-auto custom-scrollbar pb-32 md:pb-12">
+                <div class="max-w-md md:max-w-4xl mx-auto md:px-8 md:pt-12">
+                    <!-- Profile Card -->
+                    <div class="bg-surface-container-lowest md:border md:border-zinc-900 md:rounded-3xl overflow-hidden shadow-2xl relative">
+                        <!-- Banner -->
+                        <div class="relative h-40 md:h-64 w-full overflow-hidden">
+                            <div id="banner-ui" class="w-full h-full bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center">
+                                <img id="banner-img" class="w-full h-full object-cover opacity-60" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_LpvEWLVgvL3MwYJqA-dV5yxBqq28vD4DuUq1sk2yGsG4Mk6jAquMYt5p18RK3YTgaKFacc-EJFBDzRz648VCq_fh8_rw9u1DG2rbkXz5YgaQBzGS2TbyB2GZFvbUf6ah74Qtelfy8izGm2ot7vHVzqgJ_jxjI9JWMutkcpHK38YbmWY6eI4xEbO5FLXJ33tmG5UKuJMrPz6nxhrj_4nNhXAYJB5SMXgny0a0ZDi9piRrrNkCD0U4CIfIUDCto6HkQYv1C4rBBAo3" alt="Banner"/>
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black md:from-black/80 via-transparent to-transparent"></div>
+                            <div class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-2 py-1 border border-cyan-400/30 text-[10px] font-data-mono text-cyan-400 uppercase tracking-tighter" id="system-link">
+                                LINK_ESTABLISHED: 0x82...F2
+                            </div>
+                        </div>
+
+                        <!-- Identity -->
+                        <div class="px-6 pb-8 -mt-12 md:-mt-16 relative z-10 flex flex-col md:flex-row md:items-end md:gap-8">
+                            <div class="relative group mx-auto md:mx-0">
+                                <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black bg-zinc-900 overflow-hidden ring-2 ring-cyan-400/50 shadow-[0_0_20px_rgba(0,170,255,0.2)]">
+                                    <img id="pfp-ui" class="w-full h-full object-cover" src="jay.png" alt="Profile Picture"/>
+                                </div>
+                                <div id="online-indicator" class="absolute bottom-1 right-1 bg-cyan-400 w-4 h-4 md:w-6 md:h-6 rounded-full border-2 border-black animate-pulse hidden"></div>
+                            </div>
+
+                            <div class="text-center md:text-left mt-4 md:mt-0 flex-1">
+                                <div class="flex flex-col md:flex-row md:items-center gap-2">
+                                    <h1 id="name-ui" class="font-headline-md text-3xl md:text-5xl text-on-surface uppercase tracking-tighter">Awaiting Sync...</h1>
+                                    <div id="role-badge" class="flex justify-center md:justify-start"></div>
+                                </div>
+                                <p id="handle-ui" class="font-data-mono text-cyan-400/60 text-sm mt-1 uppercase tracking-widest">@nexus_node</p>
+                            </div>
+
+                            <div id="action-slot" class="mt-6 md:mt-0 w-full md:w-auto">
+                                <!-- Dynamic Buttons -->
+                            </div>
+                        </div>
+
+                        <div class="px-6 pb-8 grid md:grid-cols-3 gap-6">
+                            <div class="md:col-span-2 bg-black/20 border border-zinc-900/50 p-6 rounded-2xl">
+                                <p class="font-label-caps text-[10px] text-zinc-500 uppercase tracking-[0.2em] mb-3">Bio-Data Transmission</p>
+                                <p id="bio-ui" class="font-body-lg text-on-surface leading-relaxed italic">Identifying status within the network...</p>
+                            </div>
+
+                            <div class="grid grid-cols-3 md:grid-cols-1 gap-px bg-zinc-900/50 border border-zinc-900 rounded-2xl overflow-hidden">
+                                <div class="flex flex-col items-center justify-center py-4 bg-black/40 md:border-b md:border-zinc-900/50">
+                                    <span id="stat-followers" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
+                                    <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Followers</span>
+                                </div>
+                                <div class="flex flex-col items-center justify-center py-4 bg-black/40 border-x md:border-x-0 md:border-b md:border-zinc-900/50 border-zinc-900/50">
+                                    <span id="stat-following" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
+                                    <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Following</span>
+                                </div>
+                                <div class="flex flex-col items-center justify-center py-4 bg-black/40">
+                                    <span id="stat-reputation" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
+                                    <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Reputation</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </section>
-            </div>
-        </main>
 
-        <!-- Mobile Navigation Bar -->
-        <nav class="flex md:hidden fixed bottom-0 left-0 w-full justify-around items-center h-20 pb-safe bg-black border-t border-zinc-800 z-50 flex-shrink-0">
-            <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="index.html">
-                <span class="material-symbols-outlined">hub</span>
-                <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Network</span>
-            </a>
-            <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="discuss.html">
-                <span class="material-symbols-outlined">sensors</span>
-                <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Pulse</span>
-            </a>
-            <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="threads.html">
-                <span class="material-symbols-outlined">rss_feed</span>
-                <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Broadcast</span>
-            </a>
-            <a class="flex flex-col items-center justify-center text-cyan-400 drop-shadow-[0_0_5px_#00AAFF] flex-1 h-full bg-cyan-400/5 border-t-2 border-cyan-400" href="profile.html">
-                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
-                <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Identity</span>
-            </a>
-        </nav>
+                    <!-- Tabs -->
+                    <section class="mt-8 md:mt-12">
+                        <div class="flex border-b border-zinc-900 px-4 md:px-0">
+                            <button id="tab-posts" class="flex-1 md:flex-none md:px-12 py-4 text-cyan-400 border-b-2 border-cyan-400 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] bg-cyan-400/5 active-tab" onclick="switchTab('posts', this)">
+                                Transmissions
+                            </button>
+                            <button id="tab-connections" class="flex-1 md:flex-none md:px-12 py-4 text-zinc-500 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] hover:text-white transition-colors" onclick="switchTab('connections', this)">
+                                Connections
+                            </button>
+                            <button id="tab-data" class="flex-1 md:flex-none md:px-12 py-4 text-zinc-500 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] hover:text-white transition-colors" onclick="switchTab('about', this)">
+                                System Data
+                            </button>
+                        </div>
+
+                        <div id="feed-root" class="min-h-[300px] mt-6">
+                            <div class="flex flex-col items-center justify-center py-20 px-6 text-center opacity-40">
+                                <span class="material-symbols-outlined text-5xl text-zinc-600 mb-4 animate-pulse">wifi_off</span>
+                                <p class="font-data-mono text-xs uppercase tracking-[0.2em] text-zinc-500">Scanning for signals...</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            <!-- Mobile Bottom Nav -->
+            <nav class="flex md:hidden absolute bottom-0 left-0 w-full justify-around items-center h-20 pb-safe bg-black border-t border-zinc-800 z-50">
+                <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="index.html">
+                    <span class="material-symbols-outlined">hub</span>
+                    <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Network</span>
+                </a>
+                <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="discuss.html">
+                    <span class="material-symbols-outlined">sensors</span>
+                    <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Pulse</span>
+                </a>
+                <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="threads.html">
+                    <span class="material-symbols-outlined">rss_feed</span>
+                    <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Broadcast</span>
+                </a>
+                <a class="flex flex-col items-center justify-center text-cyan-400 drop-shadow-[0_0_5px_#00AAFF] flex-1 h-full bg-cyan-400/5 border-t-2 border-cyan-400" href="profile.html">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
+                    <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Identity</span>
+                </a>
+            </nav>
+        </div>
     </div>
 
-    <!-- Modal Rebuild -->
+    <!-- Edit Modal -->
     <div id="edit-modal" class="fixed inset-0 bg-black/95 z-[100] hidden items-center justify-center backdrop-blur-xl p-4">
         <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl w-full max-w-md shadow-2xl">
             <h2 class="font-headline-lg text-white mb-6 uppercase tracking-tighter">Update Identity</h2>
@@ -345,9 +346,9 @@
                 const { data: p } = await window.supabaseClient.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
                 state.me = (p?.username || session.user.email.split('@')[0]).toLowerCase();
                 
-                // Update system link display
                 const shortId = session.user.id.substring(0, 4) + '...' + session.user.id.substring(session.user.id.length - 2);
-                document.getElementById('system-link').textContent = `LINK_ESTABLISHED: 0x${shortId.toUpperCase()}`;
+                const systemLink = document.getElementById('system-link');
+                if (systemLink) systemLink.textContent = `LINK_ESTABLISHED: 0x${shortId.toUpperCase()}`;
             }
 
             if (!user) {
@@ -356,10 +357,10 @@
                 return;
             }
 
-            // Verify requested user actually exists before rendering
             const { data: userCheck } = await window.supabaseClient.from('profiles').select('id').eq('username', user).maybeSingle();
             if (!userCheck) {
-                document.getElementById('feed-root').innerHTML = 
+                const fr = document.getElementById('feed-root');
+                if (fr) fr.innerHTML = 
                     `<div class="flex flex-col items-center justify-center py-20 px-6 text-center opacity-40">
                         <span class="material-symbols-outlined text-5xl text-zinc-600 mb-4">person_off</span>
                         <p class="font-data-mono text-xs uppercase tracking-[0.2em] text-zinc-500">ENTITY NOT FOUND: @${esc(user)}</p>
@@ -383,16 +384,20 @@
                 if (data.banner_url) document.getElementById('banner-img').src = data.banner_url;
                 
                 const rb = document.getElementById('role-badge');
-                if (data.role === 'admin' || data.is_admin) rb.innerHTML = `<span class="bg-primary-container/20 text-cyan-400 text-[10px] px-1.5 py-0.5 rounded border border-cyan-400/40 font-label-caps">OVERSEER</span>`;
-                else if (data.role === 'moderator') rb.innerHTML = `<span class="bg-zinc-800 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded border border-emerald-400/40 font-label-caps">GUARDIAN</span>`;
+                if (rb) {
+                    if (data.role === 'admin' || data.is_admin) rb.innerHTML = `<span class="bg-primary-container/20 text-cyan-400 text-[10px] px-1.5 py-0.5 rounded border border-cyan-400/40 font-label-caps">OVERSEER</span>`;
+                    else if (data.role === 'moderator') rb.innerHTML = `<span class="bg-zinc-800 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded border border-emerald-400/40 font-label-caps">GUARDIAN</span>`;
+                }
                 
                 setupActions();
-                document.getElementById('online-indicator').classList.remove('hidden');
+                const indicator = document.getElementById('online-indicator');
+                if (indicator) indicator.classList.remove('hidden');
             }
         }
 
         function setupActions() {
             const slot = document.getElementById('action-slot');
+            if (!slot) return;
             if (state.me === user) {
                 slot.innerHTML = `
                     <button class="w-full bg-primary-container text-on-primary-container font-label-caps py-4 px-6 rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-300 transition-all active:scale-95 shadow-lg shadow-cyan-400/20" onclick="openM()">
@@ -405,18 +410,19 @@
                         <button id="follow-btn" class="flex-1 bg-primary-container text-on-primary-container font-label-caps py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-300 transition-all active:scale-95 shadow-lg shadow-cyan-400/20" onclick="toggleFollow()">
                             Connect
                         </button>
-                        <button class="flex-0.5 bg-zinc-900 border border-zinc-800 text-on-surface font-label-caps py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all active:scale-95 px-6" onclick="window.location.href='discuss.html?dm=${encodeURIComponent(user)}'">
+                        <button class="flex-0.5 bg-zinc-900 border border-zinc-800 text-on-surface font-label-caps py-4 rounded-lg flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all active:scale-95 px-6" onclick="window.location.href='discuss.html?dm=${encodeURIComponent(user)}'">
                             <span class="material-symbols-outlined text-sm">chat_bubble</span>
                         </button>
                     </div>`;
                 checkFollow();
             } else {
-                slot.innerHTML = `<button class="w-full bg-zinc-800 text-white font-label-caps py-4 rounded-xl flex items-center justify-center gap-2" onclick="window.location.href='auth.html'">Login to Connect</button>`;
+                slot.innerHTML = `<button class="w-full bg-zinc-800 text-white font-label-caps py-4 rounded-lg flex items-center justify-center gap-2" onclick="window.location.href='auth.html'">Login to Connect</button>`;
             }
         }
 
         async function renderFeed() {
             const root = document.getElementById('feed-root');
+            if (!root) return;
             root.innerHTML = `<div class="flex justify-center py-20 opacity-40"><p class="font-data-mono text-xs uppercase tracking-widest">Scanning signals...</p></div>`;
             
             if (state.view === 'posts') {
@@ -473,10 +479,13 @@
         async function syncStats() {
             const { count: f1 } = await window.supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('following', user);
             const { count: f2 } = await window.supabaseClient.from('follows').select('*', { count: 'exact', head: true }).eq('follower', user);
-            document.getElementById('stat-followers').innerText = f1 || 0;
-            document.getElementById('stat-following').innerText = f2 || 0;
+            const f1el = document.getElementById('stat-followers');
+            const f2el = document.getElementById('stat-following');
+            const repel = document.getElementById('stat-reputation');
+            if (f1el) f1el.innerText = f1 || 0;
+            if (f2el) f2el.innerText = f2 || 0;
             const { data: rep } = await window.supabaseClient.from('threads').select('likes').eq('author', user);
-            document.getElementById('stat-reputation').innerText = rep?.reduce((a,b) => a + (b.likes||0), 0) || 0;
+            if (repel) repel.innerText = rep?.reduce((a,b) => a + (b.likes||0), 0) || 0;
         }
 
         window.openM = () => {
