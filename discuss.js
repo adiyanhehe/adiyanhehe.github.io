@@ -395,10 +395,16 @@ async function syncChatsWithDatabase() {
     const uuid = session?.user?.id;
 
     // Fetch all messages where the current user is involved
+    // Build OR filter; avoid duplicating conditions if uuid matches username
+    const uid = state.currentUser.id;
+    const filters = [`sender.eq.${uid}`, `receiver.eq.${uid}`, `receiver.eq.global_chat`];
+    if (uuid && uuid !== uid) {
+        filters.push(`sender.eq.${uuid}`, `receiver.eq.${uuid}`);
+    }
     const { data: messages, error: msgError } = await window.supabaseClient
         .from('messages')
         .select('*')
-        .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id},sender.eq.${uuid},receiver.eq.${uuid},receiver.eq.global_chat`)
+        .or(filters.join(','))
         .order('created_at', { ascending: true });
 
     // Fetch read receipts to calculate unread counts
@@ -896,27 +902,27 @@ function bindEvents() {
         });
     }
 
-    elements.directRecipientInput.addEventListener("input", handleUserSearch);
-    elements.userSearchResults.addEventListener("click", handleSearchResultSelection);
+    elements.directRecipientInput?.addEventListener("input", handleUserSearch);
+    elements.userSearchResults?.addEventListener("click", handleSearchResultSelection);
 
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleDocumentKeydown);
     window.addEventListener("resize", handleResize);
-    elements.uploadButton.addEventListener("click", () => elements.fileInput.click());
-    elements.fileInput.addEventListener("change", handleFileUpload);
+    elements.uploadButton?.addEventListener("click", () => elements.fileInput?.click());
+    elements.fileInput?.addEventListener("change", handleFileUpload);
 
     // Search events
-    elements.openSearchButton.addEventListener("click", toggleWorkspaceSearch);
-    elements.closeWorkspaceSearch.addEventListener("click", toggleWorkspaceSearch);
-    elements.workspaceSearchInput.addEventListener("input", handleWorkspaceSearch);
+    elements.openSearchButton?.addEventListener("click", toggleWorkspaceSearch);
+    elements.closeWorkspaceSearch?.addEventListener("click", toggleWorkspaceSearch);
+    elements.workspaceSearchInput?.addEventListener("input", handleWorkspaceSearch);
 
     // Mention events
-    elements.mentionDropdown.addEventListener("click", handleMentionClick);
+    elements.mentionDropdown?.addEventListener("click", handleMentionClick);
 
     // Advanced features
     if (elements.cancelReplyButton) elements.cancelReplyButton.addEventListener("click", cancelReply);
     if (elements.cancelEditButton) elements.cancelEditButton.addEventListener("click", cancelEdit);
-    if (elements.closePinnedBar) elements.closePinnedBar.addEventListener("click", () => elements.pinnedMessagesBar.classList.add("hidden"));
+    if (elements.closePinnedBar) elements.closePinnedBar.addEventListener("click", () => elements.pinnedMessagesBar?.classList.add("hidden"));
 
     document.getElementById("saveProfileBtn")?.addEventListener("click", saveProfile);
     document.getElementById("publishPollBtn")?.addEventListener("click", publishPoll);
@@ -932,13 +938,15 @@ function bindEvents() {
         });
     }
 
-    elements.sheetTabs.forEach(tab => {
-        tab.addEventListener("click", () => {
-            state.currentSheetTab = tab.dataset.tab;
-            elements.sheetTabs.forEach(t => t.classList.toggle("active", t === tab));
-            renderSheet();
+    if (elements.sheetTabs && elements.sheetTabs.length > 0) {
+        elements.sheetTabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+                state.currentSheetTab = tab.dataset.tab;
+                elements.sheetTabs.forEach(t => t.classList.toggle("active", t === tab));
+                renderSheet();
+            });
         });
-    });
+    }
 }
 
 async function handleFileUpload(event) {
@@ -1363,57 +1371,62 @@ function renderFriendsStage() {
 }
 
 function renderWorkspace() {
+    // Guard: if critical workspace elements aren't ready, bail out safely
+    if (!elements.chatStage || !elements.workspaceIdentity) return;
+
     if (state.nav === "friends") {
-        elements.friendsStage.classList.remove("hidden");
-        elements.requestsStage.classList.add("hidden");
-        elements.chatStage.classList.add("hidden");
-        elements.composer.classList.add("hidden");
-        elements.membersToggleButton.classList.add("hidden");
-        elements.jumpLatestButton.classList.add("hidden");
+        elements.friendsStage?.classList.remove("hidden");
+        elements.requestsStage?.classList.add("hidden");
+        elements.activityStage?.classList.add("hidden");
+        elements.chatStage?.classList.add("hidden");
+        elements.composer?.classList.add("hidden");
+        elements.membersToggleButton?.classList.add("hidden");
+        elements.jumpLatestButton?.classList.add("hidden");
         elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Friends", "See who is online and jump straight into a conversation.");
-        elements.friendsStage.innerHTML = renderFriendsStage();
+        if (elements.friendsStage) elements.friendsStage.innerHTML = renderFriendsStage();
         return;
     }
 
     if (state.nav === "requests") {
-        elements.friendsStage.classList.add("hidden");
-        elements.requestsStage.classList.remove("hidden");
-        elements.activityStage.classList.add("hidden");
-        elements.chatStage.classList.add("hidden");
-        elements.composer.classList.add("hidden");
-        elements.membersToggleButton.classList.add("hidden");
-        elements.jumpLatestButton.classList.add("hidden");
+        elements.friendsStage?.classList.add("hidden");
+        elements.requestsStage?.classList.remove("hidden");
+        elements.activityStage?.classList.add("hidden");
+        elements.chatStage?.classList.add("hidden");
+        elements.composer?.classList.add("hidden");
+        elements.membersToggleButton?.classList.add("hidden");
+        elements.jumpLatestButton?.classList.add("hidden");
         elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Requests", "Manage your pending chat invitations.");
         renderRequestsView();
         return;
     }
 
     if (state.nav === "activity") {
-        elements.friendsStage.classList.add("hidden");
-        elements.requestsStage.classList.add("hidden");
-        elements.activityStage.classList.remove("hidden");
-        elements.chatStage.classList.add("hidden");
-        elements.composer.classList.add("hidden");
-        elements.membersToggleButton.classList.add("hidden");
-        elements.jumpLatestButton.classList.add("hidden");
+        elements.friendsStage?.classList.add("hidden");
+        elements.requestsStage?.classList.add("hidden");
+        elements.activityStage?.classList.remove("hidden");
+        elements.chatStage?.classList.add("hidden");
+        elements.composer?.classList.add("hidden");
+        elements.membersToggleButton?.classList.add("hidden");
+        elements.jumpLatestButton?.classList.add("hidden");
         elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Activity", "Catch up on your mentions and recent alerts.");
         renderActivityHub();
         return;
     }
 
     const activeChat = getActiveChat();
-    elements.friendsStage.classList.add("hidden");
-    elements.requestsStage.classList.add("hidden");
-    elements.chatStage.classList.remove("hidden");
-    elements.composer.classList.remove("hidden");
-    elements.membersToggleButton.classList.remove("hidden");
+    elements.friendsStage?.classList.add("hidden");
+    elements.requestsStage?.classList.add("hidden");
+    elements.activityStage?.classList.add("hidden");
+    elements.chatStage?.classList.remove("hidden");
+    elements.composer?.classList.remove("hidden");
+    elements.membersToggleButton?.classList.remove("hidden");
 
     if (!activeChat) {
         elements.workspaceIdentity.innerHTML = renderWorkspaceSectionIdentity("Select a chat", "Choose a conversation from the list to start messaging.");
-        elements.membersToggleButton.classList.add("hidden");
-        elements.messageStream.innerHTML = renderEmptyStateCard("Nothing selected yet", "Pick a direct message or a group chat to start.");
-        elements.typingIndicator.classList.add("hidden");
-        elements.membersSheet.classList.add("hidden");
+        elements.membersToggleButton?.classList.add("hidden");
+        if (elements.messageStream) elements.messageStream.innerHTML = renderEmptyStateCard("Nothing selected yet", "Pick a direct message or a group chat to start.");
+        elements.typingIndicator?.classList.add("hidden");
+        elements.membersSheet?.classList.add("hidden");
         return;
     }
 
@@ -1426,12 +1439,12 @@ function renderWorkspace() {
     }
     
     // Global Chat and group chats show Members panel; DMs show Profile
-    elements.membersToggleButton.textContent = (activeChat.type === "group" || activeChat.type === "global") ? "Members" : "Profile";
-    elements.membersSheet.classList.toggle("hidden", !state.membersOpen);
+    if (elements.membersToggleButton) elements.membersToggleButton.textContent = (activeChat.type === "group" || activeChat.type === "global") ? "Members" : "Profile";
+    elements.membersSheet?.classList.toggle("hidden", !state.membersOpen);
     
     renderMessages(activeChat);
     renderSheet();
-    elements.messageInput.placeholder = `Message ${getChatTitle(activeChat)}`;
+    if (elements.messageInput) elements.messageInput.placeholder = `Message ${getChatTitle(activeChat)}`;
 }
 
 function renderPinnedBar(chat) {
@@ -1803,11 +1816,11 @@ function renderMembersSheet(chat) {
 
 function renderModalMode() {
     const isGroup = state.modalMode === "group";
-    elements.groupFields.classList.toggle("hidden", !isGroup);
+    elements.groupFields?.classList.toggle("hidden", !isGroup);
     document.querySelectorAll(".mode-button").forEach((button) => {
         button.classList.toggle("active", button.dataset.mode === state.modalMode);
     });
-    elements.conversationModal.classList.toggle("hidden", !state.modalOpen);
+    elements.conversationModal?.classList.toggle("hidden", !state.modalOpen);
 }
 
 function toggleGifPicker() {
@@ -1815,7 +1828,7 @@ function toggleGifPicker() {
     if (state.gifOpen) {
         state.emojiOpen = false;
         renderEmojiPicker();
-        elements.gifSearchInput.value = "";
+        if (elements.gifSearchInput) elements.gifSearchInput.value = "";
         fetchGifs("");
         // Focus the search field only when newly opening
         setTimeout(() => elements.gifSearchInput?.focus(), 50);
@@ -1824,7 +1837,7 @@ function toggleGifPicker() {
 }
 
 function renderGifPicker() {
-    elements.gifPicker.classList.toggle("hidden", !state.gifOpen);
+    elements.gifPicker?.classList.toggle("hidden", !state.gifOpen);
 }
 
 async function fetchGifs(query) {
