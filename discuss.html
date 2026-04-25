@@ -54,6 +54,11 @@
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
         
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             background: 
                 radial-gradient(circle at 80% 0%, rgba(147, 125, 255, 0.08) 0%, transparent 40%),
@@ -62,8 +67,27 @@
                 #0c0e17;
             background-attachment: fixed;
             color: #e1e1ef;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* App shell — fills remaining height below fixed header */
+        #app {
+            height: calc(100vh - 64px) !important;
             overflow: hidden;
-            height: 100vh;
+        }
+
+        /* Workspace must fill its flex parent and scroll internally */
+        #workspace {
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Message stream fills remaining space and scrolls */
+        #messageStream {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
         }
 
         .glass-panel {
