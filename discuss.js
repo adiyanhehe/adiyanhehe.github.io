@@ -398,7 +398,7 @@ async function syncChatsWithDatabase() {
     const { data: messages, error: msgError } = await window.supabaseClient
         .from('messages')
         .select('*')
-        .or(`sender.eq."${state.currentUser.id}",receiver.eq."${state.currentUser.id}",sender.eq."${uuid}",receiver.eq."${uuid}",receiver.eq.global_chat`)
+        .or(`sender.eq.${state.currentUser.id},receiver.eq.${state.currentUser.id},sender.eq.${uuid},receiver.eq.${uuid},receiver.eq.global_chat`)
         .order('created_at', { ascending: true });
 
     // Fetch read receipts to calculate unread counts
