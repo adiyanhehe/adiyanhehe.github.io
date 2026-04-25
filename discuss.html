@@ -322,7 +322,7 @@
                 <input type="text" id="searchInput" class="bg-transparent border-none focus:ring-0 text-sm text-white placeholder-slate-600 w-full ml-2" placeholder="Search neural connections...">
             </div>
 
-            <div class="flex items-center gap-4 ml-auto">
+            <div class="flex items-center gap-2 ml-auto">
                 <!-- Mobile Directory Toggle -->
                 <button id="openDirectoryButton" class="md:hidden w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-slate-400">
                     <span class="material-symbols-outlined">forum</span>
@@ -331,6 +331,12 @@
                 <button class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-primary active:scale-90">
                     <span class="material-symbols-outlined">notifications</span>
                 </button>
+
+                <!-- Logout button -->
+                <button onclick="window.logoutNexus()" title="Sign out" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-error/10 transition-all text-slate-400 hover:text-error active:scale-90">
+                    <span class="material-symbols-outlined">logout</span>
+                </button>
+
                 <div class="w-10 h-10 rounded-xl border border-white/10 overflow-hidden cursor-pointer hover:border-primary/50 transition-all" id="settingsButton">
                     <div id="currentUserAvatar" class="w-full h-full"></div>
                 </div>
@@ -397,16 +403,34 @@
                 </button>
             </div>
 
-            <div class="p-6 border-t border-white/5 space-y-4">
+            <div class="p-4 border-t border-white/5 space-y-2">
+                <!-- User identity card -->
                 <div class="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
                     <div class="relative flex-shrink-0">
                         <div id="sidebarUserAvatar" class="w-10 h-10 rounded-xl object-cover border border-white/10"></div>
                     </div>
-                    <div class="hidden lg:flex flex-col overflow-hidden">
+                    <div class="hidden lg:flex flex-col overflow-hidden flex-1 min-w-0">
                         <span class="text-xs font-bold text-white truncate" id="currentUserName">User</span>
                         <span class="text-[9px] text-slate-500 font-mono uppercase tracking-widest truncate" id="currentUserStatus">Active Node</span>
                     </div>
                 </div>
+
+                <!-- Edit Profile button -->
+                <button onclick="window.location.href='profile.html'" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group">
+                    <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-primary/10 group-hover:text-primary transition-all flex-shrink-0">
+                        <span class="material-symbols-outlined text-lg">manage_accounts</span>
+                    </div>
+                    <span class="hidden lg:block text-xs font-bold">Edit Profile</span>
+                </button>
+
+                <!-- Logout button -->
+                <button onclick="window.logoutNexus()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-error/10 transition-all text-slate-400 hover:text-error group">
+                    <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-error/10 transition-all flex-shrink-0">
+                        <span class="material-symbols-outlined text-lg">logout</span>
+                    </div>
+                    <span class="hidden lg:block text-xs font-bold">Sign Out</span>
+                </button>
+
                 <button id="closeSidebarButton" class="md:hidden w-full py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-500">Close Panel</button>
             </div>
 
