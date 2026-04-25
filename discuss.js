@@ -1371,14 +1371,14 @@ function renderFriendsStage() {
 }
 
 function renderWorkspace() {
-    // Guard: if critical workspace elements aren't ready, bail out safely
-    if (!elements.chatStage || !elements.workspaceIdentity) return;
+    // Guard: if workspaceIdentity isn't ready, bail out safely
+    if (!elements.workspaceIdentity) return;
 
     if (state.nav === "friends") {
         elements.friendsStage?.classList.remove("hidden");
         elements.requestsStage?.classList.add("hidden");
         elements.activityStage?.classList.add("hidden");
-        elements.chatStage?.classList.add("hidden");
+        elements.messageStream?.classList.add("hidden");
         elements.composer?.classList.add("hidden");
         elements.membersToggleButton?.classList.add("hidden");
         elements.jumpLatestButton?.classList.add("hidden");
@@ -1391,7 +1391,7 @@ function renderWorkspace() {
         elements.friendsStage?.classList.add("hidden");
         elements.requestsStage?.classList.remove("hidden");
         elements.activityStage?.classList.add("hidden");
-        elements.chatStage?.classList.add("hidden");
+        elements.messageStream?.classList.add("hidden");
         elements.composer?.classList.add("hidden");
         elements.membersToggleButton?.classList.add("hidden");
         elements.jumpLatestButton?.classList.add("hidden");
@@ -1404,7 +1404,7 @@ function renderWorkspace() {
         elements.friendsStage?.classList.add("hidden");
         elements.requestsStage?.classList.add("hidden");
         elements.activityStage?.classList.remove("hidden");
-        elements.chatStage?.classList.add("hidden");
+        elements.messageStream?.classList.add("hidden");
         elements.composer?.classList.add("hidden");
         elements.membersToggleButton?.classList.add("hidden");
         elements.jumpLatestButton?.classList.add("hidden");
@@ -1413,11 +1413,12 @@ function renderWorkspace() {
         return;
     }
 
+    // Home / Global / Chat view — show the message stream
     const activeChat = getActiveChat();
     elements.friendsStage?.classList.add("hidden");
     elements.requestsStage?.classList.add("hidden");
     elements.activityStage?.classList.add("hidden");
-    elements.chatStage?.classList.remove("hidden");
+    elements.messageStream?.classList.remove("hidden");
     elements.composer?.classList.remove("hidden");
     elements.membersToggleButton?.classList.remove("hidden");
 
@@ -2433,8 +2434,8 @@ function openDrawer(drawer) {
 
 function closeDrawers() {
     state.drawer = null;
-    elements.app.classList.remove("sidebar-open", "directory-open");
-    elements.pageOverlay.classList.add("hidden");
+    elements.app?.classList.remove("sidebar-open", "directory-open");
+    elements.pageOverlay?.classList.add("hidden");
 }
 
 function shouldShowOverlay() {
