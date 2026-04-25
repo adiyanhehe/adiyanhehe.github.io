@@ -101,130 +101,187 @@
       }
     </script>
     <style>
-        body { background-color: #000000; color: #e5e2e1; min-height: 100dvh; }
+        body { background-color: #000000; color: #e5e2e1; min-height: 100dvh; overflow-x: hidden; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .neon-border { box-shadow: 0 0 5px rgba(0, 170, 255, 0.3); }
         .scanline { background: linear-gradient(to bottom, transparent 50%, rgba(0, 170, 255, 0.05) 50%); background-size: 100% 4px; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 170, 255, 0.2); border-radius: 10px; }
+        
+        @media (min-width: 768px) {
+            .sidebar-nav-btn.active { 
+                background: rgba(0, 170, 255, 0.1); 
+                color: #00aaff;
+                border-left: 2px solid #00aaff;
+            }
+        }
     </style>
 </head>
-<body class="font-body-lg antialiased">
-    <!-- TopAppBar -->
-    <header class="bg-black text-cyan-400 font-headline-md uppercase tracking-widest font-bold border-b border-zinc-900 shadow-[0_0_10px_rgba(0,170,255,0.1)] flex justify-between items-center w-full px-4 h-16 sticky top-0 z-50">
-        <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
-            <span class="material-symbols-outlined text-cyan-400">terminal</span>
-            <span class="text-xl font-black text-cyan-400 tracking-tighter">SYSTEM_ID</span>
+<body class="font-body-lg antialiased flex flex-col md:flex-row h-screen">
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex flex-col w-64 lg:w-72 bg-black border-r border-zinc-900 h-screen sticky top-0 flex-shrink-0 z-50">
+        <div class="p-8 border-b border-zinc-900">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
+                <span class="material-symbols-outlined text-cyan-400 text-3xl">terminal</span>
+                <span class="text-2xl font-black text-cyan-400 tracking-tighter font-headline-lg">SYSTEM_ID</span>
+            </div>
+            <p class="text-[10px] font-data-mono text-zinc-500 mt-2 uppercase tracking-widest">Neural Link v4.2.0</p>
         </div>
-        <div class="flex items-center gap-4">
-            <button onclick="window.logoutNexus()" class="material-symbols-outlined text-zinc-500 hover:text-error transition-colors">logout</button>
-            <span class="material-symbols-outlined text-zinc-500 hover:text-cyan-300 transition-colors cursor-pointer" onclick="window.openM()">settings</span>
+        
+        <nav class="flex-1 py-8 px-4 space-y-2">
+            <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='index.html'">
+                <span class="material-symbols-outlined">hub</span>
+                <span>Network Hub</span>
+            </button>
+            <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='discuss.html'">
+                <span class="material-symbols-outlined">sensors</span>
+                <span>Pulse Links</span>
+            </button>
+            <button class="w-full sidebar-nav-btn flex items-center gap-4 p-4 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-all font-label-caps uppercase tracking-widest text-xs" onclick="window.location.href='threads.html'">
+                <span class="material-symbols-outlined">rss_feed</span>
+                <span>Broadcasts</span>
+            </button>
+            <button class="w-full sidebar-nav-btn active flex items-center gap-4 p-4 rounded-xl font-label-caps uppercase tracking-widest text-xs">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
+                <span>Identity</span>
+            </button>
+        </nav>
+
+        <div class="p-6 border-t border-zinc-900 space-y-4">
+            <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-zinc-500 hover:text-white" onclick="window.openM()">
+                <span class="material-symbols-outlined text-xl">settings</span>
+                <span class="text-xs font-bold uppercase tracking-widest font-label-caps">Settings</span>
+            </button>
+            <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-error/10 transition-all text-zinc-500 hover:text-error" onclick="window.logoutNexus()">
+                <span class="material-symbols-outlined text-xl">logout</span>
+                <span class="text-xs font-bold uppercase tracking-widest font-label-caps">Terminate</span>
+            </button>
         </div>
-    </header>
+    </aside>
 
-    <main class="pb-32 max-w-md mx-auto relative scanline min-h-screen border-x border-zinc-900/50">
-        <!-- Profile Banner -->
-        <div class="relative h-40 w-full overflow-hidden">
-            <div id="banner-ui" class="w-full h-full bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center">
-                <img id="banner-img" class="w-full h-full object-cover opacity-60" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_LpvEWLVgvL3MwYJqA-dV5yxBqq28vD4DuUq1sk2yGsG4Mk6jAquMYt5p18RK3YTgaKFacc-EJFBDzRz648VCq_fh8_rw9u1DG2rbkXz5YgaQBzGS2TbyB2GZFvbUf6ah74Qtelfy8izGm2ot7vHVzqgJ_jxjI9JWMutkcpHK38YbmWY6eI4xEbO5FLXJ33tmG5UKuJMrPz6nxhrj_4nNhXAYJB5SMXgny0a0ZDi9piRrrNkCD0U4CIfIUDCto6HkQYv1C4rBBAo3" alt="Banner"/>
+    <!-- Main Wrapper -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Mobile Header -->
+        <header class="flex md:hidden bg-black text-cyan-400 font-headline-md uppercase tracking-widest font-bold border-b border-zinc-900 shadow-[0_0_10px_rgba(0,170,255,0.1)] justify-between items-center w-full px-4 h-16 sticky top-0 z-50 flex-shrink-0">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
+                <span class="material-symbols-outlined text-cyan-400">terminal</span>
+                <span class="text-xl font-black text-cyan-400 tracking-tighter">SYSTEM_ID</span>
             </div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-            <div class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-2 py-1 border border-cyan-400/30 text-[10px] font-data-mono text-cyan-400 uppercase tracking-tighter" id="system-link">
-                LINK_ESTABLISHED: 0x82...F2
+            <div class="flex items-center gap-4">
+                <button onclick="window.logoutNexus()" class="material-symbols-outlined text-zinc-500 hover:text-error transition-colors">logout</button>
+                <span class="material-symbols-outlined text-zinc-500 hover:text-cyan-300 transition-colors cursor-pointer" onclick="window.openM()">settings</span>
             </div>
-        </div>
+        </header>
 
-        <!-- Identity Section -->
-        <div class="px-6 -mt-12 relative z-10 flex flex-col items-center">
-            <div class="relative group">
-                <div class="w-24 h-24 rounded-full border-4 border-black bg-zinc-900 overflow-hidden ring-2 ring-cyan-400/50 shadow-[0_0_20px_rgba(0,170,255,0.2)]">
-                    <img id="pfp-ui" class="w-full h-full object-cover" src="jay.png" alt="Profile Picture"/>
-                </div>
-                <div id="online-indicator" class="absolute bottom-1 right-1 bg-cyan-400 w-4 h-4 rounded-full border-2 border-black animate-pulse hidden"></div>
-            </div>
-
-            <div class="text-center mt-4">
-                <div class="flex items-center justify-center gap-2">
-                    <h1 id="name-ui" class="font-headline-md text-on-surface uppercase">Awaiting Sync...</h1>
-                    <div id="role-badge"></div>
-                </div>
-                <p id="handle-ui" class="font-data-mono text-zinc-500 text-sm mt-1">@nexus_node</p>
-            </div>
-
-            <div class="w-full mt-6 space-y-4">
-                <!-- Bio -->
-                <div class="bg-surface-container-lowest border border-zinc-900 p-4 rounded-lg text-center">
-                    <p class="font-label-caps text-zinc-400 uppercase tracking-widest mb-1">Bio</p>
-                    <p id="bio-ui" class="font-body-lg text-on-surface text-sm">Identifying status within the network...</p>
-                </div>
-
-                <!-- Primary Action -->
-                <div id="action-slot" class="w-full">
-                    <!-- Dynamic Buttons -->
-                </div>
-
-                <!-- Stats -->
-                <div class="grid grid-cols-3 gap-px bg-zinc-900/50 border border-zinc-900 rounded-lg overflow-hidden">
-                    <div class="flex flex-col items-center py-4 bg-black/40">
-                        <span id="stat-followers" class="font-headline-md text-on-surface text-xl">0</span>
-                        <span class="font-label-caps text-[10px] text-zinc-500 uppercase">Followers</span>
+        <!-- Scrollable Content -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar relative scanline pb-32 md:pb-12">
+            <div class="max-w-md md:max-w-4xl mx-auto md:px-8 md:pt-12">
+                <!-- Profile Header Card (Combined Banner & Identity) -->
+                <div class="bg-surface-container-lowest md:border md:border-zinc-900 md:rounded-3xl overflow-hidden shadow-2xl relative">
+                    <!-- Profile Banner -->
+                    <div class="relative h-40 md:h-64 w-full overflow-hidden">
+                        <div id="banner-ui" class="w-full h-full bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center">
+                            <img id="banner-img" class="w-full h-full object-cover opacity-60" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_LpvEWLVgvL3MwYJqA-dV5yxBqq28vD4DuUq1sk2yGsG4Mk6jAquMYt5p18RK3YTgaKFacc-EJFBDzRz648VCq_fh8_rw9u1DG2rbkXz5YgaQBzGS2TbyB2GZFvbUf6ah74Qtelfy8izGm2ot7vHVzqgJ_jxjI9JWMutkcpHK38YbmWY6eI4xEbO5FLXJ33tmG5UKuJMrPz6nxhrj_4nNhXAYJB5SMXgny0a0ZDi9piRrrNkCD0U4CIfIUDCto6HkQYv1C4rBBAo3" alt="Banner"/>
+                        </div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black md:from-black/80 via-transparent to-transparent"></div>
+                        <div class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-2 py-1 border border-cyan-400/30 text-[10px] font-data-mono text-cyan-400 uppercase tracking-tighter" id="system-link">
+                            LINK_ESTABLISHED: 0x82...F2
+                        </div>
                     </div>
-                    <div class="flex flex-col items-center py-4 bg-black/40 border-x border-zinc-900/50">
-                        <span id="stat-following" class="font-headline-md text-on-surface text-xl">0</span>
-                        <span class="font-label-caps text-[10px] text-zinc-500 uppercase">Following</span>
+
+                    <!-- Identity Section -->
+                    <div class="px-6 pb-8 -mt-12 md:-mt-16 relative z-10 flex flex-col md:flex-row md:items-end md:gap-8">
+                        <div class="relative group mx-auto md:mx-0">
+                            <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black bg-zinc-900 overflow-hidden ring-2 ring-cyan-400/50 shadow-[0_0_20px_rgba(0,170,255,0.2)]">
+                                <img id="pfp-ui" class="w-full h-full object-cover" src="jay.png" alt="Profile Picture"/>
+                            </div>
+                            <div id="online-indicator" class="absolute bottom-1 right-1 bg-cyan-400 w-4 h-4 md:w-6 md:h-6 rounded-full border-2 border-black animate-pulse hidden"></div>
+                        </div>
+
+                        <div class="text-center md:text-left mt-4 md:mt-0 flex-1">
+                            <div class="flex flex-col md:flex-row md:items-center gap-2">
+                                <h1 id="name-ui" class="font-headline-md text-3xl md:text-5xl text-on-surface uppercase tracking-tighter">Awaiting Sync...</h1>
+                                <div id="role-badge" class="flex justify-center md:justify-start"></div>
+                            </div>
+                            <p id="handle-ui" class="font-data-mono text-cyan-400/60 text-sm mt-1 uppercase tracking-widest">@nexus_node</p>
+                        </div>
+
+                        <div id="action-slot" class="mt-6 md:mt-0 w-full md:w-auto">
+                            <!-- Dynamic Buttons -->
+                        </div>
                     </div>
-                    <div class="flex flex-col items-center py-4 bg-black/40">
-                        <span id="stat-reputation" class="font-headline-md text-on-surface text-xl">0</span>
-                        <span class="font-label-caps text-[10px] text-zinc-500 uppercase">Reputation</span>
+
+                    <div class="px-6 pb-8 grid md:grid-cols-3 gap-6">
+                        <!-- Bio -->
+                        <div class="md:col-span-2 bg-black/20 border border-zinc-900/50 p-6 rounded-2xl">
+                            <p class="font-label-caps text-[10px] text-zinc-500 uppercase tracking-[0.2em] mb-3">Bio-Data Transmission</p>
+                            <p id="bio-ui" class="font-body-lg text-on-surface leading-relaxed italic">Identifying status within the network...</p>
+                        </div>
+
+                        <!-- Stats -->
+                        <div class="grid grid-cols-3 md:grid-cols-1 gap-px bg-zinc-900/50 border border-zinc-900 rounded-2xl overflow-hidden">
+                            <div class="flex flex-col items-center justify-center py-4 bg-black/40 md:border-b md:border-zinc-900/50">
+                                <span id="stat-followers" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
+                                <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Followers</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-center py-4 bg-black/40 border-x md:border-x-0 md:border-b md:border-zinc-900/50 border-zinc-900/50">
+                                <span id="stat-following" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
+                                <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Following</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-center py-4 bg-black/40">
+                                <span id="stat-reputation" class="font-headline-md text-on-surface text-xl md:text-2xl">0</span>
+                                <span class="font-label-caps text-[9px] text-zinc-500 uppercase tracking-widest">Reputation</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Content Tabs -->
-        <section class="mt-8">
-            <div class="flex border-b border-zinc-900 px-4">
-                <button id="tab-posts" class="flex-1 py-4 text-cyan-400 border-b-2 border-cyan-400 font-label-caps uppercase text-center text-[11px] tracking-widest bg-cyan-400/5 active-tab" onclick="switchTab('posts', this)">
-                    Transmissions
-                </button>
-                <button id="tab-connections" class="flex-1 py-4 text-zinc-500 font-label-caps uppercase text-center text-[11px] tracking-widest" onclick="switchTab('connections', this)">
-                    Connections
-                </button>
-                <button id="tab-data" class="flex-1 py-4 text-zinc-500 font-label-caps uppercase text-center text-[11px] tracking-widest" onclick="switchTab('about', this)">
-                    System Data
-                </button>
-            </div>
+                <!-- Content Tabs -->
+                <section class="mt-8 md:mt-12">
+                    <div class="flex border-b border-zinc-900 px-4 md:px-0">
+                        <button id="tab-posts" class="flex-1 md:flex-none md:px-12 py-4 text-cyan-400 border-b-2 border-cyan-400 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] bg-cyan-400/5 active-tab" onclick="switchTab('posts', this)">
+                            Transmissions
+                        </button>
+                        <button id="tab-connections" class="flex-1 md:flex-none md:px-12 py-4 text-zinc-500 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] hover:text-white transition-colors" onclick="switchTab('connections', this)">
+                            Connections
+                        </button>
+                        <button id="tab-data" class="flex-1 md:flex-none md:px-12 py-4 text-zinc-500 font-label-caps uppercase text-center text-[11px] tracking-[0.2em] hover:text-white transition-colors" onclick="switchTab('about', this)">
+                            System Data
+                        </button>
+                    </div>
 
-            <!-- Feed Root -->
-            <div id="feed-root" class="min-h-[300px]">
-                <div class="flex flex-col items-center justify-center py-20 px-6 text-center opacity-40">
-                    <span class="material-symbols-outlined text-5xl text-zinc-600 mb-4 animate-pulse">wifi_off</span>
-                    <p class="font-data-mono text-xs uppercase tracking-[0.2em] text-zinc-500">Scanning for signals...</p>
-                </div>
+                    <!-- Feed Root -->
+                    <div id="feed-root" class="min-h-[300px] mt-6">
+                        <div class="flex flex-col items-center justify-center py-20 px-6 text-center opacity-40">
+                            <span class="material-symbols-outlined text-5xl text-zinc-600 mb-4 animate-pulse">wifi_off</span>
+                            <p class="font-data-mono text-xs uppercase tracking-[0.2em] text-zinc-500">Scanning for signals...</p>
+                        </div>
+                    </div>
+                </section>
             </div>
-        </section>
-    </main>
+        </main>
 
-    <!-- Navigation Bar -->
-    <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 pb-safe bg-black border-t border-zinc-800 z-50">
-        <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="index.html">
-            <span class="material-symbols-outlined">hub</span>
-            <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Network</span>
-        </a>
-        <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="discuss.html">
-            <span class="material-symbols-outlined">sensors</span>
-            <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Pulse</span>
-        </a>
-        <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="threads.html">
-            <span class="material-symbols-outlined">rss_feed</span>
-            <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Broadcast</span>
-        </a>
-        <a class="flex flex-col items-center justify-center text-cyan-400 drop-shadow-[0_0_5px_#00AAFF] flex-1 h-full bg-cyan-400/5 border-t-2 border-cyan-400" href="profile.html">
-            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
-            <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Identity</span>
-        </a>
-    </nav>
+        <!-- Mobile Navigation Bar -->
+        <nav class="flex md:hidden fixed bottom-0 left-0 w-full justify-around items-center h-20 pb-safe bg-black border-t border-zinc-800 z-50 flex-shrink-0">
+            <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="index.html">
+                <span class="material-symbols-outlined">hub</span>
+                <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Network</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="discuss.html">
+                <span class="material-symbols-outlined">sensors</span>
+                <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Pulse</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all flex-1 h-full" href="threads.html">
+                <span class="material-symbols-outlined">rss_feed</span>
+                <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Broadcast</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-cyan-400 drop-shadow-[0_0_5px_#00AAFF] flex-1 h-full bg-cyan-400/5 border-t-2 border-cyan-400" href="profile.html">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
+                <span class="font-space-grotesk text-[10px] uppercase font-bold tracking-tight">Identity</span>
+            </a>
+        </nav>
+    </div>
 
     <!-- Modal Rebuild -->
     <div id="edit-modal" class="fixed inset-0 bg-black/95 z-[100] hidden items-center justify-center backdrop-blur-xl p-4">
@@ -234,28 +291,28 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Communication Name</label>
-                    <input type="text" id="m-name" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all outline-none">
+                    <input type="text" id="m-name" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all outline-none font-body-lg">
                 </div>
                 
                 <div>
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Visual Signature (Avatar URL)</label>
-                    <input type="text" id="m-pfp" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all outline-none">
+                    <input type="text" id="m-pfp" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all outline-none font-body-lg">
                 </div>
                 
                 <div>
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Header Array (Banner URL)</label>
-                    <input type="text" id="m-banner" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all outline-none">
+                    <input type="text" id="m-banner" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all outline-none font-body-lg">
                 </div>
                 
                 <div>
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Bio-Data (Transmission)</label>
-                    <textarea id="m-bio" rows="3" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all outline-none"></textarea>
+                    <textarea id="m-bio" rows="3" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all outline-none font-body-lg"></textarea>
                 </div>
             </div>
             
             <div class="flex gap-4 mt-8">
-                <button class="flex-1 bg-cyan-400 text-black font-bold py-4 rounded-xl hover:bg-cyan-300 transition-all uppercase tracking-widest text-xs" onclick="saveIdentity()">Sync to Cloud</button>
-                <button class="flex-0.5 bg-zinc-800 text-white font-bold px-6 py-4 rounded-xl hover:bg-zinc-700 transition-all uppercase tracking-widest text-xs" onclick="closeM()">Abort</button>
+                <button class="flex-1 bg-cyan-400 text-black font-bold py-4 rounded-xl hover:bg-cyan-300 transition-all uppercase tracking-widest text-xs font-label-caps" onclick="saveIdentity()">Sync to Cloud</button>
+                <button class="flex-0.5 bg-zinc-800 text-white font-bold px-6 py-4 rounded-xl hover:bg-zinc-700 transition-all uppercase tracking-widest text-xs font-label-caps" onclick="closeM()">Abort</button>
             </div>
         </div>
     </div>
@@ -338,23 +395,23 @@
             const slot = document.getElementById('action-slot');
             if (state.me === user) {
                 slot.innerHTML = `
-                    <button class="w-full bg-primary-container text-on-primary-container font-label-caps py-4 rounded-lg flex items-center justify-center gap-2 hover:bg-cyan-300 transition-all active:scale-95" onclick="openM()">
+                    <button class="w-full bg-primary-container text-on-primary-container font-label-caps py-4 px-6 rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-300 transition-all active:scale-95 shadow-lg shadow-cyan-400/20" onclick="openM()">
                         <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
-                        Edit Identity
+                        <span class="uppercase tracking-widest text-xs font-bold">Edit Identity</span>
                     </button>`;
             } else if (state.me) {
                 slot.innerHTML = `
                     <div class="flex gap-2">
-                        <button id="follow-btn" class="flex-1 bg-primary-container text-on-primary-container font-label-caps py-4 rounded-lg flex items-center justify-center gap-2 hover:bg-cyan-300 transition-all active:scale-95" onclick="toggleFollow()">
+                        <button id="follow-btn" class="flex-1 bg-primary-container text-on-primary-container font-label-caps py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-300 transition-all active:scale-95 shadow-lg shadow-cyan-400/20" onclick="toggleFollow()">
                             Connect
                         </button>
-                        <button class="flex-0.5 bg-zinc-900 border border-zinc-800 text-on-surface font-label-caps py-4 rounded-lg flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all active:scale-95 px-6" onclick="window.location.href='discuss.html?dm=${encodeURIComponent(user)}'">
+                        <button class="flex-0.5 bg-zinc-900 border border-zinc-800 text-on-surface font-label-caps py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all active:scale-95 px-6" onclick="window.location.href='discuss.html?dm=${encodeURIComponent(user)}'">
                             <span class="material-symbols-outlined text-sm">chat_bubble</span>
                         </button>
                     </div>`;
                 checkFollow();
             } else {
-                slot.innerHTML = `<button class="w-full bg-zinc-800 text-white font-label-caps py-4 rounded-lg flex items-center justify-center gap-2" onclick="window.location.href='auth.html'">Login to Connect</button>`;
+                slot.innerHTML = `<button class="w-full bg-zinc-800 text-white font-label-caps py-4 rounded-xl flex items-center justify-center gap-2" onclick="window.location.href='auth.html'">Login to Connect</button>`;
             }
         }
 
@@ -372,15 +429,15 @@
                         </div>`;
                     return;
                 }
-                root.innerHTML = `<div class="p-4 space-y-4">` + data.map(t => `
-                    <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 transition-all hover:border-zinc-700">
-                        <div class="text-sm text-on-surface mb-4 leading-relaxed">${esc(t.content)}</div>
+                root.innerHTML = `<div class="grid grid-cols-1 gap-4 md:gap-6">` + data.map(t => `
+                    <div class="bg-zinc-900/40 border border-zinc-900 rounded-2xl p-6 transition-all hover:border-zinc-700 group">
+                        <div class="text-sm md:text-base text-on-surface mb-4 leading-relaxed">${esc(t.content)}</div>
                         ${t.media_url ? `<img src="${t.media_url}" class="w-full rounded-xl border border-zinc-800 mb-4">` : ''}
                         <div class="flex justify-between items-center pt-4 border-t border-zinc-800/50">
-                            <div class="text-[9px] font-data-mono text-zinc-600 uppercase">${new Date(t.timestamp).toLocaleDateString()}</div>
-                            <div class="flex gap-4">
-                                <span class="text-[10px] font-bold text-cyan-400/60 uppercase tracking-tighter">${t.likes || 0} Likes</span>
-                                <span class="text-[10px] font-bold text-zinc-600 uppercase tracking-tighter">${t.replies || 0} Replies</span>
+                            <div class="text-[9px] md:text-[10px] font-data-mono text-zinc-600 uppercase tracking-widest">${new Date(t.timestamp).toLocaleDateString()} // ${new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                            <div class="flex gap-6">
+                                <span class="text-[10px] font-bold text-cyan-400/60 uppercase tracking-[0.2em]">${t.likes || 0} Likes</span>
+                                <span class="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">${t.replies || 0} Replies</span>
                             </div>
                         </div>
                     </div>
@@ -399,12 +456,12 @@
                     return; 
                 }
                 
-                root.innerHTML = `<div class="p-4 space-y-2">` + profs.map(p => `
-                    <div class="flex items-center gap-4 p-4 bg-zinc-900/20 border border-zinc-900 rounded-xl cursor-pointer hover:bg-zinc-900/40" onclick="window.location.href='profile.html?user=${encodeURIComponent(p.username)}'">
-                        <img src="${p.avatar_url || 'jay.png'}" class="w-12 h-12 rounded-lg bg-zinc-900 object-cover border border-zinc-800">
+                root.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">` + profs.map(p => `
+                    <div class="flex items-center gap-4 p-4 bg-zinc-900/20 border border-zinc-900 rounded-2xl cursor-pointer hover:bg-zinc-900/40 hover:border-zinc-700 transition-all" onclick="window.location.href='profile.html?user=${encodeURIComponent(p.username)}'">
+                        <img src="${p.avatar_url || 'jay.png'}" class="w-14 h-14 rounded-xl bg-zinc-900 object-cover border border-zinc-800">
                         <div class="flex-1">
-                            <div class="font-bold text-sm text-white">${esc(p.display_name || p.username)}</div>
-                            <div class="text-[10px] font-data-mono text-cyan-400">@${esc(p.username)}</div>
+                            <div class="font-bold text-sm text-white uppercase tracking-tighter">${esc(p.display_name || p.username)}</div>
+                            <div class="text-[10px] font-data-mono text-cyan-400 uppercase">@${esc(p.username)}</div>
                         </div>
                     </div>
                 `).join('') + `</div>`;
