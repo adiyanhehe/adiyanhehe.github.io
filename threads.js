@@ -24,9 +24,13 @@ function cacheElements() {
     elements.gifGrid = document.getElementById("gif-grid");
     elements.gifSearchInput = document.getElementById("gif-search-in");
 
-    // Sidebar
+    // Sidebar & Profile
     elements.sidePic = document.getElementById("side-pic");
     elements.sideName = document.getElementById("side-name");
+    elements.myPics = [
+        document.getElementById('my-pic'),
+        document.getElementById('my-pic-composer')
+    ].filter(Boolean);
 }
 
 // Ensure Supabase is fully loaded from global.js before running app logic
@@ -101,8 +105,9 @@ async function initializeThreads() {
     if (elements.sidePic) elements.sidePic.src = avatar;
     if (elements.sideName) elements.sideName.innerText = displayName;
 
-    const myPic = document.getElementById('my-pic');
-    if (myPic) myPic.src = avatar;
+    elements.myPics.forEach(pic => {
+        if (pic) pic.src = avatar;
+    });
 
     // 3. Boot Engines unconditionally
     bindEvents();
@@ -216,50 +221,71 @@ function renderThreadHTML(t) {
     const isReplied = localStorage.getItem(`replied_${id}`);
     
     let content = escapeHtml(t.content || '');
-    content = content.replace(/@(\w+)/g, '<span class="accent-text" style="color: var(--accent); cursor: pointer;">@$1</span>');
-    content = content.replace(/#(\w+)/g, '<span class="accent-text" style="color: var(--accent); cursor: pointer;">#$1</span>');
+    // Wrap mentions and hashtags in primary color spans
+    content = content.replace(/@(\w+)/g, '<span class="text-primary font-bold cursor-pointer hover:underline">@$1</span>');
+    content = content.replace(/#(\w+)/g, '<span class="text-secondary font-bold cursor-pointer hover:underline">#$1</span>');
+
+    const isAdmin = t.profiles?.role === 'admin' || t.profiles?.is_admin;
+    const isMod = t.profiles?.role === 'moderator';
+    const isOwner = author.toLowerCase() === 'adiyan';
 
     return `
-        <div class="glass-panel thread-item" id="thread-${id}">
-            <div class="thread-user-side">
-                <img src="${avatar}" class="thread-avatar" onclick="window.showProfileSummary('${author}')">
-                <div class="thread-line"></div>
-            </div>
-            <div class="thread-content">
-                <div class="thread-header" style="justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <h4 onclick="window.showProfileSummary('${author}')">${author}</h4>
-                        ${(t.profiles?.role === 'admin' || t.profiles?.is_admin) ? `<span class="badge blue" style="font-size:0.5rem; padding: 1px 4px; border-radius:4px; box-shadow: 0 0 8px rgba(0, 162, 255, 0.3);">OVERSEER</span>` : (t.profiles?.role === 'moderator' ? `<span class="badge" style="font-size:0.5rem; padding:1px 4px; border-radius:4px; background:rgba(0,186,124,0.1); color:var(--success);">GUARDIAN</span>` : "")}
-                        ${author.toLowerCase() === 'adiyan' ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="#1d9bf0" style="margin-top: 2px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' : ''}
-                        <span class="thread-handle">@${author.toLowerCase()}</span>
-                        <span class="thread-time">· ${time}</span>
-                    </div>
+        <div class="relative group" id="thread-${id}">
+            <div class="flex gap-4">
+                <div class="flex flex-col items-center gap-2">
+                    <img src="${avatar}" class="w-10 h-10 md:w-12 md:h-12 rounded-xl ring-1 ring-white/10 hover:ring-primary/50 transition-all cursor-pointer object-cover flex-shrink-0" onclick="window.showProfileSummary('${author}')">
+                    <div class="flex-1 w-0.5 thread-rail opacity-20 rounded-full"></div>
                 </div>
-                <div class="thread-text">${content}</div>
-                ${t.media_url ? `<div class="thread-media" style="margin-top: 12px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border);"><img src="${t.media_url}" style="width: 100%; display: block;" loading="lazy"></div>` : ''}
-                <div class="thread-actions">
-                    <button class="action-btn ${isReplied ? 'liked' : ''}" onclick="window.toggleReply('${id}')" style="display: flex; align-items: center; gap: 6px; transition: 0.2s; color: ${isReplied ? '#1d9bf0' : 'var(--text-soft)'};">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                        <span>${t.replies || 0}</span>
-                    </button>
-                    <button class="action-btn ${isReposted ? 'liked' : ''}" onclick="window.toggleRepost('${id}')" style="display: flex; align-items: center; gap: 6px; transition: 0.2s; color: ${isReposted ? '#00ba7c' : 'var(--text-soft)'};">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M17 1l4 4-4 4m6 0l-4 4 4 4M2 13h15M2 5h19"/></svg>
-                        <span>${t.reposts || 0}</span>
-                    </button>
-                    <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${id}')" style="color: ${isLiked ? '#f91880' : 'var(--text-soft)'}; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
-                        <svg viewBox="0 0 24 24" fill="${isLiked ? '#f91880' : 'none'}" stroke="${isLiked ? '#f91880' : 'currentColor'}" width="20" height="20" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                        <span>${t.likes || 0}</span>
-                    </button>
-                    ${author !== state.currentUser?.id ? `
-                    <button class="action-btn" onclick="window.reportThread('${id}')" style="color: var(--text-soft);">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-                    </button>
-                    ` : ""}
-                    ${(author === state.currentUser?.id || localStorage.getItem('rbx_role') === 'admin' || localStorage.getItem('rbx_role') === 'moderator') ? `
-                    <button class="action-btn" onclick="window.deleteThread('${id}')" style="color: var(--text-soft); margin-left: auto;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
-                    ` : ""}
+                <div class="flex-1 pb-4">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span class="text-sm font-black text-white tracking-tight cursor-pointer hover:text-primary transition-colors" onclick="window.showProfileSummary('${author}')">${author.toUpperCase()}</span>
+                            ${isAdmin ? `<span class="bg-primary/20 text-primary text-[8px] font-black px-1.5 py-0.5 rounded border border-primary/30 uppercase tracking-tighter shadow-[0_0_10px_rgba(139,92,246,0.2)]">OVERSEER</span>` : ""}
+                            ${isMod ? `<span class="bg-secondary/20 text-secondary text-[8px] font-black px-1.5 py-0.5 rounded border border-secondary/30 uppercase tracking-tighter">GUARDIAN</span>` : ""}
+                            ${isOwner ? '<span class="material-symbols-outlined text-[#1d9bf0] text-sm" style="font-variation-settings: \'FILL\' 1;">verified</span>' : ''}
+                            <span class="text-[10px] font-mono text-white/30 lowercase">@${author.toLowerCase()}</span>
+                            <span class="text-[10px] font-mono text-white/20">· ${time}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <div class="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span class="text-[9px] font-mono text-primary/50 uppercase tracking-tighter">Signal</span>
+                                <div class="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary" style="width: ${Math.floor(Math.random() * 40) + 60}%"></div>
+                                </div>
+                            </div>
+                            <button class="material-symbols-outlined text-white/20 hover:text-white transition-colors text-sm">more_horiz</button>
+                        </div>
+                    </div>
+                    
+                    <p class="text-white/80 text-sm md:text-base leading-relaxed mb-4">${content}</p>
+                    
+                    ${t.media_url ? `
+                        <div class="rounded-2xl overflow-hidden border border-white/10 glass-panel mb-4 shadow-2xl">
+                            <img src="${t.media_url}" class="w-full h-auto object-cover opacity-90 hover:opacity-100 transition-opacity" loading="lazy">
+                        </div>
+                    ` : ''}
+
+                    <div class="flex items-center gap-6">
+                        <button class="flex items-center gap-2 group/btn ${isReplied ? 'text-primary' : 'text-white/30'} hover:text-primary transition-all" onclick="window.toggleReply('${id}')">
+                            <span class="material-symbols-outlined text-lg group-hover/btn:scale-110 transition-transform">chat_bubble</span>
+                            <span class="text-[10px] font-mono uppercase tracking-widest">${t.replies || 0}</span>
+                        </button>
+                        <button class="flex items-center gap-2 group/btn ${isReposted ? 'text-green-400' : 'text-white/30'} hover:text-green-400 transition-all" onclick="window.toggleRepost('${id}')">
+                            <span class="material-symbols-outlined text-lg group-hover/btn:scale-110 transition-transform">repeat</span>
+                            <span class="text-[10px] font-mono uppercase tracking-widest">${t.reposts || 0}</span>
+                        </button>
+                        <button class="flex items-center gap-2 group/btn ${isLiked ? 'text-pink-500' : 'text-white/30'} hover:text-pink-500 transition-all" onclick="window.toggleLike('${id}')">
+                            <span class="material-symbols-outlined text-lg group-hover/btn:scale-110 transition-transform" style="${isLiked ? 'font-variation-settings: \'FILL\' 1;' : ''}">favorite</span>
+                            <span class="text-[10px] font-mono uppercase tracking-widest">${t.likes || 0}</span>
+                        </button>
+                        
+                        <div class="ml-auto flex gap-2">
+                             ${(author === state.currentUser?.id || localStorage.getItem('rbx_role') === 'admin' || localStorage.getItem('rbx_role') === 'moderator') ? `
+                                <button class="material-symbols-outlined text-white/10 hover:text-error transition-colors text-lg" onclick="window.deleteThread('${id}')">delete</button>
+                            ` : ""}
+                            <button class="material-symbols-outlined text-white/10 hover:text-white transition-colors text-lg" onclick="window.reportThread('${id}')">flag</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -558,10 +584,12 @@ function updateTrendsEngine() {
     }
 
     elements.trendList.innerHTML = sorted.map(([tag, count], idx) => `
-        <div class="trend-item" onclick="window.searchFor('${tag}')" style="padding: 12px; border-radius: var(--radius-lg); cursor: pointer; transition: 0.2s;">
-            <div style="font-size: 0.75rem; color: var(--accent);">Trending #${idx + 1}</div>
-            <div style="font-weight: 700; color: var(--text-main);">${tag}</div>
-            <div style="font-size: 0.7rem; color: var(--text-soft);">${count} transmission${count > 1 ? 's' : ''}</div>
+        <div class="group cursor-pointer p-3 hover:bg-white/5 rounded-2xl transition-all" onclick="window.searchFor('${tag}')">
+            <div class="flex justify-between items-start mb-1">
+                <p class="text-primary text-sm font-bold tracking-tight">${tag}</p>
+                <span class="text-[10px] font-mono text-white/20">#${idx + 1}</span>
+            </div>
+            <p class="text-[10px] font-mono text-white/40 uppercase tracking-tighter">${count} transmissions • ${count > 5 ? 'Rising' : 'Active'}</p>
         </div>
     `).join('');
 }
