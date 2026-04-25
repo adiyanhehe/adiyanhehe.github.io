@@ -143,6 +143,130 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Nav buttons */
+        .nav-button {
+            border: 1px solid transparent;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+        }
+        .nav-button:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.05);
+            color: #e1e1ef;
+        }
+        .nav-button[aria-pressed="true"],
+        .nav-button.active {
+            background: rgba(202, 190, 255, 0.1);
+            border-color: rgba(202, 190, 255, 0.2);
+            color: #cabeff;
+        }
+
+        /* Directory items */
+        .directory-item {
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .directory-item:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.06);
+        }
+
+        /* Filter chips */
+        .filter-chip {
+            flex: 1;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.75rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .filter-chip:hover {
+            background: rgba(255,255,255,0.05);
+            color: #e1e1ef;
+        }
+        .filter-chip.active {
+            background: rgba(202, 190, 255, 0.15);
+            color: #cabeff;
+            border-color: rgba(202, 190, 255, 0.25);
+            box-shadow: 0 0 12px rgba(202,190,255,0.1);
+        }
+
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 2rem;
+        }
+        .empty-state-card {
+            text-align: center;
+            max-width: 260px;
+        }
+        .empty-state-card h3 {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #e1e1ef;
+            margin-bottom: 0.4rem;
+            letter-spacing: 0.04em;
+        }
+        .empty-state-card p {
+            font-size: 0.7rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        /* Avatar token */
+        .avatar-token {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, var(--avatar-a, #7b8cff), var(--avatar-b, #64d9ff));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #1a1b2e;
+            border: 2px solid rgba(255,255,255,0.08);
+        }
+
+        /* Pinned bar */
+        #pinnedMessagesBar {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: rgba(202,190,255,0.04);
+        }
+
+        /* GIF picker */
+        .gif-grid-item {
+            border-radius: 0.5rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .gif-grid-item:hover {
+            transform: scale(1.03);
+        }
+
+        /* Message input */
+        #messageInput {
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+            color: #e1e1ef;
+            font-size: 0.875rem;
+            resize: none;
+            line-height: 1.5;
+        }
+        #messageInput::placeholder {
+            color: #475569;
+        }
     </style>
 
     <!-- Supabase & Global -->
@@ -266,7 +390,11 @@
             <div id="settingsMenu" class="hidden absolute left-full bottom-24 ml-2 w-64 glass-panel rounded-2xl p-2 z-[60] border-white/10 shadow-2xl">
                 <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-slate-300 hover:text-white" onclick="window.goToMyProfile()">
                     <span class="material-symbols-outlined text-xl">account_circle</span>
-                    <span class="text-xs font-bold">Global Profile</span>
+                    <span class="text-xs font-bold">View Profile</span>
+                </button>
+                <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-slate-300 hover:text-white" onclick="window.location.href='profile.html'">
+                    <span class="material-symbols-outlined text-xl">manage_accounts</span>
+                    <span class="text-xs font-bold">Edit Profile</span>
                 </button>
                 <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-slate-300 hover:text-white" id="changeStatusButton">
                     <span class="material-symbols-outlined text-xl">edit_note</span>
