@@ -226,9 +226,25 @@
         @keyframes ping {
             75%, 100% { transform: scale(2); opacity: 0; }
         }
+
+        /* Auth View Switching */
+        [data-view] { display: none !important; }
+        html.is-logged-in body [data-view="dashboard"] { display: block !important; }
+        html.is-logged-out body [data-view="landing"] { display: block !important; }
     </style>
+    <script>
+        // Fast-check auth state before body renders to prevent layout flash
+        (function() {
+            const user = localStorage.getItem('rbx_user');
+            if (user) {
+                document.documentElement.classList.add('is-logged-in');
+            } else {
+                document.documentElement.classList.add('is-logged-out');
+            }
+        })();
+    </script>
 </head>
-<body class="bg-background text-on-background font-sans selection:bg-primary/30 is-logged-out">
+<body class="bg-background text-on-background font-sans selection:bg-primary/30">
     <!-- Background Elements -->
     <div class="bg-blobs">
         <div class="blob w-[500px] h-[500px] bg-primary top-[-10%] left-[-10%]"></div>
@@ -642,16 +658,16 @@
             const display = localStorage.getItem('rbx_display_name') || user;
 
             if (user) {
-                document.body.classList.remove('is-logged-out');
-                document.body.classList.add('is-logged-in');
+                document.documentElement.classList.remove('is-logged-out');
+                document.documentElement.classList.add('is-logged-in');
                 document.querySelectorAll('.user-name-span').forEach(el => el.innerText = display);
                 ['dash-avatar', 'dash-avatar-large', 'mob-dash-avatar'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.src = pic;
                 });
             } else {
-                document.body.classList.remove('is-logged-in');
-                document.body.classList.add('is-logged-out');
+                document.documentElement.classList.remove('is-logged-in');
+                document.documentElement.classList.add('is-logged-out');
             }
         }
 
