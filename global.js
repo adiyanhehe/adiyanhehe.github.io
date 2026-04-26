@@ -343,6 +343,7 @@ function injectUniversalHeader() {
     }
 
     let header = document.querySelector('.header');
+    if (header && header.hasAttribute('data-custom-header')) return; // Preserve custom design
     if (!header) {
         header = document.createElement('header');
         header.className = 'header';
