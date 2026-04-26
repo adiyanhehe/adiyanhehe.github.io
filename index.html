@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Adiyan Studio | Dev </title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#c0c1ff",
+                    "background": "#0b1326",
+                    "tertiary": "#bdc2ff",
+                    "on-tertiary-container": "#081486",
+                    "surface-dim": "#0b1326",
+                    "secondary": "#b9c8de",
+                    "on-tertiary-fixed": "#000767",
+                    "on-secondary-container": "#a7b6cc",
+                    "primary-fixed": "#e1e0ff",
+                    "error-container": "#93000a",
+                    "on-secondary": "#233143",
+                    "outline-variant": "#464554",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-container": "#0d0096",
+                    "surface": "#0b1326",
+                    "on-primary-fixed": "#07006c",
+                    "tertiary-fixed-dim": "#bdc2ff",
+                    "on-error": "#690005",
+                    "inverse-on-surface": "#283044",
+                    "tertiary-fixed": "#e0e0ff",
+                    "inverse-surface": "#dae2fd",
+                    "outline": "#908fa0",
+                    "secondary-fixed-dim": "#b9c8de",
+                    "tertiary-container": "#7c87f3",
+                    "error": "#ffb4ab",
+                    "surface-container": "#171f33",
+                    "on-secondary-fixed": "#0d1c2d",
+                    "on-background": "#dae2fd",
+                    "primary": "#5865F2",
+                    "surface-tint": "#c0c1ff",
+                    "on-primary": "#ffffff",
+                    "surface-bright": "#31394d",
+                    "inverse-primary": "#494bd6",
+                    "on-surface": "#dae2fd",
+                    "on-tertiary-fixed-variant": "#2f3aa3",
+                    "secondary-fixed": "#d4e4fa",
+                    "surface-container-low": "#131b2e",
+                    "on-surface-variant": "#c7c4d7",
+                    "surface-container-lowest": "#060e20",
+                    "on-tertiary": "#131e8c",
+                    "on-secondary-fixed-variant": "#39485a",
+                    "primary-container": "#404eed",
+                    "surface-container-high": "#222a3d",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "secondary-container": "#39485a",
+                    "surface-variant": "#2d3449",
+                    "surface-container-highest": "#2d3449",
+                    "brand-indigo": "#5865F2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "1rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "0.5rem",
+                    "gutter": "24px",
+                    "sm": "1rem",
+                    "md": "1.5rem",
+                    "xl": "4rem",
+                    "unit": "4px",
+                    "container-max": "1280px",
+                    "lg": "2.5rem"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-xl": ["60px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "headline-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+    
+    <style>
+        .glass-surface {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(30, 41, 59, 0.5);
+        }
+        .indigo-glow:hover {
+            box-shadow: 0 0 20px rgba(192, 193, 255, 0.1);
+            border-color: rgba(192, 193, 255, 0.4);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(30, 41, 59, 0.5);
+        }
+        .inner-glow-primary {
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 0 15px rgba(192, 193, 255, 0.1);
+        }
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity, transform;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .hero-animate {
+            animation: heroReveal 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes heroReveal {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hero-gradient {
+            background: linear-gradient(180deg, #1a1c3d 0%, #0b1326 100%);
+        }
+        /* Auth View Hiding */
+        [data-view] { display: none !important; }
+        body.is-logged-in [data-view="dashboard"] { display: block !important; }
+        body.is-logged-out [data-view="landing"] { display: block !important; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen">
+
+    <!-- LANDING PAGE VIEW (Logged Out) -->
+    <div id="landing-view" data-view="landing">
+        <header data-custom-header class="header fixed top-0 w-full z-50 bg-[#020617]/90 backdrop-blur-md border-b border-white/5">
+            <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl font-black text-white tracking-tighter hover:text-brand-indigo cursor-default">Nexus</span>
+                </div>
+                <div class="hidden lg:flex items-center gap-8">
+                    <a class="font-bold text-[16px] text-white hover:underline transition-all" href="#">Product</a>
+                    <a class="font-bold text-[16px] text-white hover:underline transition-all" href="#">Security</a>
+                    <a class="font-bold text-[16px] text-white hover:underline transition-all" href="#">Network</a>
+                    <a class="font-bold text-[16px] text-white hover:underline transition-all" href="#">Pricing</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="auth.html" class="bg-white text-black px-4 py-2 rounded-full font-bold text-sm hover:shadow-lg transition-all active:scale-95">Log In</a>
+                    <button class="text-white lg:hidden">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Hero Section -->
+            <section class="relative pt-32 pb-20 px-6 min-h-[90vh] flex flex-col items-center justify-center overflow-hidden bg-brand-indigo hero-gradient">
+                <div class="absolute inset-0 z-0 opacity-40">
+                    <div class="absolute top-20 -left-10 w-40 h-40 bg-white/20 rounded-full blur-3xl"></div>
+                    <div class="absolute bottom-10 -right-10 w-60 h-60 bg-black/20 rounded-full blur-3xl"></div>
+                </div>
+                <div class="relative z-10 text-center space-y-6 max-w-4xl mx-auto">
+                    <h1 class="font-headline-xl text-white uppercase leading-tight hero-animate opacity-0">
+                        Imagine a <br/>place...
+                    </h1>
+                    <p class="text-white/90 text-xl max-w-2xl mx-auto leading-relaxed hero-animate opacity-0 [animation-delay:200ms]">
+                        ...where you can belong to a school club, a gaming group, or a worldwide engineering community. Nexus is where high-stakes conversations happen every day.
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 hero-animate opacity-0 [animation-delay:400ms]">
+                        <a href="auth.html" class="w-full sm:w-auto px-10 py-4 bg-white text-[#23272a] rounded-full font-bold text-lg hover:text-brand-indigo shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined">login</span> Login
+                        </a>
+                        <a href="portfolio.html" class="w-full sm:w-auto px-10 py-4 bg-[#23272a] text-white rounded-full font-bold text-lg hover:bg-[#313338] shadow-xl transition-all active:scale-95">View Portfolio</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Feature Sections -->
+            <section class="bg-white text-[#23272a] py-24 px-6">
+                <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
+                    <div class="flex-1">
+                        <div class="glass-panel bg-slate-100 p-8 rounded-3xl shadow-2xl">
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
+                                    <div class="w-10 h-10 rounded-full bg-primary/20"></div>
+                                    <div class="h-3 w-32 bg-slate-200 rounded"></div>
+                                </div>
+                                <div class="flex items-center gap-3 p-3">
+                                    <div class="w-10 h-10 rounded-full bg-slate-100"></div>
+                                    <div class="h-3 w-48 bg-slate-100 rounded"></div>
+                                </div>
+                                <div class="ml-14 h-12 bg-white border border-slate-100 rounded-xl"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 space-y-6">
+                        <h2 class="text-[48px] font-black leading-[1.1]">Create an invite-only place where you belong</h2>
+                        <p class="text-xl text-slate-600">Nexus servers are organized into topic-based channels where you can collaborate, share, and just talk about your day.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-[#f6f6f6] text-[#23272a] py-24 px-6">
+                <div class="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center gap-16">
+                    <div class="flex-1">
+                        <div class="aspect-video bg-brand-indigo/10 rounded-3xl flex items-center justify-center border border-brand-indigo/20">
+                            <span class="material-symbols-outlined text-brand-indigo text-7xl" style="font-variation-settings: 'FILL' 1;">voice_chat</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 space-y-6">
+                        <h2 class="text-[48px] font-black leading-[1.1]">Where hanging out is easy</h2>
+                        <p class="text-xl text-slate-600">Grab a seat in a voice channel when you’re free. Friends in your server can see you’re around and instantly pop in to talk.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA -->
+            <section class="py-24 px-6 bg-background text-white text-center">
+                <div class="reveal max-w-3xl mx-auto">
+                    <h3 class="text-4xl font-black mb-10">RELIABLE TECH FOR STAYING CLOSE</h3>
+                    <p class="text-xl text-slate-300 mb-12">Low-latency voice and video feels like you’re in the same room. Ready to start your journey?</p>
+                    <a href="auth.html" class="inline-flex items-center gap-3 px-10 py-5 bg-primary text-white rounded-full font-bold text-lg hover:bg-[#4752c4] transition-all">
+                        <span class="material-symbols-outlined">login</span> Get Started Now
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bg-[#23272a] text-white py-16 px-8">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
+                <span class="text-4xl font-black italic uppercase text-primary">Nexus</span>
+                <nav class="flex gap-8 text-sm text-slate-400">
+                    <a href="#" class="hover:text-white">Privacy</a>
+                    <a href="#" class="hover:text-white">Terms</a>
+                    <a href="#" class="hover:text-white">Safety</a>
+                </nav>
+                <p class="text-[10px] text-white/40 uppercase tracking-widest">© 2024 Nexus Communication. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+
+    <!-- DASHBOARD VIEW (Logged In) -->
+    <div id="dashboard-view" data-view="dashboard">
+        <header data-custom-header class="header fixed top-0 w-full z-50 border-b border-slate-800/50 bg-[#020617]/80 backdrop-blur-md shadow-2xl shadow-indigo-500/5">
+            <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <div class="flex items-center gap-8">
+                    <span class="text-xl font-black text-white tracking-tighter">Nexus</span>
+                    <nav class="hidden md:flex items-center gap-6">
+                        <a class="font-inter tracking-tight text-sm font-medium text-slate-400 hover:text-white" href="index.html">Product</a>
+                        <a class="font-inter tracking-tight text-sm font-medium text-indigo-400 border-b-2 border-indigo-500 pb-1" href="discuss.html">Security</a>
+                        <a class="font-inter tracking-tight text-sm font-medium text-slate-400 hover:text-white" href="threads.html">Network</a>
+                        <a class="font-inter tracking-tight text-sm font-medium text-slate-400 hover:text-white" href="portfolio.html">Pricing</a>
+                    </nav>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+                    <div class="h-8 w-8 rounded-full border border-outline overflow-hidden cursor-pointer" onclick="goToMyProfile()">
+                        <img id="dash-avatar" alt="User avatar" class="w-full h-full object-cover" src="jay.png"/>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Desktop Dashboard Content -->
+        <main class="hidden md:block flex-grow pt-32 pb-24 px-6 max-w-7xl mx-auto w-full">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+                <div>
+                    <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Welcome back, <span class="user-name-span">Alex</span></h1>
+                    <p class="text-on-surface-variant font-body-lg">Your secure communication network is operational and optimized.</p>
+                </div>
+                <div class="flex items-center gap-4 glass-surface p-4 rounded-xl">
+                    <div class="w-12 h-12 rounded-lg overflow-hidden bg-surface-container-high border border-outline-variant">
+                        <img id="dash-avatar-large" alt="User" class="w-full h-full object-cover" src="jay.png"/>
+                    </div>
+                    <div>
+                        <p class="font-label-md text-on-surface user-name-span">Alex Rivera</p>
+                        <p class="font-label-sm text-primary">Senior Architect</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <a href="discuss.html" class="group relative glass-surface rounded-xl p-8 flex flex-col justify-between min-h-[320px] transition-all duration-300 indigo-glow cursor-pointer">
+                    <div>
+                        <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-6 border border-primary/20 group-hover:bg-primary/20">
+                            <span class="material-symbols-outlined text-primary">chat_bubble</span>
+                        </div>
+                        <h3 class="font-headline-md text-headline-md text-white mb-3">DMs</h3>
+                        <p class="text-on-surface-variant font-body-md">End-to-end encrypted messaging with technical precision and zero latency.</p>
+                    </div>
+                    <div class="mt-8 flex items-center justify-between">
+                        <span class="font-label-sm text-primary tracking-widest uppercase">New Messages</span>
+                        <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </div>
+                </a>
+                <a href="threads.html" class="group relative glass-surface rounded-xl p-8 flex flex-col justify-between min-h-[320px] transition-all duration-300 indigo-glow cursor-pointer">
+                    <div>
+                        <div class="w-12 h-12 rounded-lg bg-tertiary/10 flex items-center justify-center mb-6 border border-tertiary/20 group-hover:bg-tertiary/20">
+                            <span class="material-symbols-outlined text-tertiary">forum</span>
+                        </div>
+                        <h3 class="font-headline-md text-headline-md text-white mb-3">Threads</h3>
+                        <p class="text-on-surface-variant font-body-md">Categorized technical discussions for deep-focus engineering workflows.</p>
+                    </div>
+                    <div class="mt-8 flex items-center justify-between">
+                        <span class="font-label-sm text-tertiary tracking-widest uppercase">Active Projects</span>
+                        <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </div>
+                </a>
+                <a href="portfolio.html" class="group relative glass-surface rounded-xl p-8 flex flex-col justify-between min-h-[320px] transition-all duration-300 indigo-glow cursor-pointer">
+                    <div>
+                        <div class="w-12 h-12 rounded-lg bg-primary-container/20 flex items-center justify-center mb-6 border border-primary-container/30 group-hover:bg-primary-container/40">
+                            <span class="material-symbols-outlined text-primary-fixed-dim">folder_shared</span>
+                        </div>
+                        <h3 class="font-headline-md text-headline-md text-white mb-3">Portfolio</h3>
+                        <p class="text-on-surface-variant font-body-md">Secure repository for shared assets, documentation, and infrastructure logs.</p>
+                    </div>
+                    <div class="mt-8 flex items-center justify-between">
+                        <span class="font-label-sm text-primary-fixed-dim tracking-widest uppercase">Explore Works</span>
+                        <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 glass-surface rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="font-label-md text-white uppercase tracking-wider">Network Integrity</h4>
+                        <span class="flex items-center gap-2 text-primary font-label-sm">
+                            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> 99.9% Uptime
+                        </span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-slate-800">
+                            <span class="text-on-surface font-body-md">Frankfurt Node-01</span>
+                            <span class="text-on-surface-variant font-label-sm">12ms</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-slate-800">
+                            <span class="text-on-surface font-body-md">San Francisco Node-04</span>
+                            <span class="text-on-surface-variant font-label-sm">48ms</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 glass-surface rounded-xl p-6 flex flex-col justify-center items-center text-center relative overflow-hidden group">
+                    <div class="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-primary rounded-full blur-3xl"></div>
+                        <div class="absolute bottom-0 left-0 w-32 h-32 bg-indigo-600 rounded-full blur-3xl"></div>
+                    </div>
+                    <span class="material-symbols-outlined text-primary mb-4 scale-150" style="font-variation-settings: 'FILL' 1;">security</span>
+                    <h4 class="font-headline-md text-white mb-2">Security Audit</h4>
+                    <p class="text-on-surface-variant font-body-md px-4">Last verified scan completed successfully at 04:00 UTC.</p>
+                    <button class="mt-6 px-6 py-2 bg-primary text-on-primary font-label-md rounded-lg active:scale-95">View Report</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Mobile Dashboard Content -->
+        <main class="md:hidden pt-28 pb-32 px-6 flex flex-col gap-8 max-w-md mx-auto w-full">
+            <section class="flex flex-col gap-2">
+                <div class="flex items-center gap-4 mb-2">
+                    <div class="relative">
+                        <img id="mob-dash-avatar" alt="Profile" class="w-16 h-16 rounded-xl object-cover border border-slate-800 shadow-xl" src="jay.png"/>
+                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-background rounded-full"></div>
+                    </div>
+                    <div>
+                        <h1 class="font-headline-md text-on-surface user-name-span">Alex Rivera</h1>
+                        <p class="font-label-md text-primary tracking-wider uppercase">Senior Architect</p>
+                    </div>
+                </div>
+                <div class="glass-card p-5 rounded-xl border border-slate-800/50">
+                    <h2 class="font-headline-md text-white mb-1">Welcome back</h2>
+                    <p class="font-body-md text-on-surface-variant">Nexus systems are operational. Ready for deployment.</p>
+                </div>
+            </section>
+
+            <section class="flex flex-col gap-4">
+                <a class="group flex items-center justify-between p-6 rounded-xl bg-primary text-on-primary inner-glow-primary active:scale-[0.98]" href="discuss.html">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">forum</span>
+                        <div class="flex flex-col">
+                            <span class="font-headline-md leading-tight">DMs</span>
+                            <span class="font-label-sm opacity-80">2 New Messages</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">chevron_right</span>
+                </a>
+                <a class="group flex items-center justify-between p-6 rounded-xl glass-card border-slate-800 hover:border-primary-fixed-dim/30 active:scale-[0.98]" href="threads.html">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-3xl text-primary">alt_route</span>
+                        <div class="flex flex-col">
+                            <span class="font-headline-md text-white leading-tight">Threads</span>
+                            <span class="font-label-sm text-on-surface-variant">Active discussions</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-500 group-hover:translate-x-1 transition-transform">chevron_right</span>
+                </a>
+                <a class="group flex items-center justify-between p-6 rounded-xl glass-card border-slate-800 hover:border-primary-fixed-dim/30 active:scale-[0.98]" href="portfolio.html">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-3xl text-primary">grid_view</span>
+                        <div class="flex flex-col">
+                            <span class="font-headline-md text-white leading-tight">Portfolio</span>
+                            <span class="font-label-sm text-on-surface-variant">Explore Projects</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-500 group-hover:translate-x-1 transition-transform">chevron_right</span>
+                </a>
+            </section>
+
+            <section>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-label-md text-on-surface-variant uppercase tracking-widest">Recent Activity</h3>
+                    <span class="text-xs text-primary font-semibold">View All</span>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low border border-slate-800/30">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined">code</span>
+                        </div>
+                        <div class="flex-grow">
+                            <p class="font-body-md text-white text-sm">Mainnet-alpha updated</p>
+                            <p class="text-xs text-slate-500">2 hours ago</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 bg-[#020617]/90 backdrop-blur-xl border-t border-slate-800/50 flex justify-around items-center h-16 md:hidden z-50">
+            <button class="flex flex-col items-center gap-1 text-primary">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                <span class="text-[10px] font-bold">Home</span>
+            </button>
+            <button onclick="location.href='threads.html'" class="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">search</span>
+                <span class="text-[10px] font-bold">Explore</span>
+            </button>
+            <button onclick="location.href='discuss.html'" class="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">notifications</span>
+                <span class="text-[10px] font-bold">Alerts</span>
+            </button>
+            <button onclick="goToMyProfile()" class="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">settings</span>
+                <span class="text-[10px] font-bold">Settings</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Scripts -->
+    <script src="global.js"></script>
+    <script>
+        // Feature reveal observer
+        document.addEventListener('DOMContentLoaded', () => {
+            const observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+            
+            // Dynamic State Switcher
+            updateViewState();
+        });
+
+        async function updateViewState() {
+            // Wait for Supabase to potentially initialize
+            if (window.supabaseReady) await window.supabaseReady;
+            
+            const user = localStorage.getItem('rbx_user');
+            const pic = localStorage.getItem('rbx_pic') || 'jay.png';
+            const display = localStorage.getItem('rbx_display_name') || user;
+
+            if (user) {
+                document.body.classList.remove('is-logged-out');
+                document.body.classList.add('is-logged-in');
+                
+                // Update dynamic profile fields
+                document.querySelectorAll('.user-name-span').forEach(el => el.innerText = display);
+                const avatars = ['dash-avatar', 'dash-avatar-large', 'mob-dash-avatar'];
+                avatars.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.src = pic;
+                });
+            } else {
+                document.body.classList.remove('is-logged-in');
+                document.body.classList.add('is-logged-out');
+            }
+        }
+
+        // Listen for auth changes from global.js
+        const originalCheckAuth = window.checkGlobalAuth;
+        window.checkGlobalAuth = async (...args) => {
+            if (originalCheckAuth) await originalCheckAuth(...args);
+            updateViewState();
+        };
+    </script>
+</body>
+</html>
